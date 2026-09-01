@@ -12,7 +12,6 @@ from kornia.morphology import erosion, dilation
 from sklearn.metrics import average_precision_score
 
 from Utils.DataLoader import carregar_dataframe_starcop, STARCOPDataset, DataNormalizer
-from Modelos.Modelos import UNetBaseline
 
 def binary_opening(x: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
     eroded = torch.clamp(erosion(x.float(), kernel), 0, 1) > 0
@@ -57,7 +56,7 @@ def salvar_log_csv(nome_modelo, f1, iou, auprc, fpr, device, num_parametros, tam
     df.to_csv(nome_arquivo, index=False)
     print(f"Log do teste salvo em: '{nome_arquivo}'")
 
-def avaliar_e_visualizar(nome_modelo_salvo, produtos_entrada):
+def avaliar_e_visualizar(modelo_escolhido,nome_modelo_salvo, produtos_entrada):
     device_obj = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device_name = device_obj.type.upper()
     print(f"\nIniciando Avaliação do modelo: {nome_modelo_salvo} ({device_name})")
@@ -70,7 +69,7 @@ def avaliar_e_visualizar(nome_modelo_salvo, produtos_entrada):
     dataloader = DataLoader(dataset_teste, batch_size=1, shuffle=False)
     normalizador = DataNormalizer(produtos_entrada).to(device_obj)
 
-    modelo = UNetBaseline(in_channels=len(produtos_entrada), out_channels=1).to(device_obj)
+    modelo = modelo_escolhido(in_channels=len(produtos_entrada), out_channels=1).to(device_obj)
     caminho_pesos = f"Modelos_treinados/{nome_modelo_salvo}.pth"
     modelo.load_state_dict(torch.load(caminho_pesos, map_location=device_obj, weights_only=True))
     modelo.eval()

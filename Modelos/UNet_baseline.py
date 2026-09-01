@@ -71,22 +71,3 @@ class UNetBaseline(nn.Module):
 
         logits = self.out_conv(c4)
         return logits
-
-class CNN_1D(nn.Module):
-    def __init__(self, in_channels, out_channels=1):
-        super().__init__()
-        # Convoluções com kernel_size=1 atuam exatamente como redes 1D (processamento pixel a pixel)
-        self.net = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels, out_channels=64, kernel_size=1, stride=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=1, stride=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=128, out_channels=64, kernel_size=1, stride=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=64, out_channels=out_channels, kernel_size=1, stride=1)
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
-    
