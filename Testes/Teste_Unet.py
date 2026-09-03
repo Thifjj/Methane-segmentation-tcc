@@ -61,8 +61,8 @@ def avaliar_e_visualizar(modelo_escolhido,nome_modelo_salvo, produtos_entrada):
     device_name = device_obj.type.upper()
     print(f"\nIniciando Avaliação do modelo: {nome_modelo_salvo} ({device_name})")
 
-    CAMINHO_CSV_TESTE = "Datasets/STARCOP_test/test.csv" 
-    DIRETORIO_DADOS_TESTE = "Datasets/STARCOP_test"
+    CAMINHO_CSV_TESTE = "/media/jacques/hdd/Laboratorio/2_2026_lab/Projeto_pesquisaMetano/dataset_STARCOP/STARCOP_test/test.csv"
+    DIRETORIO_DADOS_TESTE = "/media/jacques/hdd/Laboratorio/2_2026_lab/Projeto_pesquisaMetano/dataset_STARCOP/STARCOP_test"
 
     df_test = carregar_dataframe_starcop(CAMINHO_CSV_TESTE, DIRETORIO_DADOS_TESTE)
     dataset_teste = STARCOPDataset(df_test, produtos_entrada, ["labelbinary"])
