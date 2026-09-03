@@ -33,15 +33,22 @@ def treinar_modelo(modelo_escolhido,nome_modelo_salvar, produtos_entrada):
     print(f"Bandas utilizadas: {produtos_entrada}\n")
 
 
-    CAMINHO_CSV = "Datasets/STARCOP_train/train.csv"
-    DIRETORIO_DADOS = "Datasets/STARCOP_train"
+    CAMINHO_CSV = "/media/jacques/hdd/Laboratorio/2_2026_lab/Projeto_pesquisaMetano/dataset_STARCOP/train.csv"
+    DIRETORIO_DADOS = "/media/jacques/hdd/Laboratorio/2_2026_lab/Projeto_pesquisaMetano/dataset_STARCOP"
     PRODUTO_SAIDA = ["labelbinary"]
 
     print(f"Dataset: {DIRETORIO_DADOS}\n")
     
     df_train = carregar_dataframe_starcop(CAMINHO_CSV, DIRETORIO_DADOS)
     dataset_treino = STARCOPDataset(df_train, produtos_entrada, PRODUTO_SAIDA, weight_loss="weight_mag1c")
-    dataloader = DataLoader(dataset_treino, batch_size=4, shuffle=True)
+    dataloader = DataLoader(
+        dataset_treino,
+        batch_size=6,
+        shuffle=True,
+        num_workers=6,
+        pin_memory=True,
+        persistent_workers=True,
+    )
     normalizador = DataNormalizer(produtos_entrada).to(device)
 
     modelo = modelo_escolhido(in_channels=len(produtos_entrada), out_channels=1).to(device)
@@ -71,9 +78,9 @@ def treinar_modelo(modelo_escolhido,nome_modelo_salvar, produtos_entrada):
         
         loop = tqdm(dataloader, desc=f"Época {epoca+1}/{epocas}")
         for batch in loop:
-            inputs = normalizador(batch["input"].to(device))
-            targets = batch["output"].to(device)
-            pesos_loss = batch["weight_loss"].to(device)
+            inputs = normalizador(batch["input"].to(device, non_blocking=True))
+            targets = batch["output"].to(device, non_blocking=True)
+            pesos_loss = batch["weight_loss"].to(device, non_blocking=True)
 
             optimizer.zero_grad()
             previsoes = modelo(inputs)
