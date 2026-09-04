@@ -33,8 +33,16 @@ class UNetDepthReduced(nn.Module):
         self.pool1 = nn.MaxPool2d(2)
         self.down2 = DoubleConv(64, 128)
         self.pool2 = nn.MaxPool2d(2)
-
+        # camadas podadas
+        
+        # self.down3 = DoubleConv(128, 256)
+        # self.pool3 = nn.MaxPool2d(2)
+        # self.down4 = DoubleConv(256, 512)
+        # self.pool4 = nn.MaxPool2d(2)
+        
         # O bottleneck agora ocorre diretamente após o segundo nível de pooling
+        # Modificado tamanho de entrada 128 -> saida 256
+        #self.bottleneck = DoubleConv(512, 1024)
         self.bottleneck = DoubleConv(128, 256)
 
         # Caminho de Subida (Expansão) - Reduzido para 2 estágios
