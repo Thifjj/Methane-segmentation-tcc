@@ -23,8 +23,9 @@ def ler_tif_para_plot(pasta, window, banda, div=1.0):
         img = src.read(1, window=window)
     return np.clip(img / div, 0, 1)
 
-def salvar_log_csv(nome_modelo, f1, iou, auprc, fpr, device, num_parametros, tamanho_mb, inferencia_ms):
+def salvar_log_csv(nome_modelo, f1_global, f1_strong, f1_weak, iou, auprc, fpr_no_plume, device, num_parametros, tamanho_mb, inferencia_ms):
     nome_arquivo = "Resultados_testes/historico_testes.csv"
+    os.makedirs(os.path.dirname(nome_arquivo), exist_ok=True)
     
     novo_registro = {
         "Nome do Modelo": nome_modelo,
@@ -32,10 +33,12 @@ def salvar_log_csv(nome_modelo, f1, iou, auprc, fpr, device, num_parametros, tam
         "Parametros": num_parametros,
         "Tamanho (MB)": round(tamanho_mb, 2),
         "Inferencia (ms/img)": round(inferencia_ms, 2),
-        "F1-Score": round(f1, 4),
+        "F1-Global": round(f1_global, 4),
+        "F1-Strong": round(f1_strong, 4),
+        "F1-Weak": round(f1_weak, 4),
         "IoU": round(iou, 4),
         "AUPRC": round(auprc, 4),
-        "FPR": round(fpr, 6),
+        "FPR (No-Plume)": round(fpr_no_plume, 6),
         "Teste #": 1
     }
     
@@ -50,13 +53,13 @@ def salvar_log_csv(nome_modelo, f1, iou, auprc, fpr, device, num_parametros, tam
     else:
         df = pd.DataFrame([novo_registro])
         
-    colunas_ordem = ["Teste #", "Nome do Modelo", "Device", "Parametros", "Tamanho (MB)", "Inferencia (ms/img)", "F1-Score", "IoU", "AUPRC", "FPR"]
+    colunas_ordem = ["Teste #", "Nome do Modelo", "Device", "Parametros", "Tamanho (MB)", "Inferencia (ms/img)", "F1-Global", "F1-Strong", "F1-Weak", "IoU", "AUPRC", "FPR (No-Plume)"]
     df = df[colunas_ordem]
     
     df.to_csv(nome_arquivo, index=False)
     print(f"Log do teste salvo em: '{nome_arquivo}'")
 
-def avaliar_e_visualizar(modelo_escolhido,nome_modelo_salvo, produtos_entrada):
+def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     device_obj = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device_name = device_obj.type.upper()
     print(f"\nIniciando Avaliação do modelo: {nome_modelo_salvo} ({device_name})")
@@ -81,10 +84,16 @@ def avaliar_e_visualizar(modelo_escolhido,nome_modelo_salvo, produtos_entrada):
 
     todas_probabilidades = []
     todos_gabaritos = []
-    TP_total = FP_total = FN_total = TN_total = 0
+    
+    # Acumuladores Globais
+    TP_tot = FP_tot = FN_tot = TN_tot = 0
+    # Acumuladores por Dificuldade
+    TP_str = FP_str = FN_str = 0
+    TP_weak = FP_weak = FN_weak = 0
+    FP_no_plume = TN_no_plume = 0
+    
     tempo_total_inferencia = 0.0
 
-    # Aquecimento da GPU (Warm-up)
     if device_name == "CUDA":
         dummy_input = torch.randn(1, len(produtos_entrada), 512, 512).to(device_obj)
         for _ in range(10): _ = modelo(dummy_input)
@@ -111,15 +120,34 @@ def avaliar_e_visualizar(modelo_escolhido,nome_modelo_salvo, produtos_entrada):
             p_flat = previsao_limpa.view(-1)
             g_flat = targets.view(-1)
             
-            TP_total += (p_flat * g_flat).sum().item()
-            FP_total += (p_flat * (1 - g_flat)).sum().item()
-            FN_total += ((1 - p_flat) * g_flat).sum().item()
-            TN_total += ((1 - p_flat) * (1 - g_flat)).sum().item()
+            tp = (p_flat * g_flat).sum().item()
+            fp = (p_flat * (1 - g_flat)).sum().item()
+            fn = ((1 - p_flat) * g_flat).sum().item()
+            tn = ((1 - p_flat) * (1 - g_flat)).sum().item()
+
+            # Acumula totais gerais
+            TP_tot += tp; FP_tot += fp; FN_tot += fn; TN_tot += tn
+            
+            # Estratificação por Dificuldade (Forte vs Fraca vs No-Plume)
+            g_sum = g_flat.sum().item()
+            if g_sum > 0:
+                # É uma imagem com pluma. Verifica se é Forte ou Fraca
+                qplume = df_test.iloc[i].get('qplume', 0)
+                is_strong = (qplume >= 1000) or (g_sum > 1000)
+                
+                if is_strong:
+                    TP_str += tp; FP_str += fp; FN_str += fn
+                else:
+                    TP_weak += tp; FP_weak += fp; FN_weak += fn
+            else:
+                # É uma imagem sem pluma (Background tile)
+                FP_no_plume += fp
+                TN_no_plume += tn
 
             todas_probabilidades.extend(probs.view(-1).cpu().numpy())
             todos_gabaritos.extend(g_flat.cpu().numpy())
 
-            if g_flat.sum().item() > 0 and i == 0: 
+            if g_sum > 0 and i == 0: 
                 pasta = df_test.iloc[i]['folder']
                 window = df_test.iloc[i]['window']
                 
@@ -145,9 +173,16 @@ def avaliar_e_visualizar(modelo_escolhido,nome_modelo_salvo, produtos_entrada):
                 fig.suptitle(f"Avaliação do Modelo: {nome_modelo_salvo}", fontsize=16)
                 plt.show()
 
-    iou = TP_total / (TP_total + FP_total + FN_total + 1e-6)
-    f1 = 2 * TP_total / (2 * TP_total + FP_total + FN_total + 1e-6)
-    fpr = FP_total / (FP_total + TN_total + 1e-6)
+    # Cálculos das Métricas
+    iou_global = TP_tot / (TP_tot + FP_tot + FN_tot + 1e-6)
+    f1_global = 2 * TP_tot / (2 * TP_tot + FP_tot + FN_tot + 1e-6)
+    
+    f1_strong = 2 * TP_str / (2 * TP_str + FP_str + FN_str + 1e-6) if (TP_str + FP_str + FN_str) > 0 else 0.0
+    f1_weak = 2 * TP_weak / (2 * TP_weak + FP_weak + FN_weak + 1e-6) if (TP_weak + FP_weak + FN_weak) > 0 else 0.0
+    
+    # FPR restrito aos tiles sem pluma
+    fpr_no_plume = FP_no_plume / (FP_no_plume + TN_no_plume + 1e-6)
+    
     auprc = average_precision_score(todos_gabaritos, todas_probabilidades)
     
     latencia_media_ms = (tempo_total_inferencia / len(dataloader)) * 1000
@@ -156,13 +191,14 @@ def avaliar_e_visualizar(modelo_escolhido,nome_modelo_salvo, produtos_entrada):
     print(f" Total Parâmetros: {total_parametros:,}")
     print(f" Tamanho Arquivo:  {tamanho_arquivo_mb:.2f} MB")
     print(f" Latência Média:   {latencia_media_ms:.2f} ms por imagem ({device_name})")
-    print(f" F1-Score:         {f1:.4f}")
-    print(f" IoU:              {iou:.4f}")
+    print(f" F1-Global:        {f1_global:.4f}")
+    print(f" F1-Strong:        {f1_strong:.4f} (Emissão >= 1000 kg/h ou > 1000 px)")
+    print(f" F1-Weak:          {f1_weak:.4f} (Emissão < 1000 kg/h e <= 1000 px)")
+    print(f" IoU:              {iou_global:.4f}")
     print(f" AUPRC:            {auprc:.4f}")
-    print(f" FPR:              {fpr:.6f}")
+    print(f" FPR (No-Plume):   {fpr_no_plume:.6f}")
 
-    salvar_log_csv(nome_modelo_salvo, f1, iou, auprc, fpr, device_name, total_parametros, tamanho_arquivo_mb, latencia_media_ms)
+    salvar_log_csv(nome_modelo_salvo, f1_global, f1_strong, f1_weak, iou_global, auprc, fpr_no_plume, device_name, total_parametros, tamanho_arquivo_mb, latencia_media_ms)
 
 if __name__ == "__main__":
-
     print("Use as funções através do documento main.ipynb")
