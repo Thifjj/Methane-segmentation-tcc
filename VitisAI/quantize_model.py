@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import time
 from pathlib import Path
 
 import torch
@@ -26,6 +27,10 @@ def parse_args():
     parser.add_argument("--data-root", required=True, help="Diretorio que contem as pastas das imagens.")
     parser.add_argument("--products", default=",".join(DEFAULT_PRODUCTS))
     parser.add_argument("--subset-len", type=int, default=100)
+    parser.add_argument("--batch-size", type=int, default=1)
+    parser.add_argument("--num-workers", type=int, default=2)
+    parser.add_argument("--seed", type=int, default=12345)
+    parser.add_argument("--progress-every", type=int, default=10)
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--target", help="Opcional: habilita quantizacao consciente do hardware.")
@@ -43,15 +48,32 @@ def quantize(args):
 
     if args.deploy and args.quant_mode != "test":
         raise SystemExit("--deploy somente pode ser usado com --quant-mode test.")
+    if args.batch_size < 1:
+        raise SystemExit("--batch-size deve ser maior que zero.")
+    if args.num_workers < 0:
+        raise SystemExit("--num-workers nao pode ser negativo.")
+    if args.deploy:
+        # Exigencia do export_xmodel: batch 1 e uma unica inferencia.
+        args.batch_size = 1
+        args.subset_len = 1
 
     products = parse_products(args.products)
     model, checkpoint = build_model(args.model, args.checkpoint, len(products))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-    loader = build_calibration_loader(args.csv, args.data_root, products, args.subset_len)
+    loader = build_calibration_loader(
+        args.csv,
+        args.data_root,
+        products,
+        args.subset_len,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        seed=args.seed,
+        pin_memory=device.type == "cuda",
+    )
     output_dir = Path(args.output_dir) / args.model
     output_dir.mkdir(parents=True, exist_ok=True)
-    example = torch.zeros(1, len(products), args.height, args.width, device=device)
+    example = torch.zeros(args.batch_size, len(products), args.height, args.width, device=device)
 
     kwargs = dict(
         quant_mode=args.quant_mode,
@@ -66,11 +88,26 @@ def quantize(args):
     quant_model = quantizer.quant_model.eval()
 
     count = 0
-    with torch.no_grad():
+    total = len(loader.dataset)
+    started_at = time.perf_counter()
+    with torch.inference_mode():
         for inputs in normalized_inputs(loader, products, device):
             quant_model(inputs)
             count += inputs.shape[0]
-    print(f"{args.quant_mode}: {count} amostras processadas; checkpoint={checkpoint}")
+            if count == total or (
+                args.progress_every > 0 and count % args.progress_every < inputs.shape[0]
+            ):
+                elapsed = time.perf_counter() - started_at
+                print(
+                    f"{args.quant_mode}: {count}/{total} amostras "
+                    f"({elapsed:.1f}s, {elapsed / count:.2f}s/amostra)",
+                    flush=True,
+                )
+    elapsed = time.perf_counter() - started_at
+    print(
+        f"{args.quant_mode}: {count} amostras processadas em {elapsed:.1f}s; "
+        f"checkpoint={checkpoint}"
+    )
 
     if args.quant_mode == "calib":
         quantizer.export_quant_config()
@@ -83,4 +120,3 @@ def quantize(args):
 
 if __name__ == "__main__":
     quantize(parse_args())
-

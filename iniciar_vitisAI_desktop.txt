@@ -1,0 +1,95 @@
+VITIS AI 3.5 CPU - GUIA RAPIDO
+===============================
+
+1. ENTRAR NO CONTAINER (terminal do host)
+------------------------------------------
+
+docker start methane-vitis-ai-cpu
+docker exec -it methane-vitis-ai-cpu bash
+
+
+2. ATIVAR O AMBIENTE (dentro do container)
+-------------------------------------------
+
+conda activate vitis-ai-pytorch
+cd /workspace/VitisAI
+
+O prompt deve terminar em /workspace/VitisAI. Confirme o dataset:
+
+test -f /dataset_STARCOP/train.csv && echo "CSV OK"
+
+
+3. CALIBRAR E EXPORTAR OS CINCO MODELOS
+----------------------------------------
+
+set -e
+for MODEL in baseline depth_reduced skip_connections mobilenet_v2 mobilenet_v3
+do
+  echo "=== CALIBRANDO $MODEL ==="
+  python quantize_model.py \
+    --model "$MODEL" \
+    --quant-mode calib \
+    --csv /dataset_STARCOP/train.csv \
+    --data-root /dataset_STARCOP \
+    --subset-len 100 \
+    --target DPUCZDX8G_ISA1_B4096 \
+    --output-dir ../build/vitis_ai/quantize
+
+  echo "=== EXPORTANDO $MODEL ==="
+  python quantize_model.py \
+    --model "$MODEL" \
+    --quant-mode test \
+    --csv /dataset_STARCOP/train.csv \
+    --data-root /dataset_STARCOP \
+    --target DPUCZDX8G_ISA1_B4096 \
+    --output-dir ../build/vitis_ai/quantize \
+    --deploy
+done
+
+find ../build/vitis_ai/quantize -name '*_int.xmodel'
+
+
+4. COMPILAR OS CINCO MODELOS PARA A ZCU104
+-------------------------------------------
+
+ARCH=/opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json
+test -f "$ARCH" || { echo "arch.json ausente"; exit 1; }
+
+set -e
+for MODEL in baseline depth_reduced skip_connections mobilenet_v2 mobilenet_v3
+do
+  XMODEL="$(find "../build/vitis_ai/quantize/$MODEL" -maxdepth 1 -name '*_int.xmodel' -print -quit)"
+  test -n "$XMODEL" || { echo "XModel ausente para $MODEL"; exit 1; }
+  python compile_xmodel.py \
+    --xmodel "$XMODEL" \
+    --arch "$ARCH" \
+    --output-dir "../build/vitis_ai/compiled_zcu104/$MODEL" \
+    --name "methane_$MODEL"
+done
+
+find ../build/vitis_ai/compiled_zcu104 -name '*.xmodel'
+
+O compilador ignora arquivos atualizados. Use --force somente se precisar
+recompilar. A mensagem "No CUDA runtime is found" e normal neste container CPU.
+
+
+5. SAIR
+-------
+
+exit
+
+O container continua executando em segundo plano.
+
+
+6. COPIAR PARA A PLACA (terminal do host)
+-----------------------------------------
+
+cd /media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation
+scp -r build/vitis_ai/compiled_zcu104 root@IP_DA_ZCU104:/home/root/models/
+
+Na placa, confirme o runtime e os arquivos:
+
+xdputil query
+find /home/root/models/compiled_zcu104 -name '*.xmodel'
+
+As instrucoes completas, diagnostico e benchmark estao em VitisAI/README.md.

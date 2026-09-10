@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Iterable
 
 import torch
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -70,18 +70,37 @@ def build_calibration_loader(
     data_root: str | Path,
     products: list[str],
     subset_len: int,
+    batch_size: int = 1,
+    num_workers: int = 2,
+    seed: int = 12345,
+    pin_memory: bool = False,
 ) -> DataLoader:
-    dataframe = carregar_dataframe_starcop(str(csv_path), str(data_root))
+    dataframe = carregar_dataframe_starcop(
+        str(csv_path),
+        str(data_root),
+        produtos_obrigatorios=products,
+        limite_amostras=subset_len,
+        seed=seed,
+    )
     if dataframe.empty:
         raise RuntimeError("Nenhuma amostra valida foi encontrada para calibracao.")
-    dataset = STARCOPDataset(dataframe, products, ["labelbinary"])
-    if subset_len > 0:
-        dataset = Subset(dataset, range(min(subset_len, len(dataset))))
-    return DataLoader(dataset, batch_size=1, shuffle=False, num_workers=0)
+    # Rotulos nao participam da calibracao nem da exportacao.
+    dataset = STARCOPDataset(dataframe, products, [])
+    loader_kwargs = dict(
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=pin_memory,
+    )
+    if num_workers > 0:
+        loader_kwargs.update(persistent_workers=True, prefetch_factor=2)
+    return DataLoader(dataset, **loader_kwargs)
 
 
 def normalized_inputs(loader: DataLoader, products: list[str], device: torch.device):
     normalizer = DataNormalizer(products).to(device).eval()
-    with torch.no_grad():
+    with torch.inference_mode():
         for batch in loader:
-            yield normalizer(batch["input"].to(device))
+            yield normalizer(
+                batch["input"].to(device, non_blocking=device.type == "cuda")
+            )

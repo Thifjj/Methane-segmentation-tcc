@@ -7,20 +7,15 @@ import rasterio.windows
 from torch.utils.data import Dataset, DataLoader
 import warnings
 
-def carregar_dataframe_starcop(caminho_csv, diretorio_imagens):
+def carregar_dataframe_starcop(
+    caminho_csv,
+    diretorio_imagens,
+    produtos_obrigatorios=None,
+    limite_amostras=None,
+    seed=None,
+):
     
     df = pd.read_csv(caminho_csv)
-    
-    # Cria a coluna window baseada nos metadados do CSV
-    df["window"] = df.apply(
-        lambda row: rasterio.windows.Window(
-            col_off=row.window_col_off, 
-            row_off=row.window_row_off,
-            width=row.window_width, 
-            height=row.window_height
-        ), axis=1
-    )
-
     
     if "folder" in df.columns:
         
@@ -30,22 +25,40 @@ def carregar_dataframe_starcop(caminho_csv, diretorio_imagens):
     elif "id" in df.columns:
         df["folder"] = df["id"].apply(lambda x: os.path.join(diretorio_imagens, str(x)))
 
-    linhas_validas = []
-    
-    for idx, row in df.iterrows():
-        # Verifica se o arquivo base (mag1c.tif) dessa pasta realmente existe
-        caminho_teste = os.path.join(row['folder'], "mag1c.tif")
-        if os.path.exists(caminho_teste):
-            linhas_validas.append(True)
-        else:
-            linhas_validas.append(False)
-            
-    # Mantém apenas as linhas cujas pastas existem fisicamente
-    df = df[linhas_validas].reset_index(drop=True)
-    total_original = len(linhas_validas)
-    total_valido = len(df)
+    produtos_obrigatorios = produtos_obrigatorios or ["mag1c"]
+    limite = limite_amostras if limite_amostras and limite_amostras > 0 else None
 
-    print(f"Verificação concluída! {total_valido} de {total_original} imagens estão prontas para uso.")
+    # Na calibracao, percorre uma ordem aleatoria reproduzivel e para assim que
+    # encontra a quantidade solicitada. O uso tradicional, sem limite/seed,
+    # continua validando o dataframe inteiro na ordem original.
+    candidatos = df.sample(frac=1, random_state=seed) if seed is not None else df
+    indices_validos = []
+    total_verificado = 0
+    for idx, row in candidatos.iterrows():
+        total_verificado += 1
+        if all(
+            os.path.isfile(os.path.join(row["folder"], f"{produto}.tif"))
+            for produto in produtos_obrigatorios
+        ):
+            indices_validos.append(idx)
+            if limite is not None and len(indices_validos) >= limite:
+                break
+
+    df = df.loc[indices_validos].copy().reset_index(drop=True)
+    df["window"] = [
+        rasterio.windows.Window(col_off, row_off, width, height)
+        for col_off, row_off, width, height in zip(
+            df.window_col_off,
+            df.window_row_off,
+            df.window_width,
+            df.window_height,
+        )
+    ]
+
+    print(
+        f"Verificação concluída! {len(df)} amostras válidas selecionadas "
+        f"após verificar {total_verificado} de {len(candidatos)} linhas."
+    )
 
     return df
 
