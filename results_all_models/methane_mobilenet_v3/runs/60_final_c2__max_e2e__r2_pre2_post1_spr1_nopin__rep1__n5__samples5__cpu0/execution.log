@@ -1,0 +1,70 @@
+============================================================
+METHANE SEGMENTATION ZCU104 OPTIMIZED BENCHMARK
+============================================================
+Batch: 1 ALWAYS
+Profile: max-e2e
+Dataset images: 5
+Runners: 2
+Pre workers: 2
+Post workers: 1
+Slots/runner: 1
+Pin: no
+DPU subgraphs: 6 | CPU fallback subgraphs: 6
+Input  : [1,512,512,4] INT8 fix=5
+Output : [1,512,512,1] FLOAT32
+
+============================================================
+max_end_to_end_throughput
+============================================================
+batch              = 1
+runners            = 2
+pre_workers        = 2
+post_workers       = 1
+slots_per_runner   = 1
+completed          = 5
+wall_s             = 1.136456
+THROUGHPUT FPS     = 4.399642
+POWER sensors/samples = 1/7.000000
+POWER mean/min/max W = 14.756857/14.412000/15.062000
+ENERGY estimated J   = 16.770520
+
+FPS EQUIVALENT FROM PER-JOB LATENCY
+ average = 1.935800
+ min     = 1.620508
+ max     = 2.587177
+ p95     = 1.632130
+ p99     = 1.622819
+
+LATENCY ms
+ mean   = 516.582350
+ median = 585.488710
+ min    = 386.521700
+ max    = 617.090630
+ p90    = 608.302054
+ p95    = 612.696342
+ p99    = 616.211772
+ stddev = 101.815575
+ CV     = 0.197095
+ jitter p99-p50 = 30.723062 ms
+
+DPU STAGE ms
+ mean = 212.971498
+ p95  = 220.631204
+ p99  = 222.096657
+
+PREPROCESS mean = 165.277466 ms
+POSTPROCESS mean = 6.100264 ms
+
+INTER-COMPLETION ms
+ mean = 187.175765
+ p95  = 363.697013
+ p99  = 365.903715
+OUTPUT-CADENCE FPS
+ average(system wall) = 4.399642
+ min = 2.728845
+ max = 82.148141
+ p95 = 2.749541
+ p99 = 2.732959
+
+Results saved to:
+/home/root/Benchmark_ZCU104/results_all_models/methane_mobilenet_v3/runs/60_final_c2__max_e2e__r2_pre2_post1_spr1_nopin__rep1__n5__samples5__cpu0
