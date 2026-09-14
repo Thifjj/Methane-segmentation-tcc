@@ -186,8 +186,10 @@ xdputil benchmark /home/root/models/compiled_zcu104/depth_reduced/methane_depth_
 ```
 
 Esse benchmark nao mede leitura dos GeoTIFFs, normalizacao, pos-processamento,
-IoU ou F1. A validacao completa requer o aplicativo VART de segmentacao e um
-conjunto com rotulos.
+IoU ou F1. Para o benchmark completo, copie `Benchmark_ZCU104/` para a placa e
+siga `Benchmark_ZCU104/README.md`. O runner C++ mede `model-only` e
+`end-to-end`, executa o sweep automatico, compara 1, 2, 3 e 4 nucleos e calcula
+as metricas de qualidade usadas em `Testes/Teste_Unet.py`.
 
 ## 5. Como adicionar manualmente um modelo ao código
 
