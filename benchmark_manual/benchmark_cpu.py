@@ -14,8 +14,8 @@ from .postprocess import postprocess
 from .metricas import calcular_metricas
 
 #MODEL_PATH = "/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/Mobile_Net_v3_mag1c_rgb.pth"
-DATASET_PATH = "/media/jacques/games/Datasets/STARCOP_train_remaining_all"
-
+#DATASET_PATH = "/media/jacques/games/Datasets/STARCOP_train_remaining_all"
+DATASET_PATH = "/home/thiago/Documents/STARCOP_DATASET"
 WARMUP = 10
 
 parser = argparse.ArgumentParser()

@@ -8,26 +8,29 @@ def load_model(nome_modelo, device):
     modelos = {
         "baseline": (
             UNetBaseline,
-            "/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/UNET_mag1c_rgb.pth"
+            #"/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/UNET_mag1c_rgb.pth"
+            ""
         ),
 
         "depth_reduced": (
             UNetDepthReduced,
-            "/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/UNET_depth_reduced_mag1c_rgb.pth"
+            #"/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/UNET_depth_reduced_mag1c_rgb.pth"
         ),
 
         "mobilenet_v2": (
             UNetMobileNetV2,
-            "/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/Mobile_Net_v2_mag1c_rgb.pth"
+            #"/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/Mobile_Net_v2_mag1c_rgb.pth"
+            "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/Modelos_treinados/Mobile_Net_v2_mag1c_rgb.pth"
         ),
 
         "mobilenet_v3": (
             UNetMobileNetV3,
-            "/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/Mobile_Net_v3_mag1c_rgb.pth"
+            #"/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/Mobile_Net_v3_mag1c_rgb.pth"
         ),
         "skip": (
             UNetElementWise,
-            "/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/UNET_SkipConnections_mag1c_rgb.pth"
+            #"/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/UNET_SkipConnections_mag1c_rgb.pth"
+            "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/Modelos_treinados/UNET_SkipConnections_mag1c_rgb.pth"
         )
     }
 
