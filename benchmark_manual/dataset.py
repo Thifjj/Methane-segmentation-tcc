@@ -12,7 +12,8 @@ CANAIS_ENTRADA = [
 ]
 
 def encontrar_sample(caminho_dataset):
-    caminho_csv = os.path.join(caminho_dataset, "train.csv")
+    #mexi aqui train.csv para test.csv
+    caminho_csv = os.path.join(caminho_dataset, "test.csv")
 
     tabela = pd.read_csv(caminho_csv)
 
@@ -32,6 +33,36 @@ def encontrar_sample(caminho_dataset):
             amostras.append(pasta)
 
     return amostras
+
+def carregar_classificacao_por_pasta(caminho_dataset):
+        #mexi aqui train.csv para test.csv
+    tabela = pd.read_csv(os.path.join(caminho_dataset, "test.csv"))
+    colunas_ausentes = {"folder", "has_plume", "qplume"} - set(tabela.columns)
+    if colunas_ausentes:
+        raise ValueError(f"Colunas ausentes no train.csv: {sorted(colunas_ausentes)}")
+
+    resultado = {}
+    for _, linha in tabela.iterrows():
+        nome = os.path.basename(os.path.normpath(linha["folder"]))
+        valor_has_plume = linha["has_plume"]
+        if pd.isna(valor_has_plume):
+            raise ValueError(f"has_plume ausente para {nome}")
+        if isinstance(valor_has_plume, str):
+            texto = valor_has_plume.strip().lower()
+            if texto not in {"true", "false"}:
+                raise ValueError(f"has_plume inválido para {nome}: {valor_has_plume}")
+            has_plume = texto == "true"
+        elif valor_has_plume in (True, False, 0, 1):
+            has_plume = bool(valor_has_plume)
+        else:
+            raise ValueError(f"has_plume inválido para {nome}: {valor_has_plume}")
+
+        valor_qplume = linha["qplume"]
+        if has_plume and pd.isna(valor_qplume):
+            raise ValueError(f"qplume ausente para amostra com pluma: {nome}")
+        qplume = 0.0 if pd.isna(valor_qplume) else float(valor_qplume)
+        resultado[nome] = (has_plume, qplume)
+    return resultado
 
 def carregar_sample(caminho_amostra):
     canais = []

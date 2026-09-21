@@ -1,5 +1,34 @@
 # Conversao para Vitis AI 3.5 / ZCU104
 
+## Notebook
+
+Na primeira execucao, crie o container com o Vitis AI, este projeto e o dataset
+completo montados:
+
+```bash
+docker run -it \
+  --name methane-vitis-ai-cpu \
+  --network host \
+  -v /dev/shm:/dev/shm \
+  -v "/home/thiago/Documents/aplicativos/Vitis-AI":/vitis_ai_home \
+  -v "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc":/workspace \
+  -v "/home/thiago/Documents/STARCOP_DATASET":/dataset_STARCOP:ro \
+  -w /workspace/VitisAI \
+  xilinx/vitis-ai-pytorch-cpu:ubuntu2004-3.5.0.306 \
+  bash
+```
+
+Nas execucoes seguintes:
+
+```bash
+docker start methane-vitis-ai-cpu
+docker exec -it -w /workspace/VitisAI methane-vitis-ai-cpu bash
+conda activate vitis-ai-pytorch
+```
+
+Dentro do container, o projeto fica em `/workspace`, o dataset em
+`/dataset_STARCOP` e o codigo-fonte do Vitis AI em `/vitis_ai_home`.
+
 Os scripts sao a interface principal e devem ser executados **dentro do container PyTorch do Vitis AI**. Troque somente `--model` entre `baseline`, `depth_reduced`, `skip_connections`, `mobilenet_v2` e `mobilenet_v3`. Por padrao, cada nome seleciona seu checkpoint em `Modelos_treinados/` e usa os quatro canais `mag1c,R,G,B` do projeto.
 
 > Use uma versao do container Vitis AI compativel com a imagem/bitstream instalado na ZCU104. O `arch.json` tambem deve ser exatamente o dessa DPU; nao use um arquivo apenas porque ele tem o nome ZCU104.
@@ -48,11 +77,11 @@ do
   python inspect_model.py \
     --model "$MODEL" \
     --target DPUCZDX8G_ISA1_B4096 \
-    --output-dir ../build/vitis_ai/inspect
+    --output-dir build/vitis_ai/inspect
 done
 ```
 
-Consulte `../build/vitis_ai/inspect/<modelo>/` e as imagens geradas.
+Consulte `build/vitis_ai/inspect/<modelo>/` e as imagens geradas.
 `ConvTranspose2d`, interpolacao bilinear e operadores de concatenacao podem
 produzir subgrafos fora da DPU; o Inspector e a fonte de verdade.
 
@@ -71,18 +100,17 @@ interrompe o loop e evita exportar com uma calibracao ausente ou incompleta.
 ```bash
 set -e
 
-for MODEL in baseline depth_reduced skip_connections mobilenet_v2 mobilenet_v3
+for MODEL in mobilenet_v2 mobilenet_v3
 do
   echo "=== CALIBRANDO $MODEL ==="
-
-  python quantize_model.py \
+  python3 quantize_model.py \
     --model "$MODEL" \
     --quant-mode calib \
     --csv /dataset_STARCOP/train.csv \
     --data-root /dataset_STARCOP \
-    --subset-len 100 \
+    --subset-len 1000 \
     --target DPUCZDX8G_ISA1_B4096 \
-    --output-dir ../build/vitis_ai/quantize
+    --output-dir build/vitis_ai/quantize
 
   echo "=== EXPORTANDO $MODEL ==="
 
@@ -92,7 +120,7 @@ do
     --csv /dataset_STARCOP/train.csv \
     --data-root /dataset_STARCOP \
     --target DPUCZDX8G_ISA1_B4096 \
-    --output-dir ../build/vitis_ai/quantize \
+    --output-dir build/vitis_ai/quantize \
     --deploy
 done
 ```
@@ -101,7 +129,7 @@ O deploy força automaticamente `batch_size=1` e uma unica inferencia. Confira
 os arquivos INT8 exportados:
 
 ```bash
-find ../build/vitis_ai/quantize -name '*_int.xmodel'
+find build/vitis_ai/quantize -name '*_int.xmodel'
 ```
 
 ## 3. Compilar para o bitstream da ZCU104
@@ -116,27 +144,24 @@ Procure as configuracoes disponiveis:
 find /opt/vitis_ai -path '*ZCU104*' -name arch.json 2>/dev/null
 ```
 
-Depois de identificar o arquivo correto, defina `ARCH`:
-
-```bash
-ARCH="/opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json"
-test -f "$ARCH" && echo "ARCH OK"
-```
-
-Compile os cinco modelos:
+Compile os cinco modelos diretamente para a ZCU104. Execute dentro de
+`/workspace/VitisAI`; tanto a entrada quanto a saida ficam no `build` dessa
+pasta:
 
 ```bash
 set -e
+ARCH=/opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json
+test -f "$ARCH" || { echo "arch.json da ZCU104 ausente"; exit 1; }
 
 for MODEL in baseline depth_reduced skip_connections mobilenet_v2 mobilenet_v3
 do
-  XMODEL="$(find "../build/vitis_ai/quantize/$MODEL" -maxdepth 1 -name '*_int.xmodel' -print -quit)"
+  XMODEL="$(find "build/vitis_ai/quantize/$MODEL" -maxdepth 1 -name '*_int.xmodel' -print -quit)"
   test -n "$XMODEL" || { echo "XModel ausente para $MODEL"; exit 1; }
 
   python compile_xmodel.py \
     --xmodel "$XMODEL" \
     --arch "$ARCH" \
-    --output-dir "../build/vitis_ai/compiled_zcu104/$MODEL" \
+    --output-dir "build/vitis_ai/compiled_zcu104/$MODEL" \
     --name "methane_$MODEL"
 done
 ```
@@ -144,7 +169,7 @@ done
 Confira os artefatos compilados:
 
 ```bash
-find ../build/vitis_ai/compiled_zcu104 -name '*.xmodel'
+find build/vitis_ai/compiled_zcu104 -name '*.xmodel'
 ```
 
 Uma compilacao cujo arquivo de saida esteja atualizado e ignorada
@@ -161,7 +186,7 @@ exit
 No host, copie os modelos, substituindo o usuario e o IP da ZCU104:
 
 ```bash
-scp -r build/vitis_ai/compiled_zcu104 \
+scp -r VitisAI/build/vitis_ai/compiled_zcu104 \
   root@IP_DA_ZCU104:/home/root/models/
 ```
 
@@ -284,7 +309,7 @@ O novo nome deverá aparecer nas opções de `--model`. Em seguida, teste o carr
 python inspect_model.py \
   --model meu_modelo \
   --target DPUCZDX8G_ISA1_B4096 \
-  --output-dir ../build/vitis_ai/inspect
+  --output-dir build/vitis_ai/inspect
 ```
 
 Se aparecer erro em `load_state_dict`, a classe não corresponde ao checkpoint, o número de canais está incorreto ou os pesos foram salvos usando uma estrutura diferente.
@@ -301,7 +326,7 @@ python quantize_model.py \
   --data-root /dataset_STARCOP \
   --subset-len 100 \
   --target DPUCZDX8G_ISA1_B4096 \
-  --output-dir ../build/vitis_ai/quantize
+  --output-dir build/vitis_ai/quantize
 ```
 
 Finalmente, teste e exporte o `.xmodel` INT8 usando exatamente o mesmo nome e target:
@@ -313,7 +338,7 @@ python quantize_model.py \
   --csv /dataset_STARCOP/train.csv \
   --data-root /dataset_STARCOP \
   --target DPUCZDX8G_ISA1_B4096 \
-  --output-dir ../build/vitis_ai/quantize \
+  --output-dir build/vitis_ai/quantize \
   --deploy
 ```
 

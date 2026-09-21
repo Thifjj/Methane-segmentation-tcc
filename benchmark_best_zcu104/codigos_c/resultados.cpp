@@ -133,8 +133,8 @@ void salvar_metricas(const fs::path& pasta, const std::string& modelo,
     std::ofstream global(pasta / "metricas_globais.csv");
     if (!global) throw std::runtime_error("Nao foi possivel salvar metricas globais");
     global << std::setprecision(12)
-           << "modelo,imagens,tp,fp,fn,tn,precision,recall,f1,iou,fpr,acuracia,"
-           << "f1_forte,f1_fraca,auprc,fpr_sem_pluma\n";
+           << "modelo,imagens,tp,fp,fn,tn,precision,recall,f1_global,iou,fpr,acuracia,"
+           << "f1_strong_plume,f1_weak_plume,auprc,fpr_sem_pluma\n";
     const auto& c = resumo.global;
     const auto& m = resumo.metricas_globais;
     global << csv(modelo) << ',' << resumo.imagens << ',' << c.tp << ',' << c.fp

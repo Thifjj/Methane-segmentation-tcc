@@ -12,6 +12,7 @@
     std::string id;
     std::filesystem::path pasta;
     std::optional<cv::Rect> janela;
+    bool has_plume = false;
     double qplume = 0.0;
 
   };

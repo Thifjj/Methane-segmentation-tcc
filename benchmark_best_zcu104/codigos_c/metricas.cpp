@@ -118,11 +118,10 @@
       somar(global_, c);
       ++imagens_;
 
-      const std::uint64_t pixels_pluma = c.tp + c.fn;
-      if (pixels_pluma == 0) {
+      if (!amostra.has_plume) {
           resultado.dificuldade = "sem_pluma";
           somar(sem_pluma_, c);
-      } else if (amostra.qplume >= 1000.0 || pixels_pluma > 1000) {
+      } else if (amostra.qplume > 1000.0) {
           resultado.dificuldade = "forte";
           somar(forte_, c);
       } else {

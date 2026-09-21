@@ -8,14 +8,18 @@ import csv
 from datetime import datetime
 
 from .model_loader import load_model
-from .dataset import carregar_sample, encontrar_sample, carregar_label
+from .dataset import (
+    carregar_sample, encontrar_sample, carregar_label,
+    carregar_classificacao_por_pasta,
+)
 from .preprocess import preprocess
 from .postprocess import postprocess
-from .metricas import calcular_metricas
+from .metricas import calcular_metricas, calcular_f1_contagens, classificar_pluma
 
 #MODEL_PATH = "/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/Mobile_Net_v3_mag1c_rgb.pth"
 #DATASET_PATH = "/media/jacques/games/Datasets/STARCOP_train_remaining_all"
-DATASET_PATH = "/home/thiago/Documents/STARCOP_DATASET"
+#DATASET_PATH = "/home/thiago/Documents/STARCOP_DATASET"
+DATASET_PATH = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test"
 WARMUP = 10
 
 parser = argparse.ArgumentParser()
@@ -39,6 +43,7 @@ device = torch.device("cpu")
 model = load_model(args.modelo, device)
 
 amostras = encontrar_sample(DATASET_PATH)
+classificacao_por_pasta = carregar_classificacao_por_pasta(DATASET_PATH)
 
 print("Amostras encontradas:", len(amostras))
 print("Primeira amostra:", amostras[0])
@@ -82,6 +87,10 @@ tp_total = 0
 fp_total = 0
 fn_total = 0
 tn_total = 0
+contagens_grupo = {
+    "strong_plume": [0, 0, 0],
+    "weak_plume": [0, 0, 0],
+}
 
 with torch.inference_mode():
     for pasta in tqdm(amostras, desc="Benchmark"):
@@ -121,6 +130,15 @@ with torch.inference_mode():
         fn_total += fn
         tn_total += tn
 
+        has_plume, qplume = classificacao_por_pasta[
+            os.path.basename(os.path.normpath(pasta))
+        ]
+        grupo = classificar_pluma(has_plume, qplume)
+        if grupo is not None:
+            contagens_grupo[grupo][0] += tp
+            contagens_grupo[grupo][1] += fp
+            contagens_grupo[grupo][2] += fn
+
         tempos_model.append((fim_model-inicio_model)*1000)
         tempos_e2e.append((fim_e2e-inicio_e2e)*1000)
         tempos_preprocess.append((fim_preprocess-inicio_preprocess)*1000)
@@ -132,7 +150,9 @@ precision = tp_total / (tp_total + fp_total)
 
 recall = tp_total / (tp_total + fn_total)
 
-f1 = 2 * precision * recall / (precision + recall)
+f1_global = calcular_f1_contagens(tp_total, fp_total, fn_total)
+f1_strong_plume = calcular_f1_contagens(*contagens_grupo["strong_plume"])
+f1_weak_plume = calcular_f1_contagens(*contagens_grupo["weak_plume"])
 
 iou = tp_total / (tp_total + fp_total + fn_total)
 
@@ -166,7 +186,9 @@ print("TN:", tn_total)
 
 print(f"Precision: {precision:.4f}")
 print(f"Recall:    {recall:.4f}")
-print(f"F1:        {f1:.4f}")
+print(f"F1 global:       {f1_global:.4f}")
+print(f"F1 strong plume: {f1_strong_plume:.4f}")
+print(f"F1 weak plume:   {f1_weak_plume:.4f}")
 print(f"IoU:       {iou:.4f}")
 print(f"FPR:       {fpr:.6f}")
 
@@ -234,7 +256,9 @@ resultado = {
 
     "precision": precision,
     "recall": recall,
-    "f1": f1,
+    "f1_global": f1_global,
+    "f1_strong_plume": f1_strong_plume,
+    "f1_weak_plume": f1_weak_plume,
     "iou": iou,
     "fpr": fpr,
 

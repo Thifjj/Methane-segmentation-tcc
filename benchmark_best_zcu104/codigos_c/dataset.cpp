@@ -2,6 +2,7 @@
   #include "dataset.hpp"
 
   #include <algorithm>
+  #include <cmath>
   #include <fstream>
   #include <stdexcept>
 
@@ -48,6 +49,16 @@
           return "";
       }
       return linha[indice];
+  }
+
+  bool booleano(const std::string& valor) {
+      if (valor == "true" || valor == "True" || valor == "TRUE" || valor == "1") {
+          return true;
+      }
+      if (valor == "false" || valor == "False" || valor == "FALSE" || valor == "0") {
+          return false;
+      }
+      throw std::runtime_error("Valor booleano inválido: " + valor);
   }
 
   cv::Mat ler_tiff(const Amostra& amostra, const char* nome) {
@@ -106,6 +117,7 @@
 
       const int id_col = coluna(cabecalho, "id");
       const int pasta_col = coluna(cabecalho, "folder");
+      const int has_plume_col = coluna(cabecalho, "has_plume");
       const int qplume_col = coluna(cabecalho, "qplume");
 
       const int x_col = coluna(cabecalho, "window_col_off");
@@ -115,6 +127,9 @@
 
       if (id_col < 0 && pasta_col < 0) {
           throw std::runtime_error("CSV precisa ter coluna id ou folder");
+      }
+      if (has_plume_col < 0 || qplume_col < 0) {
+          throw std::runtime_error("CSV precisa ter colunas has_plume e qplume");
       }
 
       const int colunas_janela =
@@ -154,8 +169,18 @@
                   amostra.id = amostra.pasta.filename().string();
               }
 
-              std::string qplume = campo(campos, qplume_col);
-              if (!qplume.empty()) amostra.qplume = std::stod(qplume);
+              amostra.has_plume = booleano(campo(campos, has_plume_col));
+              const std::string qplume = campo(campos, qplume_col);
+              if (qplume.empty()) {
+                  if (amostra.has_plume) {
+                      throw std::runtime_error("qplume ausente para amostra com pluma");
+                  }
+              } else {
+                  amostra.qplume = std::stod(qplume);
+                  if (amostra.has_plume && !std::isfinite(amostra.qplume)) {
+                      throw std::runtime_error("qplume inválido para amostra com pluma");
+                  }
+              }
 
               if (colunas_janela == 4) {
                   amostra.janela = cv::Rect(

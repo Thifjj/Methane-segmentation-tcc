@@ -30,6 +30,8 @@ int main() {
     label.at<float>(0, 0) = 1;
     Amostra amostra;
     amostra.id = "teste";
+    amostra.has_plume = true;
+    amostra.qplume = 1000.0;
     AcumuladorMetricas acumulador;
     const auto imagem = acumulador.adicionar(
         amostra, mascara, label, logits.data(), false, 1.0f);
@@ -38,6 +40,19 @@ int main() {
     exigir(resumo.metricas_globais.f1 == 1.0);
     exigir(resumo.metricas_fracas.f1 == 1.0);
     exigir(resumo.auprc == 1.0);
+
+    amostra.qplume = 1000.1;
+    AcumuladorMetricas acumulador_forte;
+    acumulador_forte.adicionar(
+        amostra, mascara, label, logits.data(), false, 1.0f);
+    exigir(acumulador_forte.resumo().metricas_fortes.f1 == 1.0);
+
+    amostra.has_plume = false;
+    AcumuladorMetricas acumulador_sem_pluma;
+    const auto sem_pluma = acumulador_sem_pluma.adicionar(
+        amostra, mascara, label, logits.data(), false, 1.0f);
+    exigir(sem_pluma.dificuldade == "sem_pluma");
+    exigir(acumulador_sem_pluma.resumo().metricas_fortes.f1 == 0.0);
 
     const auto tempos = resumir_valores({1.0, 2.0, 3.0});
     exigir(tempos.media == 2.0 && tempos.mediana == 2.0);

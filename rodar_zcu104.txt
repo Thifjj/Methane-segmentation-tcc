@@ -1,0 +1,76 @@
+  XMODEL="$(find /home/root/thiago/benchmark/modelos/baseline \
+    -maxdepth 1 -type f -name '*.xmodel' | head -n 1)"
+
+  test -n "$XMODEL" || {
+    echo "ERRO: XModel do baseline não encontrado"
+    exit 1
+  }
+
+  OUT="/home/root/resultados/depth_reduced_r4_cpu4_$(date +%Y%m%d_%H%M%S)"
+  mkdir -p "$OUT"
+
+  echo "XModel: $XMODEL"
+  echo "Resultados: $OUT"
+
+  (
+    while [ ! -f "$OUT/.finished" ]; do
+      echo
+      date '+%Y-%m-%d %H:%M:%S'
+      cat /proc/loadavg
+      grep -E 'MemTotal|MemAvailable|SwapTotal|SwapFree' /proc/meminfo
+
+      for PID_BENCH in $(pidof benchmark_vitis 2>/dev/null); do
+        echo "benchmark_vitis PID=$PID_BENCH"
+        grep -E 'State|VmPeak|VmSize|VmRSS|VmSwap|Threads' \
+          "/proc/$PID_BENCH/status"
+      done
+
+      sleep 2
+    done
+  ) >> "$OUT/recursos.log" 2>&1 &
+
+  MONITOR_PID=$!
+
+  ./benchmark_vitis \
+    --model "$XMODEL" \
+    --dataset /home/root/thiago/dataset_starcop \
+    --csv /home/root/thiago/dataset_starcop/train.csv \
+    --out "$OUT" \
+    --run-id baseline_r4_cpu4_test \
+    --mode all \
+    --samples 0 \
+    --iterations 0 \
+    --runners 4 \
+    --threads 4 \
+    --pre-workers 2 \
+    --post-workers 1 \
+    --slots 1 \
+    --warmup 10 \
+    --pin \
+    --power \
+    --validate \
+    2>&1 | tee "$OUT/execution.log"
+
+  touch "$OUT/.finished"
+  wait "$MONITOR_PID"
+  dmesg | tail -n 300 > "$OUT/dmesg_after.log"
+  sync
+
+  echo "Diagnóstico salvo em: $OUT"
+
+  Esse teste executa 200 inferências em model_only e 200 em end_to_end, usando 100 amostras distintas.
+
+  ### 3. Se travar ou o processo morrer
+
+  Após recuperar acesso à placa:
+
+  ULTIMO="$(find /home/root/resultados -maxdepth 1 \
+    -type d -name 'baseline_r4_cpu4_*' | sort | tail -n 1)"
+
+  echo "$ULTIMO"
+  tail -n 100 "$ULTIMO/execution.log"
+  tail -n 100 "$ULTIMO/recursos.log"
+
+  dmesg | grep -Ei \
+    'out of memory|oom|killed process|segfault|xrt|dpu|timeout|watchdog|fault|error' \
+    | tail -n 200
