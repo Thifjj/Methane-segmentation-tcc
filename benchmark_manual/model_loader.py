@@ -1,8 +1,14 @@
 import torch
 
-from Modelos import UNetBaseline, UNetDepthReduced, UNetMobileNetV2, UNetMobileNetV3, UNetElementWise
+from Modelos import UNetBaseline, UNetDepthReduced, UNetMobileNetV2, UNetMobileNetV3, UNetElementWise, carregar_hyperstarcop
 
 def load_model(nome_modelo, device):
+    if nome_modelo =="hyperstarcop":
+        caminho = (
+            "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/Modelos_treinados/HyperSTARCOP_oficial/final_checkpoint_model.ckpt"
+        )
+        return carregar_hyperstarcop(caminho,device)
+    
     modelos = {
         "baseline": (
             UNetBaseline,

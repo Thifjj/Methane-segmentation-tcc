@@ -27,15 +27,19 @@ MonitorPotencia::MonitorPotencia(int intervalo_ms) : intervalo_ms_(intervalo_ms)
     if (!fs::exists(raiz)) return;
 
     for (const auto& hwmon : fs::directory_iterator(raiz)) {
-        const std::string chip = ler_linha(hwmon.path() / "name");
+        const fs::path fonte_name = hwmon.path() / "name";
+        const std::string chip = ler_linha(fonte_name);
         for (const auto& entrada : fs::directory_iterator(hwmon.path())) {
             const std::string nome = entrada.path().filename().string();
             if (nome.rfind("power", 0) != 0 || nome.size() < 12 ||
                 nome.compare(nome.size() - 6, 6, "_input") != 0) continue;
 
             const std::string id = nome.substr(0, nome.size() - 6);
-            const std::string label = ler_linha(hwmon.path() / (id + "_label"));
+            const fs::path fonte_label = hwmon.path() / (id + "_label");
+            const std::string label = ler_linha(fonte_label);
             trilhos_.push_back({label.empty() ? chip + ":" + id : label,
+                                chip, fonte_name.string(),
+                                fs::exists(fonte_label) ? fonte_label.string() : "",
                                 entrada.path(), {}});
         }
     }
@@ -85,7 +89,9 @@ std::vector<MedidaPotencia> MonitorPotencia::resumo(double duracao_s) const {
         const auto limites = std::minmax_element(trilho.watts.begin(), trilho.watts.end());
         const double soma = std::accumulate(trilho.watts.begin(), trilho.watts.end(), 0.0);
         const double media = soma / trilho.watts.size();
-        resultado.push_back({trilho.nome, trilho.watts.size(), media,
+        resultado.push_back({trilho.nome, trilho.sensor_chip,
+                             trilho.fonte_name, trilho.fonte_label,
+                             trilho.arquivo.string(), trilho.watts.size(), media,
                              *limites.first, *limites.second, media * duracao_s});
     }
     return resultado;

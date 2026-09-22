@@ -42,6 +42,10 @@
       Metricas metricas_fracas;
       double auprc = 0;
       double fpr_sem_pluma = 0;
+      std::uint64_t fp_tiles = 0;
+      std::uint64_t tn_tiles = 0;
+      double fpr_tile = 0;
+      double fpr_tile_tabela = 0;
   };
 
   Metricas calcular_metricas(const Contagens& contagens);
@@ -67,4 +71,6 @@
       Contagens sem_pluma_;
       std::array<std::uint64_t, 256> positivos_{};
       std::array<std::uint64_t, 256> negativos_{};
+      std::uint64_t fp_tiles_ = 0;
+      std::uint64_t tn_tiles_ = 0;
   };

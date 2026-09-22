@@ -1,0 +1,344 @@
+wandb_version: 1
+
+_content:
+  desc: null
+  value:
+    dataloader: '{''batch_size'': 32, ''num_workers'': 4}'
+    dataset: '{''input_products'': [''mag1c'', ''TOA_AVIRIS_640nm'', ''TOA_AVIRIS_550nm'',
+      ''TOA_AVIRIS_460nm''], ''output_products'': [''labelbinary''], ''use_weight_loss'':
+      True, ''weight_loss'': ''weight_mag1c'', ''training_size'': [128, 128], ''training_size_overlap'':
+      [64, 64], ''weight_sampling'': True, ''root_folder'': ''/Permian/dataset'',
+      ''train_csv'': ''train.csv''}'
+    experiment_name: f4_hyper_unetsempos1all_all_15ep_R3
+    experiment_path: gs://starcop/experiments/f4_hyper_unetsempos1all_all_15ep_R3/2022-11-10_19-03/
+    model: '{''train'': True, ''test'': True, ''model_mode'': ''segmentation_output'',
+      ''model_type'': ''unet_semseg'', ''semseg_backbone'': ''mobilenet_v2'', ''num_classes'':
+      1, ''optimizer'': ''adam'', ''lr'': 0.0001, ''lr_decay'': 0.5, ''lr_patience'':
+      4, ''loss'': ''BCEWithLogitsLoss'', ''pos_weight'': 1, ''early_stopping_patience'':
+      8}'
+    plot_samples: '8'
+    products_plot:
+    - rgb_aviris
+    - mag1c
+    - label
+    - pred
+    - differences
+    resume_from_checkpoint: 'False'
+    seed: None
+    training: '{''accelerator'': ''gpu'', ''devices'': 1, ''max_epochs'': 15, ''val_check_interval'':
+      0.5, ''train_log_every_n_steps'': 10}'
+    wandb: '{''wandb_project'': ''starcop-aviris-seg-vitek'', ''wandb_entity'': ''dtacs'',
+      ''images_logging'': ''wandb''}'
+_flags_cache:
+  desc: null
+  value:
+    allow_objects: null
+    convert: null
+    readonly: null
+    struct: false
+_metadata:
+  desc: null
+  value: 'ContainerMetadata(ref_type=typing.Any, object_type=<class ''dict''>, optional=True,
+    key=None, flags={''struct'': False}, flags_root=False, resolver_cache=defaultdict(<class
+    ''dict''>, {''now'': {(''%Y-%m-%d'',): ''2022-11-10'', (''%H-%M-%S'',): ''19-03-19'',
+    (''%Y-%m-%d_%H-%M'',): ''2022-11-10_19-03''}}), key_type=typing.Any, element_type=typing.Any)'
+_parent:
+  desc: null
+  value: null
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.13.3
+    framework: lightning
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    m:
+    - 1: trainer/global_step
+      6:
+      - 3
+    - 1: val_batch._type
+      5: 1
+      6:
+      - 1
+    - 1: val_batch.sha256
+      5: 1
+      6:
+      - 1
+    - 1: val_batch.size
+      5: 1
+      6:
+      - 1
+    - 1: val_batch.path
+      5: 1
+      6:
+      - 1
+    - 1: val_batch.format
+      5: 1
+      6:
+      - 1
+    - 1: val_batch.width
+      5: 1
+      6:
+      - 1
+    - 1: val_batch.height
+      5: 1
+      6:
+      - 1
+    - 1: train_BCEWithLogitsLoss
+      5: 1
+      6:
+      - 1
+    - 1: epoch
+      5: 1
+      6:
+      - 1
+    - 1: val_loss
+      5: 1
+      6:
+      - 1
+    - 1: val_precision
+      5: 1
+      6:
+      - 1
+    - 1: val_recall
+      5: 1
+      6:
+      - 1
+    - 1: val_f1score
+      5: 1
+      6:
+      - 1
+    - 1: val_iou
+      5: 1
+      6:
+      - 1
+    - 1: val_accuracy
+      5: 1
+      6:
+      - 1
+    - 1: val_cohen_kappa
+      5: 1
+      6:
+      - 1
+    - 1: val_balanced_accuracy
+      5: 1
+      6:
+      - 1
+    - 1: val_classification_precision
+      5: 1
+      6:
+      - 1
+    - 1: val_classification_recall
+      5: 1
+      6:
+      - 1
+    - 1: val_classification_f1score
+      5: 1
+      6:
+      - 1
+    - 1: val_classification_iou
+      5: 1
+      6:
+      - 1
+    - 1: val_classification_accuracy
+      5: 1
+      6:
+      - 1
+    - 1: val_classification_cohen_kappa
+      5: 1
+      6:
+      - 1
+    - 1: val_classification_balanced_accuracy
+      5: 1
+      6:
+      - 1
+    - 1: train_batch._type
+      5: 1
+      6:
+      - 1
+    - 1: train_batch.sha256
+      5: 1
+      6:
+      - 1
+    - 1: train_batch.size
+      5: 1
+      6:
+      - 1
+    - 1: train_batch.path
+      5: 1
+      6:
+      - 1
+    - 1: train_batch.format
+      5: 1
+      6:
+      - 1
+    - 1: train_batch.width
+      5: 1
+      6:
+      - 1
+    - 1: train_batch.height
+      5: 1
+      6:
+      - 1
+    python_version: 3.10.6
+    start_time: 1668107000.728245
+    t:
+      1:
+      - 1
+      - 5
+      - 9
+      - 41
+      - 50
+      - 53
+      - 55
+      - 79
+      2:
+      - 1
+      - 5
+      - 9
+      - 41
+      - 50
+      - 53
+      - 55
+      - 63
+      - 74
+      - 79
+      3:
+      - 7
+      - 13
+      - 23
+      4: 3.10.6
+      5: 0.13.3
+      8:
+      - 5
+settings/dataloader/batch_size:
+  desc: null
+  value: 32
+settings/dataloader/num_workers:
+  desc: null
+  value: 4
+settings/dataset/input_products:
+  desc: null
+  value:
+  - mag1c
+  - TOA_AVIRIS_640nm
+  - TOA_AVIRIS_550nm
+  - TOA_AVIRIS_460nm
+settings/dataset/output_products:
+  desc: null
+  value:
+  - labelbinary
+settings/dataset/root_folder:
+  desc: null
+  value: /Permian/dataset
+settings/dataset/train_csv:
+  desc: null
+  value: train.csv
+settings/dataset/training_size:
+  desc: null
+  value:
+  - 128
+  - 128
+settings/dataset/training_size_overlap:
+  desc: null
+  value:
+  - 64
+  - 64
+settings/dataset/use_weight_loss:
+  desc: null
+  value: true
+settings/dataset/weight_loss:
+  desc: null
+  value: weight_mag1c
+settings/dataset/weight_sampling:
+  desc: null
+  value: true
+settings/experiment_name:
+  desc: null
+  value: f4_hyper_unetsempos1all_all_15ep_R3
+settings/experiment_path:
+  desc: null
+  value: gs://starcop/experiments/f4_hyper_unetsempos1all_all_15ep_R3/2022-11-10_19-03/
+settings/model/early_stopping_patience:
+  desc: null
+  value: 8
+settings/model/loss:
+  desc: null
+  value: BCEWithLogitsLoss
+settings/model/lr:
+  desc: null
+  value: 0.0001
+settings/model/lr_decay:
+  desc: null
+  value: 0.5
+settings/model/lr_patience:
+  desc: null
+  value: 4
+settings/model/model_mode:
+  desc: null
+  value: segmentation_output
+settings/model/model_type:
+  desc: null
+  value: unet_semseg
+settings/model/num_classes:
+  desc: null
+  value: 1
+settings/model/optimizer:
+  desc: null
+  value: adam
+settings/model/pos_weight:
+  desc: null
+  value: 1
+settings/model/semseg_backbone:
+  desc: null
+  value: mobilenet_v2
+settings/model/test:
+  desc: null
+  value: false
+settings/model/train:
+  desc: null
+  value: true
+settings/plot_samples:
+  desc: null
+  value: 8
+settings/products_plot:
+  desc: null
+  value:
+  - rgb_aviris
+  - mag1c
+  - label
+  - pred
+  - differences
+settings/resume_from_checkpoint:
+  desc: null
+  value: false
+settings/seed:
+  desc: null
+  value: None
+settings/training/accelerator:
+  desc: null
+  value: gpu
+settings/training/devices:
+  desc: null
+  value: 1
+settings/training/max_epochs:
+  desc: null
+  value: 15
+settings/training/train_log_every_n_steps:
+  desc: null
+  value: 10
+settings/training/val_check_interval:
+  desc: null
+  value: 0.5
+settings/wandb/images_logging:
+  desc: null
+  value: wandb
+settings/wandb/wandb_entity:
+  desc: null
+  value: dtacs
+settings/wandb/wandb_project:
+  desc: null
+  value: starcop-aviris-seg-vitek
+settings/wandb_logger_version:
+  desc: null
+  value: 1envh3p6

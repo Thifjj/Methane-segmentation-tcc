@@ -11,9 +11,8 @@ CANAIS_ENTRADA = [
     "TOA_AVIRIS_460nm",
 ]
 
-def encontrar_sample(caminho_dataset):
-    #mexi aqui train.csv para test.csv
-    caminho_csv = os.path.join(caminho_dataset, "test.csv")
+def encontrar_sample(caminho_dataset, nome_csv="test.csv"):
+    caminho_csv = os.path.join(caminho_dataset, nome_csv)
 
     tabela = pd.read_csv(caminho_csv)
 
@@ -34,9 +33,8 @@ def encontrar_sample(caminho_dataset):
 
     return amostras
 
-def carregar_classificacao_por_pasta(caminho_dataset):
-        #mexi aqui train.csv para test.csv
-    tabela = pd.read_csv(os.path.join(caminho_dataset, "test.csv"))
+def carregar_classificacao_por_pasta(caminho_dataset, nome_csv="test.csv"):
+    tabela = pd.read_csv(os.path.join(caminho_dataset, nome_csv))
     colunas_ausentes = {"folder", "has_plume", "qplume"} - set(tabela.columns)
     if colunas_ausentes:
         raise ValueError(f"Colunas ausentes no train.csv: {sorted(colunas_ausentes)}")

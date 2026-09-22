@@ -85,6 +85,7 @@
       }
 
       Contagens c;
+      std::uint64_t pixels_preditos = 0;
 
       for (int y = 0; y < 512; ++y) {
           const float* verdade = label.ptr<float>(y);
@@ -96,6 +97,7 @@
             const std::size_t pixel = static_cast<std::size_t>(y) * 512 + x;
               const bool predicao = mascara[pixel] != 0;
               const bool real = verdade[x] != 0.0f;
+              pixels_preditos += predicao;
 
               if (predicao && real) ++c.tp;
               else if (predicao) ++c.fp;
@@ -121,6 +123,8 @@
       if (!amostra.has_plume) {
           resultado.dificuldade = "sem_pluma";
           somar(sem_pluma_, c);
+          if (pixels_preditos > 10) ++fp_tiles_;
+          else ++tn_tiles_;
       } else if (amostra.qplume > 1000.0) {
           resultado.dificuldade = "forte";
           somar(forte_, c);
@@ -143,26 +147,33 @@
       r.metricas_fortes = calcular_metricas(forte_);
       r.metricas_fracas = calcular_metricas(fraca_);
       r.fpr_sem_pluma = calcular_metricas(sem_pluma_).fpr;
+      r.fp_tiles = fp_tiles_;
+      r.tn_tiles = tn_tiles_;
+      if (fp_tiles_ + tn_tiles_ > 0)
+          r.fpr_tile = static_cast<double>(fp_tiles_) / (fp_tiles_ + tn_tiles_);
+      if (imagens_ > 0)
+          r.fpr_tile_tabela = static_cast<double>(fp_tiles_) / imagens_;
 
       const std::uint64_t total_positivos =
           std::accumulate(positivos_.begin(), positivos_.end(), std::uint64_t{0});
 
-      if (total_positivos == 0) return r;
+      // sklearn.precision_recall_curve + auc retorna 0.5 sem pixels positivos.
+      if (total_positivos == 0) {
+          if (imagens_ > 0) r.auprc = 0.5;
+          return r;
+      }
 
-      std::uint64_t tp = 0;
-      std::uint64_t fp = 0;
-
-      for (int bin = 255; bin >= 0; --bin) {
-          const auto novos_tp = positivos_[bin];
-          tp += novos_tp;
-          fp += negativos_[bin];
-
-          if (novos_tp > 0) {
-              const double precision =
-                  static_cast<double>(tp) / (tp + fp);
-              r.auprc += precision *
-                         static_cast<double>(novos_tp) / total_positivos;
-          }
+      std::uint64_t tp = total_positivos;
+      std::uint64_t fp =
+          std::accumulate(negativos_.begin(), negativos_.end(), std::uint64_t{0});
+      for (std::size_t bin = 0; bin < positivos_.size(); ++bin) {
+          const double precision_antes = static_cast<double>(tp) / (tp + fp);
+          tp -= positivos_[bin];
+          fp -= negativos_[bin];
+          const double precision_depois = tp + fp > 0
+              ? static_cast<double>(tp) / (tp + fp) : 1.0;
+          r.auprc += static_cast<double>(positivos_[bin]) / total_positivos *
+                     (precision_antes + precision_depois) / 2.0;
       }
 
       return r;

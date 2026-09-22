@@ -21,6 +21,9 @@
 namespace {
 
 namespace fs = std::filesystem;
+// Se o dataset contiver os dois CSVs, defina aqui "test.csv" ou "train.csv".
+constexpr const char* NOME_CSV = "";
+constexpr const char* RAIZ_RESULTADOS = "resultados_zcu104";
 
 struct Opcoes {
     fs::path modelo;
@@ -38,19 +41,9 @@ struct Opcoes {
 
 void ajuda() {
     std::cout <<
-        "Uso: benchmark_vitis --model ARQUIVO.xmodel --dataset PASTA --out PASTA [opcoes]\n"
-        "  --csv CSV                   Padrao: DATASET/test.csv\n"
-        "  --run-id ID                 Identificador nos resultados\n"
-        "  --mode model_only|end_to_end|all (padrao: all)\n"
-        "  --samples N                0 = todas as amostras (padrao)\n"
-        "  --iterations N             0 = uma inferencia por amostra (padrao)\n"
-        "  --runners 1..4             --cpu-cores 1..4 (alias: --threads)\n"
-        "  --pre-workers 1..4         --post-workers 1..4\n"
-        "  --slots 1..4               --warmup N\n"
-        "  --pin | --no-pin           Afinidade de CPU (padrao: --no-pin)\n"
-        "  --power | --no-power       Amostragem de potencia (padrao: --power)\n"
-        "  --power-sample-ms N        Intervalo em ms (padrao: 200)\n"
-        "  --validate | --no-validate Metricas de segmentacao (padrao: --validate)\n";
+        "Uso: benchmark_vitis --model ARQUIVO.xmodel --dataset PASTA\n"
+        "Configuracao em pipeline.hpp e benchmark_vitis.cpp; saida em "
+        "resultados_zcu104/.\n";
 }
 
 std::size_t numero(const std::string& texto, const std::string& opcao) {
@@ -89,31 +82,20 @@ Opcoes interpretar(int argc, char** argv) {
             std::exit(0);
         } else if (a == "--model") o.modelo = valor();
         else if (a == "--dataset") o.dataset = valor();
-        else if (a == "--csv") o.csv = valor();
-        else if (a == "--out") o.saida = valor();
-        else if (a == "--run-id") o.run_id = valor();
-        else if (a == "--mode") o.modo = valor();
-        else if (a == "--samples") o.amostras = numero(valor(), a);
-        else if (a == "--iterations") o.pipeline.inferencias = numero(valor(), a);
-        else if (a == "--runners") o.pipeline.runners = inteiro(valor(), a, 1, 4);
-        else if (a == "--cpu-cores" || a == "--threads")
-            o.pipeline.nucleos_cpu = inteiro(valor(), a, 1, 4);
-        else if (a == "--pre-workers")
+        // Opcoes internas usadas apenas pelo sweep_vitis.
+        else if (a == "--internal-out") o.saida = valor();
+        else if (a == "--internal-run-id") o.run_id = valor();
+        else if (a == "--internal-mode") o.modo = valor();
+        else if (a == "--internal-iterations") o.pipeline.inferencias = numero(valor(), a);
+        else if (a == "--internal-runners") o.pipeline.runners = inteiro(valor(), a, 1, 4);
+        else if (a == "--internal-pre-workers")
             o.pipeline.workers_pre = inteiro(valor(), a, 1, 4);
-        else if (a == "--post-workers")
+        else if (a == "--internal-post-workers")
             o.pipeline.workers_pos = inteiro(valor(), a, 1, 4);
-        else if (a == "--slots")
-            o.pipeline.slots_por_runner = inteiro(valor(), a, 1, 4);
-        else if (a == "--warmup")
+        else if (a == "--internal-warmup")
             o.pipeline.warmup = inteiro(valor(), a, 0, std::numeric_limits<int>::max());
-        else if (a == "--pin") o.pipeline.fixar_afinidade = true;
-        else if (a == "--no-pin") o.pipeline.fixar_afinidade = false;
-        else if (a == "--power") o.potencia = true;
-        else if (a == "--no-power") o.potencia = false;
-        else if (a == "--power-sample-ms")
-            o.intervalo_potencia_ms = inteiro(valor(), a, 1, std::numeric_limits<int>::max());
-        else if (a == "--validate") o.validar = true;
-        else if (a == "--no-validate") o.validar = false;
+        else if (a == "--internal-no-power") o.potencia = false;
+        else if (a == "--internal-no-validate") o.validar = false;
         else throw std::runtime_error("Opcao desconhecida: " + a);
     }
 
@@ -121,17 +103,28 @@ Opcoes interpretar(int argc, char** argv) {
         throw std::runtime_error("XModel nao encontrado: " + o.modelo.string());
     if (o.dataset.empty() || !fs::is_directory(o.dataset))
         throw std::runtime_error("Dataset nao encontrado: " + o.dataset.string());
-    if (o.csv.empty()) o.csv = o.dataset / "test.csv";
+    if (*NOME_CSV) {
+        o.csv = o.dataset / NOME_CSV;
+    } else {
+        const bool teste = fs::is_regular_file(o.dataset / "test.csv");
+        const bool treino = fs::is_regular_file(o.dataset / "train.csv");
+        if (teste == treino)
+            throw std::runtime_error(teste
+                ? "Dataset contem test.csv e train.csv; defina NOME_CSV no codigo"
+                : "Dataset sem test.csv ou train.csv");
+        o.csv = o.dataset / (teste ? "test.csv" : "train.csv");
+    }
     if (!fs::is_regular_file(o.csv))
         throw std::runtime_error("CSV nao encontrado: " + o.csv.string());
-    if (o.saida.empty())
-        throw std::runtime_error("Informe --out");
     if (o.modo != "model_only" && o.modo != "end_to_end" && o.modo != "all")
         throw std::runtime_error("--mode deve ser model_only, end_to_end ou all");
     if (o.run_id.empty())
         o.run_id = "manual_" + std::to_string(
             std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::system_clock::now().time_since_epoch()).count());
+    if (o.saida.empty())
+        o.saida = fs::path(RAIZ_RESULTADOS) /
+                  (o.modelo.stem().string() + "_" + o.run_id);
     return o;
 }
 
@@ -183,13 +176,15 @@ void executar_modo(const Opcoes& o, const std::vector<Amostra>& amostras,
     }();
     const auto medidas = monitor
         ? monitor->resumo(execucao.duracao_s) : std::vector<MedidaPotencia>{};
-    salvar_desempenho(o.saida, o.modelo.filename().string(), o.run_id,
+    salvar_desempenho(o.saida, o.modelo.filename().string(), o.run_id, o.csv,
                        execucao, medidas, o.potencia);
 
     const auto estatisticas = resumir_execucao(execucao);
     std::cout << modo << ": " << execucao.concluidas << " inferencias em "
               << execucao.duracao_s << " s; " << execucao.throughput_fps
-              << " FPS; latencia media " << estatisticas.latencia_total.media
+              << " FPS de throughput; "
+              << 1000.0 / estatisticas.latencia_total.media
+              << " FPS por latencia; latencia media " << estatisticas.latencia_total.media
               << " ms; p99 " << estatisticas.latencia_total.p99 << " ms\n";
 }
 
@@ -223,11 +218,13 @@ int main(int argc, char** argv) {
                 return validar_modelo(o.modelo.string(), amostras,
                                       o.pipeline.warmup, progresso.contador());
             }();
-            salvar_metricas(o.saida, o.modelo.filename().string(),
+            salvar_metricas(o.saida, o.modelo.filename().string(), o.run_id,
+                            o.csv, o.modo, o.pipeline,
                             validacao.imagens, validacao.resumo);
             std::cout << "F1=" << validacao.resumo.metricas_globais.f1
                       << " IoU=" << validacao.resumo.metricas_globais.iou
-                      << " AUPRC=" << validacao.resumo.auprc << '\n';
+                      << " AUPRC=" << validacao.resumo.auprc
+                      << " FPR tile=" << validacao.resumo.fpr_tile << '\n';
         }
         std::cout << "Resultados: " << fs::absolute(o.saida) << '\n';
         return 0;

@@ -20,12 +20,12 @@
       if (saida_float) {
           const auto* logits = static_cast<const float*>(dados_saida);
           for (std::size_t i = 0; i < PIXELS_SAIDA; ++i) {
-              mascara[i] = logits[i] >= 0.0f;
+              mascara[i] = logits[i] > 0.0f;
           }
       } else {
           const auto* logits = static_cast<const std::int8_t*>(dados_saida);
           for (std::size_t i = 0; i < PIXELS_SAIDA; ++i) {
-              mascara[i] = logits[i] >= 0;
+              mascara[i] = logits[i] > 0;
           }
       }
   }

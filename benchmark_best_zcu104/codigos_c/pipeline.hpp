@@ -10,12 +10,12 @@
   class MonitorPotencia;
 
   struct ConfiguracaoPipeline {
-      int runners = 1;
+      int runners = 2;
       int nucleos_cpu = 4;
-      int workers_pre = 1;
+      int workers_pre = 2;
       int workers_pos = 1;
       int slots_por_runner = 2;
-      int warmup = 20;
+      int warmup = 10;
       std::size_t inferencias = 0; // 0 = uma por amostra
       bool fixar_afinidade = false;
   };

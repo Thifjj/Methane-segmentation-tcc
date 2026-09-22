@@ -9,6 +9,10 @@
 
 struct MedidaPotencia {
     std::string trilho;
+    std::string sensor_chip;
+    std::string fonte_name;
+    std::string fonte_label;
+    std::string fonte_power_input;
     std::size_t amostras = 0;
     double media_w = 0;
     double minima_w = 0;
@@ -29,6 +33,9 @@ public:
 private:
     struct Trilho {
         std::string nome;
+        std::string sensor_chip;
+        std::string fonte_name;
+        std::string fonte_label;
         std::filesystem::path arquivo;
         std::vector<double> watts;
     };

@@ -1,77 +1,116 @@
-# Benchmark modular dos XModels na ZCU104
+# Benchmark de XModels na ZCU104
 
-Este diretório separa leitura, pré-processamento, runner, pós-processamento,
-métricas, validação, pipeline, energia e escrita dos resultados. O
-`benchmark_vitis.cpp` conecta esses componentes; `sweep_vitis` procura a
-configuração de melhor desempenho.
+Compila e mede modelos de segmentação com VART/GraphRunner. O programa lê os
+quatro TIFFs do STARCOP, normaliza mag1c por 1750 e RGB por 60, limita os
+valores a [0, 2], quantiza para INT8 e gera máscara com `logit > 0`, igual ao
+limiar efetivo do `benchmark_manual/benchmark_geral.py`.
 
-## Execução de `benchmark_vitis`
-
-```text
-benchmark_vitis --model ARQUIVO.xmodel --dataset PASTA [--csv ARQUIVO.csv]
-  --out PASTA [--run-id ID] [--mode model_only|end_to_end|all] [--samples N]
-  --runners 1..4 --cpu-cores 1..4 --pre-workers 1..4 --post-workers 1..4
-  --slots 1..4 --iterations N --warmup N --pin|--no-pin
-  --power|--no-power [--power-sample-ms N] --validate|--no-validate
-```
-
-`--iterations 0` usa uma inferência por amostra do CSV. `--samples 0` usa
-todas as amostras. Por padrão, os dois modos rodam e a validação percorre
-todas as amostras separadamente, fora das regiões temporizadas. `--cpu-cores`
-também aceita o nome `--threads`.
-O terminal mostra o progresso `concluídas/total` em cada modo e na validação,
-atualizado aproximadamente a cada segundo.
-
-## Compilação na placa
+## Compilar na placa
 
 ```bash
 cd /home/root/thiago/benchmark/codigos_c
 ./build_zcu104.sh
-./self_test_support
 ```
 
-É necessário OpenCV, VART, XIR e GraphRunner da imagem da placa. O build
-também pode ser feito com CMake. Na placa, o autoteste confere a quantização
-NEON contra a referência escalar, além do pós-processamento e das métricas.
+São necessários OpenCV, VART, XIR e GraphRunner da imagem da placa.
 
-## Busca de desempenho
+## Executar
 
 ```bash
-./sweep_vitis --model /home/root/thiago/benchmark/modelos/baseline/methane_baseline.xmodel \
-  --dataset /home/root/thiago/dataset_starcop \
-  --csv /home/root/thiago/dataset_starcop/train.csv \
-  --out /home/root/resultados/baseline --resume
+./benchmark_vitis --model /caminho/modelo.xmodel --dataset /caminho/dataset
+./sweep_vitis --model /caminho/modelo.xmodel --dataset /caminho/dataset
+./run_all_models.sh --models-dir /caminho/modelos --dataset /caminho/dataset
 ```
 
-O sweep testa runners 1–4 e núcleos de CPU 1–4 para `model_only` e
-`end_to_end`. Ajusta workers de pré e pós-processamento e 1–4 slots dos três
-melhores candidatos end-to-end, confirma os finalistas com e sem afinidade e executa o
-dataset completo três vezes em cada modo. Os resultados ficam em `runs/` e
-`final/`, com `ranking_search.csv` e `best_config.txt` na pasta de saída.
+O programa usa `test.csv` ou `train.csv`, conforme o CSV presente no dataset.
+Se ambos estiverem na mesma pasta, defina `NOME_CSV` em `benchmark_vitis.cpp`
+para selecionar o conjunto sem ambiguidade.
+As pastas das amostras vêm da coluna `folder` do CSV, como no benchmark Python.
+Os resultados são criados em `resultados_zcu104/` no diretório atual, em uma
+pasta com o nome do modelo e horário da execução.
 
-Na MobileNet V2 a placa já travou com três runners; use `--max-runners 2` até
-decidir testar 3 e 4 com acesso para reiniciá-la. `--resume` reutiliza runs
-válidos e preserva pastas de execuções interrompidas.
+## Configuração no código
 
-## Métricas e interpretação
+- `pipeline.hpp`: runners, quatro núcleos de CPU, workers de pré e pós,
+  slots, warm-up, inferências e afinidade da execução direta.
+- `benchmark_vitis.cpp`, estrutura `Opcoes`: modo, limite de amostras,
+  potência, intervalo de amostragem e validação. `NOME_CSV` resolve datasets
+  que contenham os dois CSVs; a pasta de saída também é escolhida nesse arquivo.
+- `sweep.cpp`, constantes no início: runners 2–4, três inferências por runner
+  em cada candidato, warm-up e limites de tempo. O sweep mantém quatro núcleos,
+  um worker de pós-processamento e dois slots por runner; compara dois e quatro
+  workers de pré-processamento. Para MobileNetV2, limita a busca a dois runners
+  porque três já travaram a placa.
 
-`model_only` mede `execute_async + wait` com entradas já preparadas.
-`end_to_end` mede leitura dos TIFFs, pré-processamento, filas, sincronização,
-inferência e pós-processamento. Nas MobileNets o tempo do runner inclui
-operações de CPU dentro do grafo. Throughput é inferências concluídas divididas
-pelo tempo real; latência é calculada por imagem. Potência é registrada por
-trilho, sem somar sensores que podem se sobrepor.
+Cada candidato rápido mede 6–12 inferências em `end_to_end`. Só a configuração
+vencedora passa à execução final sobre todas as amostras. O modo `all` mede
+`model_only` e `end_to_end` e valida a segmentação em etapas separadas. A busca
+curta serve para escolher candidatos; os CSVs finais trazem as medidas
+completas. O `sweep_vitis` chama
+`benchmark_vitis` com opções internas para automatizar cada candidato; elas
+não são necessárias na execução manual.
 
-A leitura dos TIFFs usa `cv::imread` e conversão para `CV_32F`. A quantização
-usa NEON na ZCU104 e o caminho escalar nas outras arquiteturas. Na execução
-com NEON e leitura direta via libtiff, o pré-processamento médio caiu de
-43,68 para 13,10 ms e a latência E2E mediana caiu de 517,58 para 503,01 ms.
-O FPS total caiu por uma pausa de cerca de 251 s vista simultaneamente na
-leitura e na inferência; a causa não foi determinada. A leitura direta via
-libtiff foi removida. A combinação atual OpenCV + NEON ainda precisa ser
-medida na placa.
+## Resultados e comparação
 
-A máscara usa `logit >= 0`, equivalente ao limiar do `benchmark_manual`.
-O `Teste_Unet.py` usa abertura morfológica, portanto suas métricas não são
-diretamente equivalentes. AUPRC usa os 256 níveis INT8: é exata para saída
-INT8 e agrupada nesses níveis para saída FLOAT32.
+- `benchmark_geral.csv`: configuração usada, CSV do dataset, distribuição e
+  kernel Linux, arquitetura e versões instaladas de Vitis AI Library, VART,
+  XIR e OpenCV, além de throughput, FPS por latência e tempos médios das
+  etapas. O FPS por latência (`1000 / média em ms`) segue a
+  definição do benchmark Python. Como o pipeline da placa executa imagens em
+  paralelo, a latência E2E ainda representa uma execução diferente da
+  sequência usada no Python.
+- `benchmark_estagios.csv` e `benchmark_samples.csv`: distribuição e tempos
+  individuais de leitura, pré-processamento, espera, sincronização, inferência
+  e pós-processamento.
+- `metricas_globais.csv`: configuração vencedora, CSV do dataset e ambiente
+  também aparecem junto de TP, FP, FN, TN, precision, recall, F1, IoU, FPR por
+  pixel, F1 strong/weak, AUPRC e FPR por tile. `fp_tiles` conta tiles sem pluma
+  com mais de dez pixels previstos; `fpr_tile` divide pelos tiles sem pluma e
+  `fpr_tile_tabela` divide por todas as imagens.
+- `metricas_por_imagem.csv` e `metricas_grupos.csv`: métricas por amostra e
+  grupo. A validação usa todas as amostras fora das regiões cronometradas.
+- `benchmark_power_rails.csv`: potência e energia por trilho, incluindo
+  joules por inferência. A energia por inferência é a energia total do trilho
+  dividida pelo número de inferências; não é uma leitura individual de cada
+  inferência. Cada linha informa `sensor_chip` e os caminhos `fonte_name`,
+  `fonte_label` e `fonte_power_input` usados nessa execução. Não some trilhos
+  que possam se sobrepor.
+
+## Origem das leituras de potência
+
+O monitor percorre `/sys/class/hwmon/hwmon*/`. Para cada trilho, lê o chip em
+`name`, o rótulo (quando existe) em `powerN_label` e a potência em
+`powerN_input`. O CSV grava esses caminhos exatos para permitir conferir na
+própria placa, por exemplo:
+
+```bash
+cat /sys/class/hwmon/hwmonN/name
+cat /sys/class/hwmon/hwmonN/powerM_label
+cat /sys/class/hwmon/hwmonN/powerM_input
+```
+
+Substitua `hwmonN` e `powerM` pelos nomes registrados no CSV; os índices podem
+mudar entre inicializações. Esses arquivos são interfaces virtuais do driver
+do kernel, não logs gravados diretamente pelo sensor. Segundo a
+[interface hwmon do Linux](https://docs.kernel.org/hwmon/sysfs-interface.html),
+`powerN_input` fornece potência instantânea em microwatts. O código divide o
+valor por `1.000.000` para obter watts. A `energia_j` reportada é uma **estimativa**
+`media_w × duracao_s`, e `energia_por_inferencia_j = energia_j / inferencias`;
+o programa não lê um contador direto de energia.
+
+`model_only` mede `execute_async + wait` com as entradas preparadas nos slots,
+reutilizando essas entradas. `entradas_preparadas` no CSV registra quantos
+slots foram montados. O `end_to_end` mede o pipeline concorrente de leitura
+até pós-processamento. Leitura dos labels e cálculo da qualidade ficam fora
+dos tempos, como no benchmark Python. Nas MobileNets, o runner pode conter
+subgrafos de CPU.
+
+A AUPRC usa a área trapezoidal da curva precisão–revocação, como no Python,
+mas agrupa scores nos 256 níveis INT8 do XModel. Diferenças residuais em
+relação ao PyTorch são esperadas por causa da quantização. O código conserva
+OpenCV para ler TIFF e usa NEON no pré-processamento da ZCU104.
+
+As versões de Vitis AI Library, VART e XIR são lidas dos arquivos de versão
+instalados na placa. `vitis_ai_library_versao` identifica a biblioteca de
+execução, não a versão do compilador usada para gerar o XModel. Um campo fica
+`indisponivel` quando a informação não existe na imagem da placa.

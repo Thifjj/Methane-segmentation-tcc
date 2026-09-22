@@ -154,15 +154,15 @@
               fs::path pasta_csv = campo(campos, pasta_col);
               if (!pasta_csv.has_filename()) pasta_csv = pasta_csv.parent_path();
 
-              fs::path por_id = raiz_dataset / amostra.id;
               fs::path por_pasta = raiz_dataset / pasta_csv.filename();
-
-              if (!amostra.id.empty() && fs::is_directory(por_id)) {
-                  amostra.pasta = por_id;
-              } else if (!pasta_csv.empty() && fs::is_directory(por_pasta)) {
+              if (pasta_col >= 0) {
+                  // Segue benchmark_manual: usa folder e ignora pastas ausentes.
+                  if (!fs::is_directory(por_pasta)) continue;
                   amostra.pasta = por_pasta;
               } else {
-                  throw std::runtime_error("Pasta da amostra não encontrada");
+                  amostra.pasta = raiz_dataset / amostra.id;
+                  if (!fs::is_directory(amostra.pasta))
+                      throw std::runtime_error("Pasta da amostra não encontrada");
               }
 
               if (amostra.id.empty()) {
