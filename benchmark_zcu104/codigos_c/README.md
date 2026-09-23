@@ -3,7 +3,7 @@
 Compila e mede modelos de segmentação com VART/GraphRunner. O programa lê os
 quatro TIFFs do STARCOP, normaliza mag1c por 1750 e RGB por 60, limita os
 valores a [0, 2], quantiza para INT8 e gera máscara com `logit > 0`, igual ao
-limiar efetivo do `benchmark_manual/benchmark_geral.py`.
+limiar efetivo do `benchmark_nao_embarcado/benchmark_geral.py`.
 
 ## Compilar na placa
 
@@ -37,7 +37,7 @@ for DATASET in \
 done
 ```
 
-`run_all_models.sh` encontra recursivamente os cinco arquivos
+`run_all_models.sh` aceita `--models-dir` e `--dataset`, encontra recursivamente os cinco arquivos
 `methane_*.xmodel` e roda `sweep_vitis` e o benchmark final para cada um.
 
 ### Somente o baseline nos dois datasets
@@ -103,7 +103,8 @@ O sweep grava `ranking_search.csv`, `best_config.txt` e a execução final em
 
 O programa usa `test.csv` ou `train.csv`, conforme o CSV presente no dataset.
 Se ambos estiverem na mesma pasta, defina `NOME_CSV` em `benchmark_vitis.cpp`
-para selecionar o conjunto sem ambiguidade.
+para selecionar o conjunto sem ambiguidade. Para este uso, mantenha `test.csv`
+em `STARCOP_test` e `train.csv` em `dataset_starcop`.
 As pastas das amostras vêm da coluna `folder` do CSV, como no benchmark Python.
 Os resultados são criados em `resultados_zcu104/` no diretório atual, em uma
 pasta com o nome do modelo, do dataset e horário da execução. Por exemplo,
@@ -118,7 +119,7 @@ separados.
 - `benchmark_vitis.cpp`, estrutura `Opcoes`: modo, limite de amostras,
   potência, intervalo de amostragem e validação. `NOME_CSV` resolve datasets
   que contenham os dois CSVs; a pasta de saída também é escolhida nesse arquivo.
-- `sweep.cpp`, constantes no início: runners 2–4, 80 inferências por candidato
+- `sweep.cpp`, constantes no início: runners 2–4 (2 para MobileNetV2), 80 inferências por candidato
   na busca, warm-up e limites de tempo. O sweep mantém quatro núcleos,
   um worker de pós-processamento e dois slots por runner; compara dois e quatro
   workers de pré-processamento. Para MobileNetV2, limita a busca a dois runners

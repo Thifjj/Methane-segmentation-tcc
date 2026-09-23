@@ -80,7 +80,7 @@ modelo, normalmente `512 × 512`.
 
 ### Caminhos dos pesos
 
-Edite o dicionário `modelos` em `benchmark_manual/model_loader.py`. Cada item
+Edite o dicionário `modelos` em `benchmark_nao_embarcado/model_loader.py`. Cada item
 deve conter a classe e o caminho do respectivo arquivo `.pth`:
 
 ```python
@@ -107,13 +107,13 @@ Os modelos apresentados no menu são:
 
 Execute os comandos a partir da raiz do repositório. O uso de `python3 -m` é
 necessário porque os scripts usam imports relativos do pacote
-`benchmark_manual`.
+`benchmark_nao_embarcado`.
 
 ### Benchmark geral
 
 ```bash
 source .venv/bin/activate
-python3 -m benchmark_manual.benchmark_geral
+python3 -m benchmark_nao_embarcado.benchmark_geral
 ```
 
 Ao iniciar, o programa pergunta o modelo, o dataset (`full` ou `test`) e o
@@ -135,7 +135,7 @@ Para cada amostra, o benchmark faz:
 3. clamp de cada canal no intervalo `[0, 2]`;
 4. montagem do tensor `[1, 4, H, W]`;
 5. inferência PyTorch;
-6. sigmoid e limiar `>= 0,5`;
+6. sigmoid e limiar estrito `> 0,5` (equivalente a `logit > 0`);
 7. leitura do label e cálculo das métricas por pixel.
 
 Antes das medições são executadas dez inferências de warm-up usando a primeira
@@ -184,20 +184,22 @@ A quantidade de pixels positivos da máscara não é usada para classificar uma
 amostra como strong ou weak. Amostras com `has_plume=false` continuam no
 `f1_global`, mas não entram em `f1_strong_plume` nem em `f1_weak_plume`.
 
-O pós-processamento deste benchmark não executa abertura morfológica.
+O pós-processamento deste benchmark não executa abertura morfológica. O loop
+principal usa `> 0,5`; o helper isolado `postprocess.py` usa `>= 0,5` e não é
+chamado pelo loop atual.
 
 ## Resultado gerado
 
 Ao terminar, o programa cria:
 
 ```text
-benchmark_manual/resultado_<dataset>_<device>_<modelo>_AAAAMMDD_HHMM.csv
+benchmark_nao_embarcado/resultado_<dataset>_<device>_<modelo>_AAAAMMDD_HHMM.csv
 ```
 
 Exemplo:
 
 ```text
-benchmark_manual/resultado_test_cpu_mobilenet_v3_20260921_1430.csv
+benchmark_nao_embarcado/resultado_test_cpu_mobilenet_v3_20260921_1430.csv
 ```
 
 O CSV contém uma linha com:
@@ -227,7 +229,7 @@ Para comparar CPU, GPU e ZCU104:
 ## Verificação rápida da classificação
 
 ```bash
-python3 -m benchmark_manual.metricas
+python3 -m benchmark_nao_embarcado.metricas
 ```
 
 A saída esperada é:
@@ -243,7 +245,7 @@ Self-test OK
 O arquivo foi executado diretamente. Volte à raiz do repositório e use:
 
 ```bash
-python3 -m benchmark_manual.benchmark_geral
+python3 -m benchmark_nao_embarcado.benchmark_geral
 ```
 
 ### `FileNotFoundError` para `train.csv` ou TIFF

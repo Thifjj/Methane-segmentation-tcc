@@ -2,6 +2,10 @@
 
 Execuções do conjunto `test`, com **342 imagens por modelo**, realizadas em 22/09/2026. O comparativo usa os CSVs locais e cobre todos os campos gravados neles. Valores de proporção aparecem como fração (0–1), exceto FPR por tile que também está mostrado em percentual.
 
+A comparação de throughput e métricas entre ZCU104, CPU e GPU está em
+[`../comparativos/comparativo_test_zcu104_cpu_gpu.csv`](../comparativos/comparativo_test_zcu104_cpu_gpu.csv).
+Este documento mantém o detalhamento das execuções CPU aqui descritas.
+
 ## Foco: desempenho e métricas do paper
 
 FPS é `1000 / latência média`, para inferência sequencial de uma imagem por vez. `model_fps` mede só o modelo; `e2e_fps` inclui leitura, pré-processamento, inferência e pós-processamento.

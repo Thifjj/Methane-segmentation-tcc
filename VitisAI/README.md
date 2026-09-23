@@ -211,10 +211,11 @@ xdputil benchmark /home/root/models/compiled_zcu104/depth_reduced/methane_depth_
 ```
 
 Esse benchmark nao mede leitura dos GeoTIFFs, normalizacao, pos-processamento,
-IoU ou F1. Para o benchmark completo, copie `Benchmark_ZCU104/` para a placa e
-siga `Benchmark_ZCU104/README.md`. O runner C++ mede `model-only` e
-`end-to-end`, executa o sweep automatico, compara 1, 2, 3 e 4 nucleos e calcula
-as metricas de qualidade usadas em `Testes/Teste_Unet.py`.
+IoU ou F1. Para o benchmark completo, copie `benchmark_zcu104/codigos_c/` para
+`/home/root/thiago/benchmark/` e siga
+[`benchmark_zcu104/codigos_c/README.md`](../benchmark_zcu104/codigos_c/README.md).
+O código atual mede os datasets `STARCOP_test` e `dataset_starcop` e mantém
+saídas separadas para cada dataset.
 
 ## 5. Como adicionar manualmente um modelo ao código
 
@@ -324,7 +325,7 @@ python quantize_model.py \
   --quant-mode calib \
   --csv /dataset_STARCOP/train.csv \
   --data-root /dataset_STARCOP \
-  --subset-len 100 \
+  --subset-len 1000 \
   --target DPUCZDX8G_ISA1_B4096 \
   --output-dir build/vitis_ai/quantize
 ```

@@ -3,7 +3,7 @@
 No computador, a partir da raiz do repositório:
 
 ```bash
-scp -O -r benchmark_best_zcu104/codigos_c root@192.168.2.100:/home/root/thiago/benchmark/
+scp -O -r benchmark_zcu104/codigos_c root@192.168.2.100:/home/root/thiago/benchmark/
 ```
 
 Na placa:
@@ -16,10 +16,23 @@ cd /home/root/thiago/benchmark/codigos_c
 ./sweep_vitis --model /home/root/thiago/benchmark/modelos/mobilenet_v3/methane_mobilenet_v3.xmodel --dataset /home/root/thiago/dataset_starcop
 ```
 
+Para usar o test set (`test.csv`):
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/mobilenet_v3/methane_mobilenet_v3.xmodel --dataset /home/root/thiago/STARCOP_test
+./sweep_vitis --model /home/root/thiago/benchmark/modelos/mobilenet_v3/methane_mobilenet_v3.xmodel --dataset /home/root/thiago/STARCOP_test
+```
+
 Para todos os modelos, em sequência:
 
 ```bash
 ./run_all_models.sh --models-dir /home/root/thiago/benchmark/modelos --dataset /home/root/thiago/dataset_starcop
+```
+
+Para rodar todos os modelos no test set, troque o dataset:
+
+```bash
+./run_all_models.sh --models-dir /home/root/thiago/benchmark/modelos --dataset /home/root/thiago/STARCOP_test
 ```
 
 Os programas escolhem `test.csv` ou `train.csv` dentro do dataset quando há
