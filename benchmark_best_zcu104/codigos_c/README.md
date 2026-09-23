@@ -14,12 +14,91 @@ cd /home/root/thiago/benchmark/codigos_c
 
 São necessários OpenCV, VART, XIR e GraphRunner da imagem da placa.
 
-## Executar
+## Executar o sweep
+
+### Todos os modelos nos dois datasets
+
+Os cinco XModels compilados para a ZCU104 estão em
+`build/vitis_ai/compiled_zcu104/`: `baseline`, `depth_reduced`,
+`skip_connections`, `mobilenet_v2` e `mobilenet_v3`. Na placa, considerando que
+os arquivos foram copiados para `/home/root/thiago/benchmark/modelos` e os
+datasets estão em `/home/root/thiago`, compile e execute todos os modelos nos
+dois conjuntos: `STARCOP_test` e o full, chamado `dataset_starcop` na placa:
 
 ```bash
-./benchmark_vitis --model /caminho/modelo.xmodel --dataset /caminho/dataset
-./sweep_vitis --model /caminho/modelo.xmodel --dataset /caminho/dataset
-./run_all_models.sh --models-dir /caminho/modelos --dataset /caminho/dataset
+cd /home/root/thiago/benchmark/codigos_c
+./build_zcu104.sh
+
+MODELS=/home/root/thiago/benchmark/modelos
+for DATASET in \
+  /home/root/thiago/STARCOP_test \
+  /home/root/thiago/dataset_starcop; do
+  ./run_all_models.sh --models-dir "$MODELS" --dataset "$DATASET"
+done
+```
+
+`run_all_models.sh` encontra recursivamente os cinco arquivos
+`methane_*.xmodel` e roda `sweep_vitis` e o benchmark final para cada um.
+
+### Somente o baseline nos dois datasets
+
+Para rodar o sweep somente do baseline nos dois datasets, copie e execute na
+placa:
+
+```bash
+cd /home/root/thiago/benchmark/codigos_c
+./build_zcu104.sh
+./sweep_vitis --model /home/root/thiago/benchmark/modelos/baseline/methane_baseline.xmodel --dataset /home/root/thiago/STARCOP_test
+./sweep_vitis --model /home/root/thiago/benchmark/modelos/baseline/methane_baseline.xmodel --dataset /home/root/thiago/dataset_starcop
+```
+
+O sweep grava `ranking_search.csv`, `best_config.txt` e a execução final em
+`resultados_zcu104/methane_baseline_<dataset>_sweep_*/`.
+
+## Executar sem sweep
+
+### Um modelo por vez: STARCOP_test
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/baseline/methane_baseline.xmodel --dataset /home/root/thiago/STARCOP_test
+```
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/depth_reduced/methane_depth_reduced.xmodel --dataset /home/root/thiago/STARCOP_test
+```
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/skip_connections/methane_skip_connections.xmodel --dataset /home/root/thiago/STARCOP_test
+```
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/mobilenet_v2/methane_mobilenet_v2.xmodel --dataset /home/root/thiago/STARCOP_test
+```
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/mobilenet_v3/methane_mobilenet_v3.xmodel --dataset /home/root/thiago/STARCOP_test
+```
+
+### Um modelo por vez: dataset full (`dataset_starcop`)
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/baseline/methane_baseline.xmodel --dataset /home/root/thiago/dataset_starcop
+```
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/depth_reduced/methane_depth_reduced.xmodel --dataset /home/root/thiago/dataset_starcop
+```
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/skip_connections/methane_skip_connections.xmodel --dataset /home/root/thiago/dataset_starcop
+```
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/mobilenet_v2/methane_mobilenet_v2.xmodel --dataset /home/root/thiago/dataset_starcop
+```
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/mobilenet_v3/methane_mobilenet_v3.xmodel --dataset /home/root/thiago/dataset_starcop
 ```
 
 O programa usa `test.csv` ou `train.csv`, conforme o CSV presente no dataset.
@@ -27,7 +106,10 @@ Se ambos estiverem na mesma pasta, defina `NOME_CSV` em `benchmark_vitis.cpp`
 para selecionar o conjunto sem ambiguidade.
 As pastas das amostras vêm da coluna `folder` do CSV, como no benchmark Python.
 Os resultados são criados em `resultados_zcu104/` no diretório atual, em uma
-pasta com o nome do modelo e horário da execução.
+pasta com o nome do modelo, do dataset e horário da execução. Por exemplo,
+execuções do baseline ficam em pastas `methane_baseline_STARCOP_test_*` e
+`methane_baseline_dataset_starcop_*`, mantendo os resultados do test e do full
+separados.
 
 ## Configuração no código
 
@@ -36,16 +118,16 @@ pasta com o nome do modelo e horário da execução.
 - `benchmark_vitis.cpp`, estrutura `Opcoes`: modo, limite de amostras,
   potência, intervalo de amostragem e validação. `NOME_CSV` resolve datasets
   que contenham os dois CSVs; a pasta de saída também é escolhida nesse arquivo.
-- `sweep.cpp`, constantes no início: runners 2–4, três inferências por runner
-  em cada candidato, warm-up e limites de tempo. O sweep mantém quatro núcleos,
+- `sweep.cpp`, constantes no início: runners 2–4, 80 inferências por candidato
+  na busca, warm-up e limites de tempo. O sweep mantém quatro núcleos,
   um worker de pós-processamento e dois slots por runner; compara dois e quatro
   workers de pré-processamento. Para MobileNetV2, limita a busca a dois runners
   porque três já travaram a placa.
 
-Cada candidato rápido mede 6–12 inferências em `end_to_end`. Só a configuração
+Cada candidato mede 80 inferências em `end_to_end`. Só a configuração
 vencedora passa à execução final sobre todas as amostras. O modo `all` mede
 `model_only` e `end_to_end` e valida a segmentação em etapas separadas. A busca
-curta serve para escolher candidatos; os CSVs finais trazem as medidas
+serve para escolher candidatos; os CSVs finais trazem as medidas
 completas. O `sweep_vitis` chama
 `benchmark_vitis` com opções internas para automatizar cada candidato; elas
 não são necessárias na execução manual.

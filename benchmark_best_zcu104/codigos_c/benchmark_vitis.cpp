@@ -124,7 +124,8 @@ Opcoes interpretar(int argc, char** argv) {
                 std::chrono::system_clock::now().time_since_epoch()).count());
     if (o.saida.empty())
         o.saida = fs::path(RAIZ_RESULTADOS) /
-                  (o.modelo.stem().string() + "_" + o.run_id);
+                  (o.modelo.stem().string() + "_" + o.dataset.filename().string() +
+                   "_" + o.run_id);
     return o;
 }
 

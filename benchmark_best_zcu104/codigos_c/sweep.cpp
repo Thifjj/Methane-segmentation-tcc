@@ -18,11 +18,11 @@ namespace fs = std::filesystem;
 namespace {
 
 // Edite somente estes valores para mudar a busca. Cada candidato executa
-// três inferencias por runner; o vencedor percorre o dataset inteiro.
+// o mesmo numero de inferencias; o vencedor percorre o dataset inteiro.
 constexpr int PRIMEIRO_RUNNER = 2;
 constexpr int ULTIMO_RUNNER = 4;
-constexpr int INFERENCIAS_POR_RUNNER = 3;
-constexpr int WARMUP_BUSCA = 1;
+constexpr int INFERENCIAS_BUSCA = 80;
+constexpr int WARMUP_BUSCA = 10;
 constexpr int WARMUP_FINAL = 10;
 constexpr int TIMEOUT_BUSCA_S = 90;
 constexpr int TIMEOUT_FINAL_S = 3600;
@@ -125,7 +125,7 @@ Medida medir(const fs::path& benchmark, const fs::path& modelo,
         "--internal-runners", std::to_string(config.runners),
         "--internal-pre-workers", std::to_string(config.pre_workers),
         "--internal-iterations", std::to_string(
-            final ? 0 : INFERENCIAS_POR_RUNNER * config.runners),
+            final ? 0 : INFERENCIAS_BUSCA),
         "--internal-warmup", std::to_string(final ? WARMUP_FINAL : WARMUP_BUSCA)
     };
     if (!final) {
@@ -175,7 +175,8 @@ int main(int argc, char** argv) {
         const auto instante = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()).count();
         const fs::path saida = fs::path(RAIZ_RESULTADOS) /
-            (modelo.stem().string() + "_sweep_" + std::to_string(instante));
+            (modelo.stem().string() + "_" + dataset.filename().string() +
+             "_sweep_" + std::to_string(instante));
         fs::create_directories(saida);
         std::ofstream ranking(saida / "ranking_search.csv");
         if (!ranking) throw std::runtime_error("Nao foi possivel gravar ranking");
