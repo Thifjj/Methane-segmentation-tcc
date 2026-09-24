@@ -29,7 +29,7 @@ conda activate vitis-ai-pytorch
 Dentro do container, o projeto fica em `/workspace`, o dataset em
 `/dataset_STARCOP` e o codigo-fonte do Vitis AI em `/vitis_ai_home`.
 
-Os scripts sao a interface principal e devem ser executados **dentro do container PyTorch do Vitis AI**. Troque somente `--model` entre `baseline`, `depth_reduced`, `skip_connections`, `mobilenet_v2` e `mobilenet_v3`. Por padrao, cada nome seleciona seu checkpoint em `Modelos_treinados/` e usa os quatro canais `mag1c,R,G,B` do projeto.
+Os scripts sao a interface principal e devem ser executados **dentro do container PyTorch do Vitis AI**. Use `--model` com `baseline`, `depth_reduced`, `skip_connections`, `mobilenet_v2`, `mobilenet_v3` ou `hyperstarcop`. Por padrao, cada nome seleciona seu checkpoint em `Modelos_treinados/` e usa os quatro canais `mag1c,R,G,B` do projeto. O HyperSTARCOP exige as dependencias adicionais descritas ao final deste guia.
 
 > Use uma versao do container Vitis AI compativel com a imagem/bitstream instalado na ZCU104. O `arch.json` tambem deve ser exatamente o dessa DPU; nao use um arquivo apenas porque ele tem o nome ZCU104.
 
@@ -358,3 +358,68 @@ Os diretorios `build/vitis_ai/quantize`, `build/vitis_ai/inspect` e
 `build/vitis_ai/compiled_zcu104` sao artefatos gerados. Preserve-os para o
 deploy, mas evite adiciona-los ao Git sem uma decisao explicita sobre o tamanho
 do repositorio.
+
+## HyperSTARCOP oficial
+
+O modelo `hyperstarcop` usa o checkpoint Lightning em
+`Modelos_treinados/HyperSTARCOP_oficial/final_checkpoint_model.ckpt`. Seu
+carregamento preserva os quatro canais `mag1c, 640, 550, 460 nm` e a mesma
+normalizacao dos demais modelos. O container Vitis AI 3.5 usa Python 3.8;
+instale nele as dependencias abaixo, mantendo o PyTorch do container:
+
+```bash
+pip install --no-deps segmentation-models-pytorch==0.3.3 \
+  pretrainedmodels==0.7.4 efficientnet-pytorch==0.7.1 timm==0.9.2
+pip install omegaconf==2.3.0
+pip install rasterio==1.3.11
+```
+
+O container `methane-vitis-ai-cpu` existente nesta maquina nao tem o
+`train.csv` montado em `/dataset_STARCOP`. Para calibrar com o dataset full em
+`/media/jacques/games/Datasets/STARCOP_train_remaining_all`, crie no host um
+container com o volume correto:
+
+```bash
+docker run -it --name methane-vitis-ai-full --network host \
+  -v /dev/shm:/dev/shm \
+  -v /media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation:/workspace \
+  -v /media/jacques/games/Datasets/STARCOP_train_remaining_all:/dataset_STARCOP:ro \
+  -w /workspace/VitisAI \
+  xilinx/vitis-ai-pytorch-cpu:ubuntu2004-3.5.0.306 bash
+```
+
+Se `methane-vitis-ai-full` ja existir, reutilize-o em vez de repetir
+`docker run`:
+
+```bash
+docker start methane-vitis-ai-full
+docker exec -it -w /workspace/VitisAI methane-vitis-ai-full bash
+```
+
+Dentro desse container, ative `conda activate vitis-ai-pytorch`, instale as
+dependencias acima e execute `bash run_hyperstarcop_full.sh` para calibrar,
+exportar e compilar em sequencia. Os comandos individuais equivalentes sao:
+
+```bash
+python inspect_model.py --model hyperstarcop --target DPUCZDX8G_ISA1_B4096
+python quantize_model.py --model hyperstarcop --quant-mode calib \
+  --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP \
+  --subset-len 1000 --seed 12345 --target DPUCZDX8G_ISA1_B4096 \
+  --output-dir build/vitis_ai/quantize
+python quantize_model.py --model hyperstarcop --quant-mode test --deploy \
+  --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP \
+  --target DPUCZDX8G_ISA1_B4096 --output-dir build/vitis_ai/quantize
+```
+
+Confirme `calib: 1000/1000 amostras` no log. Para compilar, use o `arch.json`
+correspondente ao bitstream da placa, conforme a secao 3 deste guia:
+
+```bash
+XMODEL="$(find build/vitis_ai/quantize/hyperstarcop -maxdepth 1 \
+  -name '*_int.xmodel' -print -quit)"
+test -n "$XMODEL" || { echo "XModel INT8 ausente"; exit 1; }
+python compile_xmodel.py --xmodel "$XMODEL" \
+  --arch /opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json \
+  --output-dir build/vitis_ai/compiled_zcu104/hyperstarcop \
+  --name methane_hyperstarcop
+```

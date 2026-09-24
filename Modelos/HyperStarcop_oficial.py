@@ -22,11 +22,12 @@ class HyperSTARCOPOficial(nn.Module):
 
 def carregar_hyperstarcop(caminho_checkpoint, device):
 
-    checkpoint = torch.load(
-        caminho_checkpoint,
-        map_location=device,
-        weights_only=False
-    )
+    try:
+        checkpoint = torch.load(
+            caminho_checkpoint, map_location=device, weights_only=False
+        )
+    except TypeError:  # PyTorch de versoes anteriores do container Vitis AI.
+        checkpoint = torch.load(caminho_checkpoint, map_location=device)
 
     state_dict = checkpoint["state_dict"]
 
@@ -40,7 +41,7 @@ def carregar_hyperstarcop(caminho_checkpoint, device):
 
     for nome, peso in state_dict.items():
         if nome.startswith("network."):
-            novo_nome = nome.removeprefix("network.")
+            novo_nome = nome[len("network."):]
             pesos_network[novo_nome] = peso
 
     model = HyperSTARCOPOficial()

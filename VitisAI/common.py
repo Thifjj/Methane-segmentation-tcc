@@ -32,6 +32,7 @@ MODEL_REGISTRY = {
     "skip_connections": (UNetElementWise, "UNET_SkipConnections_mag1c_rgb.pth"),
     "mobilenet_v2": (UNetMobileNetV2, "Mobile_Net_v2_mag1c_rgb.pth"),
     "mobilenet_v3": (UNetMobileNetV3, "Mobile_Net_v3_mag1c_rgb.pth"),
+    "hyperstarcop": (None, "HyperSTARCOP_oficial/final_checkpoint_model.ckpt"),
 }
 
 
@@ -50,6 +51,13 @@ def build_model(model_name: str, checkpoint: str | Path | None, in_channels: int
     checkpoint_path = Path(checkpoint) if checkpoint else PROJECT_ROOT / "Modelos_treinados" / default_checkpoint
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Checkpoint nao encontrado: {checkpoint_path}")
+
+    if model_name == "hyperstarcop":
+        if in_channels != 4:
+            raise ValueError("HyperSTARCOP requer os quatro canais mag1c e RGB.")
+        from Modelos.HyperStarcop_oficial import carregar_hyperstarcop
+
+        return carregar_hyperstarcop(checkpoint_path, torch.device("cpu")), checkpoint_path
 
     model = model_class(in_channels=in_channels, out_channels=1)
     try:
