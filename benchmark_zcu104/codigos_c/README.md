@@ -18,9 +18,9 @@ São necessários OpenCV, VART, XIR e GraphRunner da imagem da placa.
 
 ### Todos os modelos nos dois datasets
 
-Os cinco XModels compilados para a ZCU104 estão em
+Os seis XModels compilados para a ZCU104 estão em
 `build/vitis_ai/compiled_zcu104/`: `baseline`, `depth_reduced`,
-`skip_connections`, `mobilenet_v2` e `mobilenet_v3`. Na placa, considerando que
+`skip_connections`, `mobilenet_v2`, `mobilenet_v3` e `hyperstarcop`. Na placa, considerando que
 os arquivos foram copiados para `/home/root/thiago/benchmark/modelos` e os
 datasets estão em `/home/root/thiago`, compile e execute todos os modelos nos
 dois conjuntos: `STARCOP_test` e o full, chamado `dataset_starcop` na placa:
@@ -37,8 +37,11 @@ for DATASET in \
 done
 ```
 
-`run_all_models.sh` aceita `--models-dir` e `--dataset`, encontra recursivamente os cinco arquivos
-`methane_*.xmodel` e roda `sweep_vitis` e o benchmark final para cada um.
+`run_all_models.sh` aceita `--models-dir` e `--dataset`, encontra recursivamente
+todos os arquivos `methane_*.xmodel` na pasta e executa `sweep_vitis` para cada
+um. Portanto, inclua nessa pasta somente os modelos que deseja medir. O sweep
+avalia configurações de pipeline e executa a configuração vencedora sobre todas
+as amostras; ele não é apenas uma execução única com configuração fixa.
 
 ### Somente o baseline nos dois datasets
 
@@ -79,6 +82,10 @@ O sweep grava `ranking_search.csv`, `best_config.txt` e a execução final em
 ./benchmark_vitis --model /home/root/thiago/benchmark/modelos/mobilenet_v3/methane_mobilenet_v3.xmodel --dataset /home/root/thiago/STARCOP_test
 ```
 
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/hyperstarcop/methane_hyperstarcop.xmodel --dataset /home/root/thiago/STARCOP_test
+```
+
 ### Um modelo por vez: dataset full (`dataset_starcop`)
 
 ```bash
@@ -99,6 +106,10 @@ O sweep grava `ranking_search.csv`, `best_config.txt` e a execução final em
 
 ```bash
 ./benchmark_vitis --model /home/root/thiago/benchmark/modelos/mobilenet_v3/methane_mobilenet_v3.xmodel --dataset /home/root/thiago/dataset_starcop
+```
+
+```bash
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/hyperstarcop/methane_hyperstarcop.xmodel --dataset /home/root/thiago/dataset_starcop
 ```
 
 O programa usa `test.csv` ou `train.csv`, conforme o CSV presente no dataset.

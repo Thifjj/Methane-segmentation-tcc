@@ -219,12 +219,20 @@ caminho e a segunda sobrescreve a primeira.
 
 Para comparar CPU, GPU e ZCU104:
 
-1. use o mesmo checkpoint e a mesma ordem de canais;
-2. use o mesmo `train.csv` e a mesma quantidade de amostras;
-3. confirme que o limiar e o pós-processamento são iguais;
-4. feche cargas concorrentes no computador;
-5. registre as versões do PyTorch, CUDA e driver;
-6. compare separadamente model-only, E2E e qualidade.
+1. use o mesmo conjunto, CSV e as mesmas amostras, na mesma ordem;
+2. use checkpoints correspondentes às versões quantizadas compiladas para a placa;
+3. confirme que a ordem dos canais, a normalização e o limiar são iguais;
+4. feche cargas concorrentes no computador e registre PyTorch, runtime Vitis AI,
+   arquitetura da DPU e configuração do pipeline;
+5. compare qualidade pelas métricas globais e por amostra. As diferenças
+   residuais podem vir da quantização INT8;
+6. compare desempenho separando latência de inferência, latência E2E e throughput.
+
+A entrada e as métricas de qualidade são comparáveis quando CPU e ZCU104 usam
+exatamente o mesmo CSV e conjunto. O CPU mede PyTorch FP32 sequencial; a placa
+usa XModel quantizado e pode executar várias inferências em paralelo. Por isso,
+FPS sequencial, throughput e latência do pipeline são medidas distintas, mesmo
+com os mesmos dados.
 
 ## Verificação rápida da classificação
 

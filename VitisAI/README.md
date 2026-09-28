@@ -144,7 +144,7 @@ Procure as configuracoes disponiveis:
 find /opt/vitis_ai -path '*ZCU104*' -name arch.json 2>/dev/null
 ```
 
-Compile os cinco modelos diretamente para a ZCU104. Execute dentro de
+Compile os cinco modelos originais diretamente para a ZCU104. Execute dentro de
 `/workspace/VitisAI`; tanto a entrada quanto a saida ficam no `build` dessa
 pasta:
 
@@ -165,6 +165,11 @@ do
     --name "methane_$MODEL"
 done
 ```
+
+O HyperSTARCOP usa um fluxo separado porque requer dependências adicionais e
+calibração própria. Execute `bash run_hyperstarcop_full.sh` conforme a seção
+[HyperSTARCOP oficial](#hyperstarcop-oficial); o script também compila seu
+XModel para a ZCU104.
 
 Confira os artefatos compilados:
 
@@ -188,6 +193,16 @@ No host, copie os modelos, substituindo o usuario e o IP da ZCU104:
 ```bash
 scp -r VitisAI/build/vitis_ai/compiled_zcu104 \
   root@IP_DA_ZCU104:/home/root/models/
+```
+
+O comando acima copia a pasta `compiled_zcu104` para
+`/home/root/models/compiled_zcu104`. Para o benchmark C++ deste projeto, que
+procura os modelos em `/home/root/thiago/benchmark/modelos/<modelo>/`, copie-os
+para o caminho esperado, por exemplo:
+
+```bash
+scp -r VitisAI/build/vitis_ai/compiled_zcu104/* \
+  root@IP_DA_ZCU104:/home/root/thiago/benchmark/modelos/
 ```
 
 Copiar o modelo nao inicia a inferencia. A placa tambem precisa do Vitis AI
