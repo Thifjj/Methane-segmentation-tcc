@@ -123,7 +123,7 @@
       if (!amostra.has_plume) {
           resultado.dificuldade = "sem_pluma";
           somar(sem_pluma_, c);
-          if (pixels_preditos > 10) ++fp_tiles_;
+          if (pixels_preditos > 10 * PIXELS_SAIDA / (64 * 64)) ++fp_tiles_;
           else ++tn_tiles_;
       } else if (amostra.qplume > 1000.0) {
           resultado.dificuldade = "forte";
@@ -167,6 +167,7 @@
       std::uint64_t fp =
           std::accumulate(negativos_.begin(), negativos_.end(), std::uint64_t{0});
       for (std::size_t bin = 0; bin < positivos_.size(); ++bin) {
+          if (tp + fp == 0) break;
           const double precision_antes = static_cast<double>(tp) / (tp + fp);
           tp -= positivos_[bin];
           fp -= negativos_[bin];

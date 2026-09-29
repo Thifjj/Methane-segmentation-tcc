@@ -159,8 +159,9 @@ não são necessárias na execução manual.
 - `metricas_globais.csv`: configuração vencedora, CSV do dataset e ambiente
   também aparecem junto de TP, FP, FN, TN, precision, recall, F1, IoU, FPR por
   pixel, F1 strong/weak, AUPRC e FPR por tile. `fp_tiles` conta tiles sem pluma
-  com mais de dez pixels previstos; `fpr_tile` divide pelos tiles sem pluma e
-  `fpr_tile_tabela` divide por todas as imagens.
+  com mais de 640 pixels previstos em cada imagem 512×512, seguindo o limiar
+  oficial de 10 pixels por 64×64; `fpr_tile` divide pelos tiles sem pluma e
+  `fpr_tile_tabela` divide por todas as imagens (não é o FPR da Tabela 2).
 - `metricas_por_imagem.csv` e `metricas_grupos.csv`: métricas por amostra e
   grupo. A validação usa todas as amostras fora das regiões cronometradas.
 - `benchmark_power_rails.csv`: potência e energia por trilho, incluindo

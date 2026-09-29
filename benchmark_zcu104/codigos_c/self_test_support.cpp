@@ -54,6 +54,17 @@ int main() {
     exigir(sem_pluma.dificuldade == "sem_pluma");
     exigir(acumulador_sem_pluma.resumo().metricas_fortes.f1 == 0.0);
 
+    std::fill(mascara.begin(), mascara.end(), 0);
+    std::fill(mascara.begin(), mascara.begin() + 640, 1);
+    AcumuladorMetricas limite_tile;
+    limite_tile.adicionar(amostra, mascara, cv::Mat(512, 512, CV_32FC1, cv::Scalar(0)),
+                        logits.data(), false, 1.0f);
+    mascara[640] = 1;
+    limite_tile.adicionar(amostra, mascara, cv::Mat(512, 512, CV_32FC1, cv::Scalar(0)),
+                        logits.data(), false, 1.0f);
+    exigir(limite_tile.resumo().fp_tiles == 1 && limite_tile.resumo().tn_tiles == 1);
+    exigir(limite_tile.resumo().fpr_tile == 0.5);
+
     const auto tempos = resumir_valores({1.0, 2.0, 3.0});
     exigir(tempos.media == 2.0 && tempos.mediana == 2.0);
     exigir(std::abs(tempos.p95 - 2.9) < 1e-12);

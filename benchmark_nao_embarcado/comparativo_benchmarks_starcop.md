@@ -2,6 +2,8 @@
 
 Execuções do conjunto `test`, com **342 imagens por modelo**, realizadas em 22/09/2026. O comparativo usa os CSVs locais e cobre todos os campos gravados neles. Valores de proporção aparecem como fração (0–1), exceto FPR por tile que também está mostrado em percentual.
 
+**Atenção:** os FPRs por tile dos CSVs CPU/GPU abaixo são históricos e usaram o limiar de `>10` pixels por imagem 512×512. O código oficial escala o limiar para `>640` nessa resolução. Como esses CSVs não guardam contagens por imagem, é preciso repetir a validação para comparar FPR por tile com o artigo. O código do benchmark já foi corrigido.
+
 A comparação de throughput e métricas entre ZCU104, CPU e GPU está em
 [`../comparativos/comparativo_test_zcu104_cpu_gpu.csv`](../comparativos/comparativo_test_zcu104_cpu_gpu.csv).
 Este documento mantém o detalhamento das execuções CPU aqui descritas.
@@ -40,24 +42,24 @@ FPS é `1000 / latência média`, para inferência sequencial de uma imagem por 
 ### Como ler as métricas
 
 - **F1 global** usa pixels de todas as amostras com limiar de probabilidade `> 0,5`; `F1 strong` e `F1 weak` são subdivisões por intensidade de pluma (`qplume > 1000` e `<= 1000`).
-- **FPR pixel** = `FP / (FP + TN)`. **FPR tile (sem pluma)** mede a fração de tiles sem pluma em que o modelo previu pluma (mais de 10 pixels previstos). Essa é a variante de falso positivo por tile mais diretamente interpretável como métrica do paper.
+- **FPR pixel** = `FP / (FP + TN)`. **FPR tile (sem pluma)** mede a fração de tiles sem pluma em que o modelo previu pluma; nos CSVs desta página, isso significou mais de 10 pixels por imagem 512×512. O artigo usa o limiar escalonado de 640 pixels nessa resolução.
 - **FPR tile (todos/342)** = `fp_tiles / total de imagens`; mantida porque também está gravada no CSV, mas usa outro denominador. Não comparar diretamente com FPR restrita aos tiles negativos.
 - **AUPRC** é a área sob a curva precision-recall calculada sobre as probabilidades por pixel. F1 usa máscara binária no limiar fixo, portanto mede outro aspecto.
 
 ### Conferência com o paper: HyperSTARCOP mag1c + RGB
 
-O paper define AUPRC sobre os mapas de segmentação, aplica limiar 0,5 para F1, separa F1 strong/weak por intensidade da pluma e classifica um tile como positivo quando há mais de 10 pixels previstos. O FPR é calculado nos tiles sem pluma. Essas definições correspondem ao pipeline deste benchmark. O conjunto local contém 342 imagens `test`; o paper descreve resultados no conjunto AVIRIS de teste. Portanto, a comparação do HyperSTARCOP é metodologicamente alinhada, não uma comparação entre tarefas ou métricas diferentes.
+O artigo define AUPRC sobre os mapas de segmentação, aplica limiar 0,5 para F1 e separa F1 strong/weak por intensidade da pluma. No código oficial, a classificação de tile exige mais de 10 pixels por 64×64, equivalentes a 640 por 512×512. Os FPRs por tile dos CSVs locais desta página usaram o limiar incorreto de 10 por 512×512; por isso, o FPR publicado não pode ser comparado diretamente com eles.
 
 | Métrica | Este benchmark: `hyperstarcop` | Paper: HyperSTARCOP mag1c + RGB | Diferença local − paper |
 |---|---:|---:|---:|
 | F1 strong | 83,08% | 81,96% ± 3,71 p.p. | +1,12 p.p. |
 | F1 weak | 53,72% | 43,42% ± 5,72 p.p. | +10,30 p.p. |
-| FPR por tile sem pluma | 41,48% | 43,66% ± 7,36 p.p. (Tabela 2); 43,79% (Figura 7) | −2,18 p.p. vs. Tabela 2 |
+| FPR por tile sem pluma | 41,48% (limiar antigo) | 43,66% ± 7,36 p.p. (Tabela 2); 43,79% (Figura 7) | n/d: limiares diferentes |
 | AUPRC | 50,61% | 51,99% ± 2,76 p.p. | −1,38 p.p. |
 
-O paper apresenta a média e o desvio padrão de cinco treinos; o CSV local registra uma execução. Assim, a diferença é esperada e não invalida a comparabilidade do protocolo. O resultado local de F1 weak fica acima da média publicada por 10,30 pontos percentuais, ponto que merece ser registrado como variação entre execuções/checkpoints. FPS é uma medição adicional deste benchmark e não é reportado pelo paper.
+O artigo apresenta a média e o desvio padrão de cinco treinos; o CSV local registra uma execução. O resultado local de F1 weak fica acima da média publicada por 10,30 pontos percentuais. FPS é uma medição adicional deste benchmark e não é reportado pelo artigo.
 
-`FPR tile (todos/342)` não é a mesma taxa: divide o número de falsos alarmes pelo total de tiles. Para comparar com o FPR do paper, use `FPR tile (sem pluma)`.
+`FPR tile (todos/342)` divide o número de falsos alarmes pelo total de tiles. Para comparar com o artigo, use o FPR entre tiles sem pluma **recalculado com limiar de 640 pixels**.
 
 
 ### Demais métricas de qualidade
@@ -97,7 +99,7 @@ O paper apresenta a média e o desvio padrão de cinco treinos; o CSV local regi
 
 - **Maior FPS:** `mobilenet_v3` (18,618 model-only; 13,221 E2E), com F1 global 0,5261 e AUPRC 0,5083.
 - **Maior F1 global e AUPRC:** `mobilenet_v2` (0,6017 e 0,5824), com 7,844 FPS model-only e 6,618 FPS E2E.
-- **Menor FPR por tile entre tiles sem pluma:** `mobilenet_v3` (1,705%); `mobilenet_v2` registra 3,409%.
+- **Menor FPR por tile entre tiles sem pluma com o limiar antigo:** `mobilenet_v3` (1,705%); `mobilenet_v2` registra 3,409%.
 - **Maior F1 strong:** `hyperstarcop` (0,8308), mas sua execução é bem mais lenta que as variantes MobileNet: 5,637 FPS model-only.
 
 ## Avaliação e escolha por caso de uso
@@ -108,7 +110,7 @@ Não há um modelo que lidere simultaneamente em qualidade, velocidade e falsos 
 |---|---|---|
 | Equilíbrio de qualidade geral | **MobileNetV2** | Maior F1 global (**0,6017**) e AUPRC (**0,5824**), além do maior F1 weak (**0,5765**). Entrega **6,618 FPS E2E**. |
 | Velocidade e menos falsos alarmes em tiles sem pluma | **MobileNetV3** | Mais rápido (**13,221 FPS E2E**), menor FPR entre tiles sem pluma (**1,705%**) e maior precision (**0,7888**). F1 global e AUPRC ficam abaixo do MobileNetV2. |
-| Detectar plumas fortes, aceitando mais falsos alarmes | **HyperSTARCOP** | Maior F1 strong (**0,8308**) e recall (**0,8304**), mas tem FPR por tile de **41,477%** e **5,010 FPS E2E**. Adequado quando perder uma pluma forte custa mais do que revisar alarmes falsos. |
+| Detectar plumas fortes, aceitando mais falsos alarmes | **HyperSTARCOP** | Maior F1 strong (**0,8308**) e recall (**0,8304**), FPR por tile histórico de **41,477%** com o limiar antigo e **5,010 FPS E2E**. |
 | Boa qualidade com latência mais baixa que os modelos tradicionais | **MobileNetV2** | Entre os modelos rápidos, combina recall (**0,5860**), F1 weak (**0,5765**) e o melhor AUPRC. É mais lento que MobileNetV3. |
 
 ### Recomendação padrão

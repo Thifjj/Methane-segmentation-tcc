@@ -164,6 +164,20 @@ FPS = 1000 / latência média em milissegundos
 Esse FPS representa a execução sequencial de uma imagem por vez. Ele não é
 throughput com várias inferências concorrentes.
 
+### Potência e energia
+
+O benchmark lê o contador RAPL do pacote CPU e, quando usa CUDA, o contador
+acumulado de energia da GPU via NVML. Para `model_only` e `end_to_end`, o CSV
+registra a fonte (`energia_fontes`), número de imagens medidas, energia total
+(J), energia por inferência (J) e potência média (W). Mínimo e máximo de
+potência são as médias de cada imagem, não amostras instantâneas. O pacote CPU
+e a GPU são domínios separados; não representam a potência total da tomada.
+O E2E inclui leitura, pré-processamento e pós-processamento, mas exclui a
+validação das métricas. Se RAPL/NVML não existir, não permitir leitura ou não
+suportar contador de energia, a fonte fica ausente do CSV; `energia_fontes`
+mostra `indisponivel` quando nenhuma fonte pôde ser medida. Os CSVs antigos
+não ganham esses valores retroativamente.
+
 ## Métricas de qualidade
 
 As contagens são acumuladas por pixel sobre todas as amostras do grupo antes
@@ -210,6 +224,7 @@ O CSV contém uma linha com:
 - médias de carregamento, pré-processamento e pós-processamento;
 - precision, recall, `f1_global`, `f1_strong_plume`, `f1_weak_plume`, IoU e FPR;
 - TP, FP, FN e TN globais.
+- potência e energia de CPU/GPU, quando os contadores estiverem disponíveis.
 
 O nome identifica dataset, dispositivo e modelo, com precisão de um minuto.
 Duas execuções da mesma combinação iniciadas no mesmo minuto usam o mesmo

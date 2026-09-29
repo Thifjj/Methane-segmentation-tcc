@@ -8,6 +8,7 @@ import csv
 import ctypes
 import re
 from datetime import datetime
+from pathlib import Path
 from sklearn.metrics import precision_recall_curve, auc
 
 from .model_loader import load_model
@@ -32,56 +33,117 @@ WARMUP = 10
 
 
 class MedidorEnergia:
-    """Lê os contadores RAPL de pacote e núcleos via perf_event_open."""
-    def __init__(self):
-        self.fd = {}
-        self.scale = {}
-        self.libc = ctypes.CDLL(None, use_errno=True)
-        self.nr_perf_event_open = 298  # Linux x86_64
-        self.attr = (ctypes.c_ubyte * 128)()
-        ctypes.c_uint32.from_buffer(self.attr, 4).value = 128
-        ctypes.c_uint64.from_buffer(self.attr, 40).value = 1  # disabled
-        for evento in ("energy-pkg", "energy-core"):
-            base = f"/sys/bus/event_source/devices/power/events/{evento}"
+    """Energia do pacote CPU (RAPL) e, em CUDA, da GPU (NVML)."""
+    def __init__(self, dispositivo):
+        self.fontes = {}
+        self.nvml = None
+        self.fds = []
+        for zona in Path("/sys/class/powercap").glob("*-rapl:*"):
+            if zona.name.count(":") != 1:
+                continue  # Subzonas de núcleos já estão incluídas no pacote.
             try:
-                with open(base) as arquivo:
-                    correspondencia = re.search(r"event=(0x[0-9a-fA-F]+|[0-9]+)", arquivo.read())
-                if correspondencia is None:
+                if not (zona / "name").read_text().strip().startswith("package-"):
                     continue
-                with open("/sys/bus/event_source/devices/power/type") as arquivo:
-                    tipo = int(arquivo.read())
-                with open(f"/sys/bus/event_source/devices/power/events/{evento}.scale") as arquivo:
-                    escala = float(arquivo.read())
-                ctypes.c_uint32.from_buffer(self.attr, 0).value = tipo
-                ctypes.c_uint64.from_buffer(self.attr, 8).value = int(correspondencia.group(1), 0)
-                fd = self.libc.syscall(self.nr_perf_event_open, ctypes.byref(self.attr), -1, 0, -1, 0)
-                if fd >= 0:
-                    self.libc.ioctl(fd, 0x2400, 0)  # PERF_EVENT_IOC_RESET
-                    self.libc.ioctl(fd, 0x2401, 0)  # PERF_EVENT_IOC_ENABLE
-                    self.fd[evento] = fd
-                    self.scale[evento] = escala
-            except (OSError, AttributeError):
+                limite = int((zona / "max_energy_range_uj").read_text())
+                int((zona / "energy_uj").read_text())
+                self.fontes[f"cpu_{zona.name}"] = (
+                    lambda z=zona: int((z / "energy_uj").read_text()), 1e-6, limite
+                )
+            except (OSError, ValueError):
                 pass
+
+        if not any(nome.startswith("cpu_") for nome in self.fontes):
+            self._abrir_rapl_perf()
+        if dispositivo.type == "cuda":
+            self._abrir_nvml()
+
+    def _abrir_rapl_perf(self):
+        """Alternativa quando o RAPL do sysfs não é legível."""
+        try:
+            evento = Path("/sys/bus/event_source/devices/power/events/energy-pkg")
+            codigo = re.search(r"event=(0x[0-9a-fA-F]+|[0-9]+)", evento.read_text())
+            if codigo is None:
+                return
+            tipo = int(Path("/sys/bus/event_source/devices/power/type").read_text())
+            escala = float(Path(f"{evento}.scale").read_text())
+            attr = (ctypes.c_ubyte * 128)()
+            ctypes.c_uint32.from_buffer(attr, 0).value = tipo
+            ctypes.c_uint32.from_buffer(attr, 4).value = 128
+            ctypes.c_uint64.from_buffer(attr, 8).value = int(codigo.group(1), 0)
+            libc = ctypes.CDLL(None, use_errno=True)
+            fd = libc.syscall(298, ctypes.byref(attr), -1, 0, -1, 0)  # x86_64
+            if fd < 0:
+                return
+            self.fds.append(fd)
+            self.fontes["cpu_rapl_pkg"] = (
+                lambda f=fd: self._ler_perf(f), escala, None
+            )
+        except (OSError, ValueError, AttributeError):
+            pass
+
+    @staticmethod
+    def _ler_perf(fd):
+        dados = os.read(fd, 8)
+        if len(dados) != 8:
+            raise OSError("Leitura incompleta do contador RAPL")
+        return int.from_bytes(dados, "little")
+
+    def _abrir_nvml(self):
+        try:
+            nvml = ctypes.CDLL("libnvidia-ml.so.1")
+            nvml.nvmlInit_v2.restype = ctypes.c_int
+            if nvml.nvmlInit_v2() != 0:
+                return
+            self.nvml = nvml
+            nvml.nvmlDeviceGetHandleByIndex_v2.argtypes = [
+                ctypes.c_uint, ctypes.POINTER(ctypes.c_void_p)
+            ]
+            nvml.nvmlDeviceGetTotalEnergyConsumption.argtypes = [
+                ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulonglong)
+            ]
+            indice = torch.cuda._get_nvml_device_index(0)
+            gpu = ctypes.c_void_p()
+            if nvml.nvmlDeviceGetHandleByIndex_v2(indice, ctypes.byref(gpu)) != 0:
+                return
+
+            def ler_gpu():
+                energia = ctypes.c_ulonglong()
+                if nvml.nvmlDeviceGetTotalEnergyConsumption(gpu, ctypes.byref(energia)) != 0:
+                    raise OSError("Contador de energia NVML indisponível")
+                return energia.value
+
+            ler_gpu()
+            self.fontes["gpu_nvml"] = (ler_gpu, 1e-3, None)
+        except (OSError, AttributeError, RuntimeError):
+            pass
 
     def ler(self):
         valores = {}
-        for evento, fd in self.fd.items():
-            bruto = ctypes.c_uint64()
-            if self.libc.read(fd, ctypes.byref(bruto), ctypes.sizeof(bruto)) == ctypes.sizeof(bruto):
-                valores[evento] = bruto.value * self.scale[evento]
-        return valores
+        for nome, (ler, _, _) in self.fontes.items():
+            try:
+                valores[nome] = ler()
+            except (OSError, ValueError):
+                pass
+        return time.perf_counter(), valores
 
     def fechar(self):
-        for fd in self.fd.values():
+        for fd in self.fds:
             os.close(fd)
+        if self.nvml is not None:
+            self.nvml.nvmlShutdown()
 
 
-def medir_energia(medidor, antes, depois, duracao):
+def medir_energia(medidor, antes, depois):
     medidas = {}
-    for evento in antes.keys() & depois.keys():
-        joules = depois[evento] - antes[evento]
-        if joules >= 0:
-            medidas[evento] = (joules, joules / duracao if duracao else 0)
+    duracao = depois[0] - antes[0]
+    for nome in antes[1].keys() & depois[1].keys():
+        _, escala, limite = medidor.fontes[nome]
+        diferenca = depois[1][nome] - antes[1][nome]
+        if diferenca < 0 and limite is not None:
+            diferenca += limite  # RAPL volta a zero após max_energy_range_uj.
+        if diferenca >= 0 and duracao > 0:
+            joules = diferenca * escala
+            medidas[nome] = (joules, joules / duracao, duracao)
     return medidas
 
 parser = argparse.ArgumentParser(description="Benchmark manual geral de inferência")
@@ -169,8 +231,13 @@ with torch.inference_mode():
 if device.type == "cuda":
     torch.cuda.synchronize()
 
-medidor_energia = MedidorEnergia()
-energia_por_evento = {evento: [] for evento in medidor_energia.fd}
+medidor_energia = MedidorEnergia(device)
+energia_por_modo = {
+    modo: {fonte: [] for fonte in medidor_energia.fontes}
+    for modo in ("model_only", "end_to_end")
+}
+if not medidor_energia.fontes:
+    print("Energia indisponível: sem acesso ao RAPL ou ao contador NVML.")
 tempos_model = []
 tempos_e2e = []
 tempos_preprocess = []
@@ -193,6 +260,7 @@ contagens_grupo = {
 
 with torch.inference_mode():
     for pasta in tqdm(amostras, desc="Benchmark"):
+        energia_e2e_antes = medidor_energia.ler()
         inicio_e2e = time.perf_counter()
 
         inicio_carregamento = time.perf_counter()
@@ -207,19 +275,19 @@ with torch.inference_mode():
 
         if device.type == "cuda":
             torch.cuda.synchronize()
+        energia_model_antes = medidor_energia.ler()
         inicio_model = time.perf_counter()
-        energia_antes = medidor_energia.ler()
 
         saida = model(entrada)
         if device.type == "cuda":
             torch.cuda.synchronize()
 
         fim_model = time.perf_counter()
-        energia_depois = medidor_energia.ler()
+        energia_model_depois = medidor_energia.ler()
         for evento, medida in medir_energia(
-            medidor_energia, energia_antes, energia_depois, fim_model - inicio_model
+            medidor_energia, energia_model_antes, energia_model_depois
         ).items():
-            energia_por_evento[evento].append(medida)
+            energia_por_modo["model_only"][evento].append(medida)
 
         inicio_posprocess = time.perf_counter()
         
@@ -231,6 +299,11 @@ with torch.inference_mode():
         fim_posprocess = time.perf_counter()
 
         fim_e2e = time.perf_counter()
+        energia_e2e_depois = medidor_energia.ler()
+        for evento, medida in medir_energia(
+            medidor_energia, energia_e2e_antes, energia_e2e_depois
+        ).items():
+            energia_por_modo["end_to_end"][evento].append(medida)
         
         label = carregar_label(pasta)
 
@@ -264,7 +337,7 @@ with torch.inference_mode():
 
             pixels_preditos = mascara.sum().item()
 
-            pred_tile_tem_pluma = pixels_preditos > 10
+            pred_tile_tem_pluma = pixels_preditos > 10 * mascara.numel() / (64 ** 2)
 
             if pred_tile_tem_pluma:
                 fp_tiles += 1
@@ -317,21 +390,23 @@ fpr = fp_total / (fp_total + tn_total)
 media_e2e = np.mean(tempos_e2e)
 
 medidor_energia.fechar()
-for evento, medidas in energia_por_evento.items():
-    if medidas:
-        energias = [medida[0] for medida in medidas]
-        potencias = [medida[1] for medida in medidas]
-        print(f"\n===== ENERGIA {evento} =====")
-        print(f"Energia por inferência (J) — média: {np.mean(energias):.6f}, mínimo: {np.min(energias):.6f}, máximo: {np.max(energias):.6f}")
-        print(f"Potência durante inferência (W) — média: {np.mean(potencias):.3f}, mínimo: {np.min(potencias):.3f}, máximo: {np.max(potencias):.3f}")
-    else:
-        print(f"\nEnergia {evento}: contador indisponível para este processo.")
+for modo, fontes in energia_por_modo.items():
+    for fonte, medidas in fontes.items():
+        if medidas:
+            energia_total = sum(medida[0] for medida in medidas)
+            tempo_medido = sum(medida[2] for medida in medidas)
+            print(f"\n===== ENERGIA {modo} / {fonte} =====")
+            print(f"Energia total: {energia_total:.6f} J")
+            print(f"Energia por inferência: {energia_total / len(medidas):.6f} J")
+            print(f"Potência média: {energia_total / tempo_medido:.3f} W")
+        else:
+            print(f"Energia {modo} / {fonte}: contador indisponível.")
 
 print("\n===== MÉTRICAS ARTIGO STARCOP =====")
 print(f"F1 strong: {f1_strong_plume:.4f}")
 print(f"F1 weak:   {f1_weak_plume:.4f}")
 print(f"FPR tile:  {fpr_tile:.4f} ({fpr_tile * 100:.2f}%)")
-print(f"FPR tile (Tabela 2): {fpr_tile_tabela:.4f} ({fpr_tile_tabela * 100:.2f}%)")
+print(f"FP tiles / total de imagens: {fpr_tile_tabela:.4f} ({fpr_tile_tabela * 100:.2f}%)")
 print(f"AUPRC:     {auprc:.4f} ({auprc * 100:.2f}%)")
 print(f"FP tiles:  {fp_tiles}")
 print(f"TN tiles:  {tn_tiles}")
@@ -407,7 +482,7 @@ print(f"Posprocess:   {np.mean(tempos_posprocess):.3f} ms "
 
 data_hora = datetime.now().strftime("%Y%m%d_%H%M")
 
-ARQUIVO_RESULTADOS = f"benchmark_manual/resultado_{args.dataset}_{args.device}_{args.modelo}_{data_hora}.csv"
+ARQUIVO_RESULTADOS = Path(__file__).resolve().parent / f"resultado_{args.dataset}_{args.device}_{args.modelo}_{data_hora}.csv"
 
 resultado = {
     "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -450,15 +525,20 @@ resultado = {
     "fn": fn_total,
     "tn": tn_total
 }
-for evento, medidas in energia_por_evento.items():
-    if medidas:
+resultado["energia_fontes"] = ",".join(medidor_energia.fontes) or "indisponivel"
+for modo, fontes in energia_por_modo.items():
+    for fonte, medidas in fontes.items():
+        if not medidas:
+            continue
+        energia_total = sum(medida[0] for medida in medidas)
+        tempo_medido = sum(medida[2] for medida in medidas)
         resultado.update({
-            f"{evento}_energia_media_j": np.mean([medida[0] for medida in medidas]),
-            f"{evento}_energia_min_j": np.min([medida[0] for medida in medidas]),
-            f"{evento}_energia_max_j": np.max([medida[0] for medida in medidas]),
-            f"{evento}_potencia_media_w": np.mean([medida[1] for medida in medidas]),
-            f"{evento}_potencia_min_w": np.min([medida[1] for medida in medidas]),
-            f"{evento}_potencia_max_w": np.max([medida[1] for medida in medidas]),
+            f"{modo}_{fonte}_amostras": len(medidas),
+            f"{modo}_{fonte}_energia_total_j": energia_total,
+            f"{modo}_{fonte}_energia_por_inferencia_j": energia_total / len(medidas),
+            f"{modo}_{fonte}_potencia_media_w": energia_total / tempo_medido,
+            f"{modo}_{fonte}_potencia_min_w": min(medida[1] for medida in medidas),
+            f"{modo}_{fonte}_potencia_max_w": max(medida[1] for medida in medidas),
         })
 with open(ARQUIVO_RESULTADOS, "w", newline="") as arquivo:
     escritor = csv.DictWriter(

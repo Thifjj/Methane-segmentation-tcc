@@ -11,6 +11,10 @@ _EXPORTS = {
     "UNetElementWise": (".UNet_SkipConnections", "UNetElementWise"),
     "HyperSTARCOPOficial": (".HyperStarcop_oficial", "HyperSTARCOPOficial"),
     "carregar_hyperstarcop": (".HyperStarcop_oficial", "carregar_hyperstarcop"),
+    "UNetAttentionGates": (".UNet_AttentionGates", "UNetAttentionGates"),
+    "UNetPSA": (".UNet_PSA", "UNetPSA"),
+    "UNetResNet34": (".UNet_ResNet34", "UNetResNet34"),
+    "SegFormerB0": (".UNet_SegFormer", "SegFormerB0"),
 }
 
 __all__ = list(_EXPORTS)
