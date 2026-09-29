@@ -63,11 +63,12 @@ def carregar_dataframe_starcop(
     return df
 
 class STARCOPDataset(Dataset):
-    def __init__(self, dataframe, input_products, output_products, weight_loss=None):
+    def __init__(self, dataframe, input_products, output_products, weight_loss=None, patching=False):
         self.dataframe = dataframe
         self.input_products = input_products
         self.output_products = output_products
         self.weight_loss = weight_loss
+        self.patching = patching
 
     def __len__(self):
         return self.dataframe.shape[0]
@@ -101,6 +102,15 @@ class STARCOPDataset(Dataset):
                 out_dict[io_name] = torch.cat(tensors, dim=0).float()
             elif len(tensors) == 1:
                 out_dict[io_name] = tensors[0].float()
+
+            if self.patching:
+                tensor = out_dict[io_name]
+                _, height, width = tensor.shape
+                out_dict[io_name] = torch.stack([
+                    tensor[:, y:y + 128, x:x + 128]
+                    for y in range(0, height - 128 + 1, 64)
+                    for x in range(0, width - 128 + 1, 64)
+                ])
 
         return out_dict
 

@@ -23,7 +23,7 @@ def ler_tif_para_plot(pasta, window, banda, div=1.0):
         img = src.read(1, window=window)
     return np.clip(img / div, 0, 1)
 
-def salvar_log_csv(nome_modelo, f1_global, f1_strong, f1_weak, iou, auprc, fpr_no_plume, device, num_parametros, tamanho_mb, inferencia_ms):
+def salvar_log_csv(nome_modelo, f1_global, f1_strong, f1_weak, iou, auprc, fpr_no_plume, device, num_parametros, tamanho_mb, inferencia_ms, vram_pico_mb):
     nome_arquivo = "Resultados_testes/historico_testes.csv"
     os.makedirs(os.path.dirname(nome_arquivo), exist_ok=True)
     
@@ -33,6 +33,7 @@ def salvar_log_csv(nome_modelo, f1_global, f1_strong, f1_weak, iou, auprc, fpr_n
         "Parametros": num_parametros,
         "Tamanho (MB)": round(tamanho_mb, 2),
         "Inferencia (ms/img)": round(inferencia_ms, 2),
+        "VRAM Pico (MB)": round(vram_pico_mb, 2),
         "F1-Global": round(f1_global, 4),
         "F1-Strong": round(f1_strong, 4),
         "F1-Weak": round(f1_weak, 4),
@@ -53,7 +54,7 @@ def salvar_log_csv(nome_modelo, f1_global, f1_strong, f1_weak, iou, auprc, fpr_n
     else:
         df = pd.DataFrame([novo_registro])
         
-    colunas_ordem = ["Teste #", "Nome do Modelo", "Device", "Parametros", "Tamanho (MB)", "Inferencia (ms/img)", "F1-Global", "F1-Strong", "F1-Weak", "IoU", "AUPRC", "FPR (No-Plume)"]
+    colunas_ordem = ["Teste #", "Nome do Modelo", "Device", "Parametros", "Tamanho (MB)", "Inferencia (ms/img)", "VRAM Pico (MB)", "F1-Global", "F1-Strong", "F1-Weak", "IoU", "AUPRC", "FPR (No-Plume)"]
     df = df[colunas_ordem]
     
     df.to_csv(nome_arquivo, index=False)
@@ -100,6 +101,8 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
         dummy_input = torch.randn(1, len(produtos_entrada), 512, 512).to(device_obj)
         for _ in range(10): _ = modelo(dummy_input)
         torch.cuda.synchronize()
+        del dummy_input
+        torch.cuda.reset_peak_memory_stats()
 
     with torch.no_grad():
         for i, batch in enumerate(tqdm(dataloader, desc="Calculando Métricas e Latência")):
@@ -188,11 +191,13 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     auprc = average_precision_score(todos_gabaritos, todas_probabilidades)
     
     latencia_media_ms = (tempo_total_inferencia / len(dataloader)) * 1000
+    vram_pico_mb = torch.cuda.max_memory_allocated() / (1024 * 1024) if device_name == "CUDA" else 0.0
 
     print(f" Modelo:           {nome_modelo_salvo}")
     print(f" Total Parâmetros: {total_parametros:,}")
     print(f" Tamanho Arquivo:  {tamanho_arquivo_mb:.2f} MB")
     print(f" Latência Média:   {latencia_media_ms:.2f} ms por imagem ({device_name})")
+    print(f" VRAM Pico:        {vram_pico_mb:.2f} MB")
     print(f" F1-Global:        {f1_global:.4f}")
     print(f" F1-Strong:        {f1_strong:.4f} (Emissão >= 1000 kg/h ou > 1000 px)")
     print(f" F1-Weak:          {f1_weak:.4f} (Emissão < 1000 kg/h e <= 1000 px)")
@@ -200,7 +205,7 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     print(f" AUPRC:            {auprc:.4f}")
     print(f" FPR (No-Plume):   {fpr_no_plume:.6f}")
 
-    salvar_log_csv(nome_modelo_salvo, f1_global, f1_strong, f1_weak, iou_global, auprc, fpr_no_plume, device_name, total_parametros, tamanho_arquivo_mb, latencia_media_ms)
+    salvar_log_csv(nome_modelo_salvo, f1_global, f1_strong, f1_weak, iou_global, auprc, fpr_no_plume, device_name, total_parametros, tamanho_arquivo_mb, latencia_media_ms, vram_pico_mb)
 
 if __name__ == "__main__":
 
