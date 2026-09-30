@@ -1,0 +1,188 @@
+REVISÃO DAS ARQUITETURAS PARA VITIS AI / ZCU104
+Data: 30/09/2026
+
+ESCOPO E EVIDÊNCIAS
+==================
+Alvo do projeto: Vitis AI 3.5, DPUCZDX8G_ISA1_B4096 (ZCU104).
+Foram revisados os 11 arquivos de arquitetura de Modelos/, as dependências
+Torchvision/SMP e os relatórios do Inspector já presentes no repositório.
+Não foi executada uma nova quantização, inspeção ou compilação nesta revisão.
+
+CONFIRMADO: há relatório local do Inspector com atribuição DPU/CPU.
+INFERIDO: o código atual contém a mesma configuração rejeitada em outro modelo.
+A VERIFICAR: risco identificado por análise do código/documentação; falta
+inspeção desta arquitetura no alvo. Não significa falha comprovada.
+
+Os relatórios locais correspondem a grafos anteriores com entrada
+[1, 4, 512, 512]. Não garantem o resultado de outras versões de dependências,
+shapes, checkpoints, configurações da DPU ou alterações de arquitetura.
+Um XModel compilado pode conter partes CPU; compilar não prova execução
+integral na DPU. Essas partes precisam de suporte no runner da placa.
+
+RESULTADO POR MODELO
+===================
+
+1. UNet_baseline.py / UNetBaseline
+   Situação: sem incompatibilidade de operadores no Inspector existente.
+   Evidência: inspect/baseline/inspect_DPUCZDX8G_ISA1_B4096.txt.
+   ConvTranspose2d up1..up4 (kernel=2, stride=2), MaxPool2d, convoluções,
+   ReLU e concatenações foram atribuídos à DPU.
+   Atenção: o modelo e seus mapas intermediários são grandes; isso afeta
+   memória/desempenho, mas não é incompatibilidade comprovada de camada.
+
+2. UNet_depth_reduced.py / UNetDepthReduced
+   Situação: sem incompatibilidade no Inspector existente.
+   Evidência: inspect/depth_reduced/inspect_DPUCZDX8G_ISA1_B4096.txt.
+   As duas ConvTranspose2d e concatenações foram atribuídas à DPU.
+
+3. UNet_SkipConnections.py / UNetElementWise
+   Situação: sem incompatibilidade no Inspector existente.
+   Evidência: inspect/skip_connections/inspect_DPUCZDX8G_ISA1_B4096.txt.
+   As duas ConvTranspose2d e as somas elemento a elemento foram aceitas.
+   Não utiliza upsampling bilinear com align_corners=True.
+
+4. UNet_MobileNet_v2.py / UNetMobileNetV2
+   Situação: incompatibilidade CONFIRMADA para execução integral na DPU.
+   Local: linhas 58, 63, 68, 73 e 78; up1..up4 e up_final.
+   Operação: Upsample(scale_factor=2, mode='bilinear', align_corners=True).
+   Inspector: os CINCO resize foram atribuídos à CPU por align_corners=True.
+   Evidência: inspect/mobilenet_v2/inspect_DPUCZDX8G_ISA1_B4096.txt.
+   Depthwise convolutions, ReLU6 e somas do encoder não foram o problema:
+   os respectivos operadores foram atribuídos à DPU no relatório existente.
+   Possível adaptação: bilinear com align_corners=False ou nearest, seguida
+   de nova inspeção e avaliação da qualidade.
+
+5. UNet_MobileNet_v3.py / UNetMobileNetV3
+   Situação: incompatibilidade CONFIRMADA para execução integral na DPU.
+   Local: linhas 57, 62, 67, 72 e 77; up1..up4 e up_final.
+   Mesmo problema de bilinear + align_corners=True; CINCO resize na CPU.
+   Evidência: inspect/mobilenet_v3/inspect_DPUCZDX8G_ISA1_B4096.txt.
+   Hardswish, Hardsigmoid, pooling dos blocos Squeeze-and-Excitation,
+   multiplicações e depthwise convolutions foram atribuídos à DPU.
+   Não confundir Hardsigmoid do MobileNetV3 com Sigmoid comum dos gates.
+   Possível adaptação: rever os cinco upsamplings, como no MobileNetV2.
+
+6. UNet_MobileNetV3_AttentionGates.py / UNetMobileNetV3AttentionGates
+   Situação atual: resize alterados pelo usuário; riscos adicionais nos gates.
+   Local: linhas 96, 100, 104, 108 e 112; up1..up4 e up_final.
+   Os cinco agora usam bilinear + align_corners=False. A configuração anterior
+   era a mesma rejeitada pelo Inspector nos modelos 4 e 5. A mudança remove
+   esse motivo de rejeição, mas falta inspeção desta arquitetura atualizada.
+   Gates ag1..ag4: psi usa nn.Sigmoid() (linha 41), e forward faz x * attn.
+   A VERIFICAR: suporte/conversão do Sigmoid e da multiplicação com broadcast
+   de [B,1,H,W] para [B,C,H,W]. Não assumir que todo broadcast é incompatível.
+   Possível adaptação: rever resize e avaliar Hardsigmoid nos gates, somente
+   após medir a mudança de comportamento e inspecionar o novo grafo.
+
+7. UNet_ResNet34.py / UNetResNet34
+   Situação: incompatibilidade INFERIDA no upsampling final.
+   Local: linhas 73..77; up_final é bilinear 2x com align_corners=True.
+   As quatro ConvTranspose2d têm kernel=2/stride=2, configuração aceita em
+   outros modelos do projeto; isso ainda não substitui inspeção do ResNet34.
+   As somas residuais e convoluções do encoder não são incompatibilidades
+   evidentes por si só. Falta relatório desta arquitetura no alvo.
+   Possível adaptação: rever up_final e executar Inspector.
+
+8. UNet_AttentionGates.py / UNetAttentionGates
+   Situação: A VERIFICAR; não há relatório local desta arquitetura.
+   Local: AttentionGate.psi, linha 40 (nn.Sigmoid), e forward, linha 49
+   (x * attn com broadcast de um canal para vários canais).
+   Sigmoid comum não está entre as ativações nativas listadas para o alvo
+   na tabela consultada; pode exigir conversão/aproximação ou parte CPU.
+   É necessário verificar o grafo produzido pelo quantizador, pois ele
+   pode transformar a operação. A saída do gate é usada dentro da rede;
+   não basta mover esse Sigmoid para o pós-processamento final.
+   ConvTranspose2d kernel=2/stride=2 não é o problema confirmado aqui.
+   Possível adaptação: avaliar Hardsigmoid e verificar o broadcast.
+
+9. UNet_PSA.py / UNetPSA
+   Situação: vários pontos A VERIFICAR; não há relatório local.
+   Local: PSA_Module.conv2/conv3/conv4, linhas 38, 41 e 44.
+   Conv2d com groups=2/4/8 e kernels 5/7/9: são convoluções agrupadas
+   intermediárias, diferentes de conv comum e de depthwise. A transformação
+   ou partição no alvo precisa ser comprovada pelo Inspector/compiler.
+   O kernel 9, isoladamente, não prova incompatibilidade.
+   Local: PSA_Module.gap (AdaptiveAvgPool2d(1), linha 49).
+   Para entrada 512x512, psa1 recebe mapa 512x512 antes do pooling global:
+   há risco de limites de pooling ou necessidade de decomposição. O pooling
+   pequeno dos blocos MobileNetV3 já aceito não garante este caso maior.
+   Local: PSA_Module.se, linhas 53..56: Linear + ReLU + Linear + Sigmoid.
+   Sigmoid comum requer verificação; Linear, por si só, não prova problema.
+   Local: forward, linhas 62..72: split, concat, view e feat * attn.
+   Verificar transformação dos shapes/layouts e broadcast espacial de
+   [B,C,1,1] sobre [B,C,H,W].
+   Possíveis adaptações: rever grupos, pooling e ativação conforme os erros
+   efetivamente reportados. Trocar a arquitetura exige validar os pesos.
+
+10. UNet_SegFormer.py / SegFormerB0
+    Situação: A VERIFICAR; não há relatório local desta arquitetura.
+    Local: MixFFN.act, linha 45: nn.GELU(), usado nos quatro stages.
+    GELU não aparece nas ativações nativas listadas para este alvo; verificar
+    se o quantizador aceita e como o compiler particiona o operador.
+    Local: forward, linhas 112..126: quatro interpolações bilineares com
+    align_corners=False. NÃO têm o problema align_corners=True das MobileNets.
+    Para 512x512, as escalas são 2x/4x/8x nos ramos e 4x na saída. Verificar
+    os parâmetros concretos de resize, shapes e transformação para a DPU;
+    align_corners=False sozinho não garante aprovação de todos os casos.
+    A arquitetura local é convolucional inspirada em SegFormer: não contém
+    self-attention, Softmax, LayerNorm ou produto de matrizes de tokens.
+    Não atribuir a ela incompatibilidades de um Transformer não implementado.
+    Possível adaptação: avaliar ReLU/ReLU6 em lugar de GELU e rever os resize
+    somente conforme o Inspector. Isso altera o comportamento aprendido.
+
+11. HyperStarcop_oficial.py / HyperSTARCOPOficial
+    Situação: sem incompatibilidade no Inspector existente.
+    Implementação: smp.Unet, encoder mobilenet_v2, quatro canais e um logit.
+    Evidência: inspect/hyperstarcop/inspect_DPUCZDX8G_ISA1_B4096.txt.
+    O grafo gerado HyperSTARCOPOficial.py usa CINCO resize nearest 2x;
+    todos foram atribuídos à DPU. Não usa os upsamplings bilineares com
+    align_corners=True das UNets MobileNet personalizadas deste projeto.
+    O wrapper delega o decoder ao segmentation_models_pytorch; conferir
+    novamente ao mudar a versão da biblioteca. Não trocar a configuração
+    do modelo oficial sem avaliar seu checkpoint e a qualidade resultante.
+
+IMPLICAÇÕES PARA UMA FUTURA ADAPTAÇÃO
+===================================
+- Maior evidência de aprovação local: baseline, depth_reduced,
+  skip_connections e HyperSTARCOP (nos grafos inspecionados).
+- Problema confirmado: MobileNetV2 e MobileNetV3, nos cinco resize de cada.
+- Mesma configuração problemática no código: ResNet34 (um resize final).
+  MobileNetV3AttentionGates teve seus cinco resize alterados para
+  align_corners=False pelo usuário; ainda precisa de nova inspeção.
+- Atenção adicional: Sigmoid/broadcast dos gates e PSA; GELU do SegFormer;
+  convoluções agrupadas e pooling global grande do PSA.
+- ConvTranspose2d, depthwise, Hardswish, Hardsigmoid, concat e somas NÃO
+  devem ser tratados automaticamente como incompatíveis: há aprovação local.
+- Alterar align_corners não muda a forma dos pesos, mas muda a interpolação
+  e as previsões. Reavaliar métricas e considerar ajuste fino; recalibrar
+  INT8 e recompilar. Trocar camadas com parâmetros pode invalidar checkpoint.
+- Os cinco modelos sem relatório (AttentionGates, MobileNetV3AttentionGates,
+  PSA, ResNet34, SegFormer) também não estão em MODEL_REGISTRY de
+  VitisAI/common.py. Precisam de cadastro antes de usar os scripts por nome.
+- A .venv de treinamento PyTorch/CUDA não substitui o container Vitis AI.
+  A loss e as augmentations do treinamento não integram o forward exportado.
+
+COMO CONFIRMAR NO ALVO
+=====================
+Dentro do container Vitis AI 3.5, em /workspace/VitisAI:
+  python inspect_model.py --model mobilenet_v2 \
+    --target DPUCZDX8G_ISA1_B4096 --output-dir build/vitis_ai/inspect
+Para os modelos ainda não cadastrados, registrar classe/checkpoint antes.
+Usar o arch.json do bitstream real para compilar e conferir os subgrafos
+CPU/DPU do XModel final; Inspector e compiler são etapas complementares.
+
+FONTES
+======
+Relatórios locais (caminhos relativos à raiz do projeto):
+  VitisAI/build/vitis_ai/inspect/<modelo>/inspect_DPUCZDX8G_ISA1_B4096.txt
+  <modelo>: baseline, depth_reduced, skip_connections, mobilenet_v2,
+            mobilenet_v3, hyperstarcop.
+Grafo HyperSTARCOP gerado:
+  VitisAI/build/vitis_ai/inspect/hyperstarcop/HyperSTARCOPOficial.py
+Fluxo e cadastro: VitisAI/README.md e VitisAI/common.py.
+Documentação oficial consultada para limites do alvo:
+  https://docs.amd.com/r/en-US/ug1414-vitis-ai/Currently-Supported-Operators
+  https://docs.amd.com/r/en-US/ug1414-vitis-ai/Supported-Operators-and-DPU-Limitations
+  https://xilinx.github.io/Vitis-AI/3.5/html/docs/reference/release_notes.html
+As notas de versão do compilador abrangem diferentes DPUs: novidades como
+group conv e broadcast não garantem suporte irrestrito na ZCU104.

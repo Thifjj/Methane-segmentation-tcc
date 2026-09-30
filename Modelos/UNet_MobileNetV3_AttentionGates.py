@@ -93,23 +93,23 @@ class UNetMobileNetV3AttentionGates(nn.Module):
 
         # 5. Caminho de Subida (Decoder)
         # Decoder 1: 16x16 -> 32x32
-        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         self.conv1 = DoubleConv(576 + 48, 96)
         
         # Decoder 2: 32x32 -> 64x64
-        self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         self.conv2 = DoubleConv(96 + 24, 48)
         
         # Decoder 3: 64x64 -> 128x128
-        self.up3 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up3 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         self.conv3 = DoubleConv(48 + 16, 24)
 
         # Decoder 4: 128x128 -> 256x256
-        self.up4 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up4 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         self.conv4 = DoubleConv(24 + 16, 16)
         
         # Decoder Final: 256x256 -> 512x512
-        self.up_final = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up_final = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         self.out_conv = nn.Sequential(
             nn.Conv2d(16, 16, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),

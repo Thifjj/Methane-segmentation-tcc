@@ -65,11 +65,9 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     device_name = device_obj.type.upper()
     print(f"\nIniciando Avaliação do modelo: {nome_modelo_salvo} ({device_name})")
 
-    CAMINHO_CSV_TESTE = "/media/jacques/hdd/Laboratorio/2_2026_lab/Projeto_pesquisaMetano/dataset_STARCOP/train.csv"
+    CAMINHO_CSV_TESTE = "/media/jacques/hdd/Laboratorio/2_2026_lab/Projeto_pesquisaMetano/dataset_STARCOP/train.csv" 
     DIRETORIO_DADOS_TESTE = "/media/jacques/hdd/Laboratorio/2_2026_lab/Projeto_pesquisaMetano/dataset_STARCOP"
-    #CAMINHO_CSV_TESTE = "/media/thifj/nvme2/Trabalhos_mes8/Projeto_joao_starcop/Methane-segmentation-tcc/STARCOP_mini/test_mini10.csv"
-    #DIRETORIO_DADOS_TESTE = "/media/thifj/nvme2/Trabalhos_mes8/Projeto_joao_starcop/Methane-segmentation-tcc/STARCOP_mini/"
-    
+
     df_test = carregar_dataframe_starcop(CAMINHO_CSV_TESTE, DIRETORIO_DADOS_TESTE)
     dataset_teste = STARCOPDataset(df_test, produtos_entrada, ["labelbinary"])
     dataloader = DataLoader(dataset_teste, batch_size=1, shuffle=False)
@@ -101,15 +99,17 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
         dummy_input = torch.randn(1, len(produtos_entrada), 512, 512).to(device_obj)
         for _ in range(10): _ = modelo(dummy_input)
         torch.cuda.synchronize()
-        del dummy_input
-        torch.cuda.reset_peak_memory_stats()
+        del dummy_input, _
+        torch.cuda.empty_cache()
+        torch.cuda.reset_peak_memory_stats(device_obj)
 
     with torch.no_grad():
         for i, batch in enumerate(tqdm(dataloader, desc="Calculando Métricas e Latência")):
             inputs = normalizador(batch["input"].to(device_obj))
             targets = batch["output"].to(device_obj)
 
-            if device_name == "CUDA": torch.cuda.synchronize()
+            if device_name == "CUDA": 
+                torch.cuda.synchronize()
             inicio = time.perf_counter()
             
             logits = modelo(inputs)
@@ -130,15 +130,13 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
             fn = ((1 - p_flat) * g_flat).sum().item()
             tn = ((1 - p_flat) * (1 - g_flat)).sum().item()
 
-            # Acumula totais gerais
             TP_tot += tp; FP_tot += fp; FN_tot += fn; TN_tot += tn
             
-            # Estratificação por Dificuldade (Forte vs Fraca vs No-Plume)
             g_sum = g_flat.sum().item()
             if g_sum > 0:
-                # É uma imagem com pluma. Verifica se é Forte ou Fraca
-                qplume = df_test.iloc[i].get('qplume', 0)
-                is_strong = (qplume >= 1000) or (g_sum > 1000)
+                dificuldade = df_test.iloc[i].get('difficulty', '')
+                
+                is_strong = (dificuldade == 'easy')
                 
                 if is_strong:
                     TP_str += tp; FP_str += fp; FN_str += fn
@@ -179,6 +177,8 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
                 plt.show()
 
     # Cálculos das Métricas
+    vram_pico_mb = ( torch.cuda.max_memory_allocated() / (1024 * 1024) if device_name == "CUDA" else 0.0 )
+    
     iou_global = TP_tot / (TP_tot + FP_tot + FN_tot + 1e-6)
     f1_global = 2 * TP_tot / (2 * TP_tot + FP_tot + FN_tot + 1e-6)
     
@@ -191,13 +191,12 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     auprc = average_precision_score(todos_gabaritos, todas_probabilidades)
     
     latencia_media_ms = (tempo_total_inferencia / len(dataloader)) * 1000
-    vram_pico_mb = torch.cuda.max_memory_allocated() / (1024 * 1024) if device_name == "CUDA" else 0.0
 
     print(f" Modelo:           {nome_modelo_salvo}")
     print(f" Total Parâmetros: {total_parametros:,}")
     print(f" Tamanho Arquivo:  {tamanho_arquivo_mb:.2f} MB")
     print(f" Latência Média:   {latencia_media_ms:.2f} ms por imagem ({device_name})")
-    print(f" VRAM Pico:        {vram_pico_mb:.2f} MB")
+    print(f" Pico de VRAM:     {vram_pico_mb:.2f} MB")
     print(f" F1-Global:        {f1_global:.4f}")
     print(f" F1-Strong:        {f1_strong:.4f} (Emissão >= 1000 kg/h ou > 1000 px)")
     print(f" F1-Weak:          {f1_weak:.4f} (Emissão < 1000 kg/h e <= 1000 px)")
@@ -208,5 +207,4 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     salvar_log_csv(nome_modelo_salvo, f1_global, f1_strong, f1_weak, iou_global, auprc, fpr_no_plume, device_name, total_parametros, tamanho_arquivo_mb, latencia_media_ms, vram_pico_mb)
 
 if __name__ == "__main__":
-
     print("Use as funções através do documento main.ipynb")
