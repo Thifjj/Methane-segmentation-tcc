@@ -54,27 +54,27 @@ class UNetMobileNetV3(nn.Module):
 
         # 4. Caminho de Subida (Decodificador de Upsampling Bilinear Estático)
         # Decoder 1: Reergue de 16x16 para 32x32
-        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         # 576 (do up) + 48 (skip connection do enc_stage3) = 624 canais de entrada
         self.conv1 = DoubleConv(576 + 48, 96)
         
         # Decoder 2: Reergue de 32x32 para 64x64
-        self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up2 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         # 96 (do up) + 24 (skip connection do enc_stage2) = 120 canais de entrada
         self.conv2 = DoubleConv(96 + 24, 48)
         
         # Decoder 3: Reergue de 64x64 para 128x128
-        self.up3 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up3 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         # 48 (do up) + 16 (skip connection do enc_stage1) = 64 canais de entrada
         self.conv3 = DoubleConv(48 + 16, 24)
 
         # Decoder 4: Reergue de 128x128 para 256x256
-        self.up4 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up4 = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         # 24 (do up) + 16 (skip connection do enc_stage0) = 40 canais de entrada
         self.conv4 = DoubleConv(24 + 16, 16)
         
         # Decoder Final: Reergue de 256x256 para a resolução original 512x512
-        self.up_final = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+        self.up_final = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=False)
         self.out_conv = nn.Sequential(
             nn.Conv2d(16, 16, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),

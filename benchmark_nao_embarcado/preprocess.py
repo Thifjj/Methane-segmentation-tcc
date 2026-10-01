@@ -1,24 +1,20 @@
 import torch
+from Utils.DataLoader import DataNormalizer
+from .dataset import CANAIS_ENTRADA
 
 
-def preprocess(canais):
-    mag1c = canais[0] / 1750.0
-    r = canais[1] / 60.0
-    g = canais[2] / 60.0
-    b = canais[3] / 60.0
+def recortar_patches(tensor):
+    # Mesmo tamanho, passo e ordem de STARCOPDataset(patching=True).
+    height, width = tensor.shape[-2:]
+    return torch.stack([
+        tensor[..., y:y + 128, x:x + 128]
+        for y in range(0, height - 128 + 1, 64)
+        for x in range(0, width - 128 + 1, 64)
+    ])
 
-    mag1c = torch.clamp(mag1c, 0, 2)
-    r = torch.clamp(r, 0, 2)
-    g = torch.clamp(g, 0, 2)
-    b = torch.clamp(b, 0, 2)
 
-    x = torch.stack([
-        mag1c,
-        r,
-        g,
-        b
-    ], dim=0)
-
-    x = x.unsqueeze(0)
-
-    return x
+def preprocess(canais, produtos=None, input_mode="full"):
+    produtos = tuple(produtos or CANAIS_ENTRADA)
+    x = torch.stack(canais, dim=0)
+    x = recortar_patches(x) if input_mode == "patches" else x.unsqueeze(0)
+    return DataNormalizer(produtos)(x)

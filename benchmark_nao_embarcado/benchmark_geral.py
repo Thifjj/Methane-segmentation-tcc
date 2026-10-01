@@ -9,23 +9,22 @@ import ctypes
 import re
 from datetime import datetime
 from pathlib import Path
-from sklearn.metrics import precision_recall_curve, auc
+from Utils.DataLoader import carregar_dataframe_starcop
 
-from .model_loader import load_model
+from .model_loader import load_model, MODEL_REGISTRY, modelos_disponiveis, produtos_modelo, caminho_checkpoint
 from .dataset import (
-    carregar_sample, encontrar_sample, carregar_label,
-    carregar_classificacao_por_pasta,
+    carregar_sample, carregar_label,
 )
-from .preprocess import preprocess
+from .preprocess import preprocess, recortar_patches
 from .postprocess import postprocess
-from .metricas import calcular_metricas, calcular_f1_contagens, classificar_pluma
+from .metricas import calcular_metricas, calcular_f1_contagens, classificar_pluma, calcular_auprc_imagem
 
 #MODEL_PATH = "/media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation/Modelos_treinados/Mobile_Net_v3_mag1c_rgb.pth"
 #DATASET_PATH = "/media/jacques/games/Datasets/STARCOP_train_remaining_all"
 DATASETS = {
-    "full": ("/home/thiago/Documents/STARCOP_DATASET", "train.csv"),
+    "full": ("/media/jacques/games/Datasets/STARCOP_train_remaining_all", "train.csv"),
     "test": (
-        "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test",
+        "/media/jacques/games/Datasets/test/STARCOP_test",
         "test.csv",
     ),
 }
@@ -148,86 +147,89 @@ def medir_energia(medidor, antes, depois):
 
 parser = argparse.ArgumentParser(description="Benchmark manual geral de inferência")
 
+parser.add_argument("--modelo", choices=tuple(MODEL_REGISTRY))
+parser.add_argument("--dataset", choices=("full", "test"))
+parser.add_argument("--device", choices=("cpu", "cuda", "gpu"))
+parser.add_argument("--quantidade", type=int)
+parser.add_argument("--input-mode", choices=("patches", "full"), default="patches")
+parser.add_argument("--checkpoint", help="Checkpoint alternativo, sem substituir os pesos padrão")
+parser.add_argument("--produtos", help="Produtos separados por vírgula, na ordem usada no treinamento")
+parser.add_argument("--data-root", help="Diretório alternativo do dataset")
+parser.add_argument("--csv-name", help="Nome do CSV dentro do diretório do dataset")
+parser.add_argument("--output", help="Caminho alternativo do CSV de resultados")
 args = parser.parse_args()
 
-modelos_disponiveis = (
-    "baseline", "depth_reduced", "mobilenet_v2", "mobilenet_v3", "skip",
-    "hyperstarcop",
-)
-print("Modelos disponíveis:")
-for indice, nome_modelo in enumerate(modelos_disponiveis, start=1):
-    print(f"{indice} - {nome_modelo}")
-while True:
-    escolha_modelo = input("Escolha o modelo: ").strip()
-    if escolha_modelo.isdigit() and 1 <= int(escolha_modelo) <= len(modelos_disponiveis):
-        break
-    print(f"Opção inválida. Digite um número de 1 a {len(modelos_disponiveis)}.")
-args.modelo = modelos_disponiveis[int(escolha_modelo) - 1]
-
-print("Datasets disponíveis:")
-print("1 - full")
-print("2 - test")
-while True:
-    escolha_dataset = input("Escolha o dataset [1/2]: ").strip()
-    if escolha_dataset in ("1", "2"):
-        break
-    print("Opção inválida. Digite 1 ou 2.")
-args.dataset = "full" if escolha_dataset == "1" else "test"
+if args.modelo is None:
+    disponiveis = modelos_disponiveis()
+    print("Modelos disponíveis com checkpoint:")
+    for indice, nome in enumerate(disponiveis, start=1):
+        print(f"{indice} - {nome}")
+    while True:
+        escolha = input("Escolha o modelo: ").strip()
+        if escolha.isdigit() and 1 <= int(escolha) <= len(disponiveis):
+            args.modelo = disponiveis[int(escolha) - 1]
+            break
+        print("Opção inválida.")
+if args.dataset is None:
+    print("Datasets: 1 - full; 2 - test")
+    while True:
+        escolha = input("Escolha o dataset [1/2]: ").strip()
+        if escolha in ("1", "2"):
+            args.dataset = "full" if escolha == "1" else "test"
+            break
 DATASET_PATH, CSV_DATASET = DATASETS[args.dataset]
-
-print("Dispositivos disponíveis:")
-print("1 - CPU")
-print("2 - GPU (CUDA)")
-while True:
-    escolha_device = input("Escolha o dispositivo [1/2]: ").strip()
-    if escolha_device in ("1", "2"):
-        break
-    print("Opção inválida. Digite 1 ou 2.")
-args.device = "cpu" if escolha_device == "1" else "gpu"
-
+DATASET_PATH = args.data_root or DATASET_PATH
+CSV_DATASET = args.csv_name or CSV_DATASET
+if args.device is None:
+    while True:
+        escolha = input("Dispositivo: 1 - CPU; 2 - CUDA [1/2]: ").strip()
+        if escolha in ("1", "2"):
+            args.device = "cpu" if escolha == "1" else "gpu"
+            break
+if args.device == "cuda":
+    args.device = "gpu"
 if args.device == "gpu" and not torch.cuda.is_available():
     raise RuntimeError("GPU solicitada, mas CUDA não está disponível")
-
 device = torch.device("cuda" if args.device == "gpu" else "cpu")
 if device.type == "cuda":
     print("GPU:", torch.cuda.get_device_name(0))
+produtos = tuple(p.strip() for p in args.produtos.split(",")) if args.produtos else produtos_modelo(args.modelo)
+print("Produtos na ordem:", produtos)
+print("Modo de entrada:", args.input_mode)
+print("Checkpoint:", caminho_checkpoint(args.modelo, args.checkpoint))
+model = load_model(args.modelo, device, checkpoint=args.checkpoint, produtos=produtos)
 
-model = load_model(args.modelo, device)
-
-amostras = encontrar_sample(DATASET_PATH, CSV_DATASET)
-classificacao_por_pasta = carregar_classificacao_por_pasta(DATASET_PATH, CSV_DATASET)
-
-print("Amostras encontradas:", len(amostras))
-print("Primeira amostra:", amostras[0])
-
-canais = carregar_sample(amostras[0])
-label = carregar_label(amostras[0])
-
-print("Shapes dos canais:")
-for canal in canais:
-    print(canal.shape)
-
-print("Shape label:", label.shape)
-
-quantidade = -1
-
-while quantidade < 0 or quantidade > len(amostras):
-    quantidade = int(
-        input(f"Quantas imagens deseja usar? (0 = todas, máximo {len(amostras)}): ")
-    )
-
-if quantidade > 0:
-    amostras = amostras[:quantidade]
+df = carregar_dataframe_starcop(
+    str(Path(DATASET_PATH) / CSV_DATASET), DATASET_PATH,
+    produtos_obrigatorios=list(produtos) + ["labelbinary"],
+)
+if df.empty:
+    raise RuntimeError("Nenhuma amostra válida encontrada")
+quantidade = args.quantidade
+if quantidade is None:
+    while True:
+        escolha = input(f"Quantas imagens? (0=todas, máximo {len(df)}): ").strip()
+        if escolha.isdigit() and int(escolha) <= len(df):
+            quantidade = int(escolha)
+            break
+if quantidade < 0 or quantidade > len(df):
+    raise ValueError(f"Quantidade deve estar entre 0 e {len(df)}")
+if quantidade:
+    df = df.iloc[:quantidade]
+amostras = list(df["folder"])
 
 print("Amostras usadas:", len(amostras))
 
 # WARMUP
-canais = carregar_sample(amostras[0])
-entrada = preprocess(canais).to(device)
+canais = carregar_sample(amostras[0], produtos, window=df.iloc[0]["window"])
+entrada = preprocess(canais, produtos, args.input_mode).to(device)
 
 with torch.inference_mode():
     for _ in range(WARMUP):
-        model(entrada)
+        saida_aquecimento = model(entrada)
+        torch.sigmoid(saida_aquecimento)
+        postprocess(saida_aquecimento)
+    del saida_aquecimento
 if device.type == "cuda":
     torch.cuda.synchronize()
 
@@ -251,24 +253,28 @@ tn_total = 0
 fp_tiles = 0
 tn_tiles = 0
 
-probabilidades_auprc = []
-labels_auprc = []
+auprc_por_imagem = []
+fp_no_plume = 0
+tn_no_plume = 0
+patches_por_imagem = entrada.shape[0]
 contagens_grupo = {
     "strong_plume": [0, 0, 0],
     "weak_plume": [0, 0, 0],
 }
 
 with torch.inference_mode():
-    for pasta in tqdm(amostras, desc="Benchmark"):
+    for indice, pasta in enumerate(tqdm(amostras, desc="Benchmark")):
+        row = df.iloc[indice]
+        window = row["window"]
         energia_e2e_antes = medidor_energia.ler()
         inicio_e2e = time.perf_counter()
 
         inicio_carregamento = time.perf_counter()
-        canais = carregar_sample(pasta)
+        canais = carregar_sample(pasta, produtos, window=window)
         fim_carregamento = time.perf_counter()
 
         inicio_preprocess = time.perf_counter()
-        entrada = preprocess(canais).to(device)
+        entrada = preprocess(canais, produtos, args.input_mode).to(device)
         if device.type == "cuda":
             torch.cuda.synchronize()
         fim_preprocess = time.perf_counter()
@@ -292,7 +298,7 @@ with torch.inference_mode():
         inicio_posprocess = time.perf_counter()
         
         probs = torch.sigmoid(saida)
-        mascara = (probs > 0.5).float()
+        mascara = postprocess(saida)
         if device.type == "cuda":
             torch.cuda.synchronize()
         
@@ -305,19 +311,13 @@ with torch.inference_mode():
         ).items():
             energia_por_modo["end_to_end"][evento].append(medida)
         
-        label = carregar_label(pasta)
-
-        mascara = mascara.squeeze().cpu()
-        
-        probs_2d = probs.squeeze().cpu()
-
-        probabilidades_auprc.append(
-            probs_2d.flatten().numpy().astype(np.float32)
-        )
-
-        labels_auprc.append(
-            label.flatten().numpy().astype(np.uint8)
-        )
+        label = carregar_label(pasta, window=window)
+        label = recortar_patches(label.unsqueeze(0)) if args.input_mode == "patches" else label[None, None]
+        mascara = mascara.cpu()
+        probs_cpu = probs.cpu()
+        auprc_img = calcular_auprc_imagem(label.numpy(), probs_cpu.numpy())
+        if auprc_img is not None:
+            auprc_por_imagem.append(auprc_img)
 
         tp, fp, fn, tn, _, _, _, _ = calcular_metricas(
             mascara,
@@ -329,9 +329,11 @@ with torch.inference_mode():
         fn_total += fn
         tn_total += tn
 
-        has_plume, qplume = classificacao_por_pasta[
-            os.path.basename(os.path.normpath(pasta))
-        ]
+        # A máscara real determina presença de pluma, como em Teste_Unet.
+        has_plume = (tp + fn) > 0
+        if not has_plume:
+            fp_no_plume += fp
+            tn_no_plume += tn
         # FPR BY TILE do artigo
         if not has_plume:
 
@@ -343,7 +345,7 @@ with torch.inference_mode():
                 fp_tiles += 1
             else:
                 tn_tiles += 1
-        grupo = classificar_pluma(has_plume, qplume)
+        grupo = classificar_pluma(has_plume, row.get("difficulty", ""))
         if grupo is not None:
             contagens_grupo[grupo][0] += tp
             contagens_grupo[grupo][1] += fp
@@ -362,30 +364,18 @@ fpr_tile = (
 )
 fpr_tile_tabela = fp_tiles / len(amostras) if amostras else 0.0
 
-y_true = np.concatenate(labels_auprc)
-y_score = np.concatenate(probabilidades_auprc)
-
-precision_curve, recall_curve, _ = precision_recall_curve(
-    y_true,
-    y_score
-)
-
-auprc = auc(
-    recall_curve,
-    precision_curve
-)
-
-precision = tp_total / (tp_total + fp_total)
-
-recall = tp_total / (tp_total + fn_total)
+auprc = float(np.mean(auprc_por_imagem)) if auprc_por_imagem else 0.0
+precision = tp_total / (tp_total + fp_total) if tp_total + fp_total else 0.0
+recall = tp_total / (tp_total + fn_total) if tp_total + fn_total else 0.0
 
 f1_global = calcular_f1_contagens(tp_total, fp_total, fn_total)
 f1_strong_plume = calcular_f1_contagens(*contagens_grupo["strong_plume"])
 f1_weak_plume = calcular_f1_contagens(*contagens_grupo["weak_plume"])
 
-iou = tp_total / (tp_total + fp_total + fn_total)
+iou = tp_total / (tp_total + fp_total + fn_total + 1e-6)
 
-fpr = fp_total / (fp_total + tn_total)
+fpr = fp_no_plume / (fp_no_plume + tn_no_plume + 1e-6)
+fpr_global = fp_total / (fp_total + tn_total + 1e-6)
 
 media_e2e = np.mean(tempos_e2e)
 
@@ -402,7 +392,7 @@ for modo, fontes in energia_por_modo.items():
         else:
             print(f"Energia {modo} / {fonte}: contador indisponível.")
 
-print("\n===== MÉTRICAS ARTIGO STARCOP =====")
+print("\n===== MÉTRICAS COMPATÍVEIS COM TESTE_UNET =====")
 print(f"F1 strong: {f1_strong_plume:.4f}")
 print(f"F1 weak:   {f1_weak_plume:.4f}")
 print(f"FPR tile:  {fpr_tile:.4f} ({fpr_tile * 100:.2f}%)")
@@ -480,9 +470,9 @@ print(f"Modelo:       {np.mean(tempos_model):.3f} ms "
 print(f"Posprocess:   {np.mean(tempos_posprocess):.3f} ms "
       f"({np.mean(tempos_posprocess) / media_e2e * 100:.1f}%)")
 
-data_hora = datetime.now().strftime("%Y%m%d_%H%M")
+data_hora = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
-ARQUIVO_RESULTADOS = Path(__file__).resolve().parent / f"resultado_{args.dataset}_{args.device}_{args.modelo}_{data_hora}.csv"
+ARQUIVO_RESULTADOS = Path(args.output) if args.output else Path(__file__).resolve().parent / f"resultado_{args.dataset}_{args.device}_{args.modelo}_{args.input_mode}_{data_hora}.csv"
 
 resultado = {
     "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -490,6 +480,12 @@ resultado = {
     "dataset": args.dataset,
     "device": args.device,
     "imagens": len(amostras),
+    "input_mode": args.input_mode,
+    "patches_por_imagem": patches_por_imagem,
+    "produtos": ",".join(produtos),
+    "checkpoint": str(caminho_checkpoint(args.modelo, args.checkpoint)),
+    "metricas_protocolo": "teste_unet_difficulty_opening_ap_mean_plume_v1",
+    "csv_dataset": str(Path(DATASET_PATH) / CSV_DATASET),
 
     "model_media_ms": np.mean(tempos_model),
     "model_mediana_ms": np.median(tempos_model),
@@ -514,6 +510,8 @@ resultado = {
     "f1_weak_plume": f1_weak_plume,
     "iou": iou, 
     "fpr_pixel": fpr,
+    "fpr_pixel_global": fpr_global,
+    "imagens_auprc": len(auprc_por_imagem),
     "fpr_tile": fpr_tile,
     "fpr_tile_tabela": fpr_tile_tabela,
     "auprc": auprc,

@@ -6,6 +6,7 @@ import rasterio
 import rasterio.windows
 from torch.utils.data import Dataset, DataLoader
 import warnings
+from collections import OrderedDict
 
 def carregar_dataframe_starcop(
     caminho_csv,
@@ -63,12 +64,78 @@ def carregar_dataframe_starcop(
     return df
 
 class STARCOPDataset(Dataset):
-    def __init__(self, dataframe, input_products, output_products, weight_loss=None, patching=False):
+    def __init__(self, dataframe, input_products, output_products, weight_loss=None, patching=False, cache_max_bytes=0):
         self.dataframe = dataframe
         self.input_products = input_products
         self.output_products = output_products
         self.weight_loss = weight_loss
         self.patching = patching
+        if cache_max_bytes < 0:
+            raise ValueError("cache_max_bytes não pode ser negativo.")
+        self.cache_max_bytes = int(cache_max_bytes)
+        self._cache = OrderedDict()
+        self._cache_bytes = 0
+        self._cache_pid = os.getpid()
+        self._cache_hits = 0
+        self._cache_misses = 0
+
+    def __getstate__(self):
+        # Workers criados por spawn começam sem copiar o cache do processo pai.
+        state = self.__dict__.copy()
+        state.update(_cache=OrderedDict(), _cache_bytes=0, _cache_pid=None,
+                     _cache_hits=0, _cache_misses=0)
+        return state
+
+    @staticmethod
+    def _cache_slice(array, window):
+        if window is None:
+            return array
+        x, y, width, height = window.col_off, window.row_off, window.width, window.height
+        if any(value != int(value) for value in (x, y, width, height)):
+            return None
+        x, y, width, height = map(int, (x, y, width, height))
+        if x < 0 or y < 0 or width <= 0 or height <= 0 or x + width > array.shape[2] or y + height > array.shape[1]:
+            return None
+        return array[:, y:y + height, x:x + width]
+
+    def _read_tif(self, path, window):
+        if not self.cache_max_bytes:
+            with rasterio.open(path) as src:
+                return src.read(window=window)
+        if self._cache_pid != os.getpid():
+            # Também isola caches quando o DataLoader usa fork.
+            self._cache.clear()
+            self._cache_bytes = 0
+            self._cache_pid = os.getpid()
+            self._cache_hits = self._cache_misses = 0
+        if path in self._cache:
+            self._cache.move_to_end(path)
+            crop = self._cache_slice(self._cache[path], window)
+            if crop is not None:
+                self._cache_hits += 1
+                return crop.copy()  # Uma alteração na amostra não modifica o cache.
+        self._cache_misses += 1
+        with rasterio.open(path) as src:
+            size = src.count * src.height * src.width * np.dtype(src.dtypes[0]).itemsize
+            integral_window = window is None or (
+                all(v == int(v) for v in (window.col_off, window.row_off, window.width, window.height))
+                and window.col_off >= 0 and window.row_off >= 0
+                and window.width > 0 and window.height > 0
+                and window.col_off + window.width <= src.width
+                and window.row_off + window.height <= src.height
+            )
+            if size > self.cache_max_bytes or not integral_window:
+                return src.read(window=window)
+            # Libera espaço antes de decodificar outro arquivo inteiro.
+            while self._cache and self._cache_bytes + size > self.cache_max_bytes:
+                _, evicted = self._cache.popitem(last=False)
+                self._cache_bytes -= evicted.nbytes
+            array = src.read()
+        if path in self._cache:
+            self._cache_bytes -= self._cache.pop(path).nbytes
+        self._cache[path] = array
+        self._cache_bytes += array.nbytes
+        return self._cache_slice(array, window).copy()
 
     def __len__(self):
         return self.dataframe.shape[0]
@@ -93,9 +160,7 @@ class STARCOPDataset(Dataset):
                 # Monta o caminho exato do arquivo .tif (ex: TOA_AVIRIS_460nm.tif)
                 path = os.path.join(product_folder, f"{key_name}.tif")
                 
-                with rasterio.open(path) as src:
-                    # Lê o recorte específico usando a window
-                    tensors.append(torch.from_numpy(src.read(window=window)))
+                tensors.append(torch.from_numpy(self._read_tif(path, window)))
             
             # Concatena todas as bandas num único tensor (C, H, W)
             if len(tensors) > 1:

@@ -1,0 +1,12 @@
+Inspecao executada em 2026-09-30 no container Vitis AI 3.5.
+Target: DPUCZDX8G_ISA1_B4096
+Entrada: [1,4,512,512]. Arquitetura atual, com align_corners=False nos cinco upsamplings.
+Checkpoints carregados separadamente com strict=True, sem alteracao dos pesos.
+attentiongates_normal: {'user': 1, 'dpu': 165, 'cpu': 8}
+attentiongates_3245: {'user': 1, 'dpu': 165, 'cpu': 8}
+
+Ambos apresentam 8 operadores em CPU: 4 sigmoid e 4 multiplicacoes dos gates ag1, ag2, ag3, ag4.
+Os cinco upsamplings foram atribuídos a DPU.
+Resultado: compatibilidade parcial; nao executam integralmente na DPU.
+Inspecao de operadores, sem calibracao INT8, compilacao integral ou execucao na placa.
+A arquitetura e identica; treinamentos diferentes nao mudaram a atribuicao dos operadores.

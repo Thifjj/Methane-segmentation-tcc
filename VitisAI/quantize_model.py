@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import bisect
+import json
 import time
 from pathlib import Path
 
@@ -33,6 +35,9 @@ def parse_args():
     parser.add_argument("--progress-every", type=int, default=10)
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--width", type=int, default=512)
+    parser.add_argument("--patching", action="store_true", help="Usa os patches 128x128, passo 64, do treinamento.")
+    parser.add_argument("--patch-count", type=int, default=1000, help="Quantidade de patches sorteados; 0 usa todos.")
+    parser.add_argument("--patches-per-image", type=int, default=0, help="Sorteia esta quantidade por imagem; substitui --patch-count.")
     parser.add_argument("--target", help="Opcional: habilita quantizacao consciente do hardware.")
     parser.add_argument("--output-dir", default="build/vitis_ai/quantize")
     parser.add_argument("--deploy", action="store_true", help="No modo test, exporta o xmodel INT8.")
@@ -52,10 +57,18 @@ def quantize(args):
         raise SystemExit("--batch-size deve ser maior que zero.")
     if args.num_workers < 0:
         raise SystemExit("--num-workers nao pode ser negativo.")
+    if args.patch_count < 0:
+        raise SystemExit("--patch-count nao pode ser negativo.")
+    if args.patches_per_image < 0 or (args.patches_per_image and not args.patching):
+        raise SystemExit("--patches-per-image requer --patching e valor nao negativo.")
+    if args.patching:
+        args.height = args.width = 128
     if args.deploy:
         # Exigencia do export_xmodel: batch 1 e uma unica inferencia.
         args.batch_size = 1
         args.subset_len = 1
+        args.patch_count = 1
+        args.patches_per_image = 0
 
     products = parse_products(args.products)
     model, checkpoint = build_model(args.model, args.checkpoint, len(products))
@@ -70,10 +83,29 @@ def quantize(args):
         num_workers=args.num_workers,
         seed=args.seed,
         pin_memory=device.type == "cuda",
+        patching=args.patching,
+        patch_count=args.patch_count,
+        patches_per_image=args.patches_per_image,
     )
     output_dir = Path(args.output_dir) / args.model
     output_dir.mkdir(parents=True, exist_ok=True)
-    example = torch.zeros(args.batch_size, len(products), args.height, args.width, device=device)
+    if args.patching and args.quant_mode == "calib":
+        flat_dataset = loader.dataset.dataset
+        selected = []
+        for index in loader.dataset.indices:
+            image = bisect.bisect_right(flat_dataset.offsets, index) - 1
+            patch = index - flat_dataset.offsets[image]
+            row = flat_dataset.dataset.dataframe.iloc[image]
+            columns = (int(row["window"].width) - 128) // 64 + 1
+            selected.append({
+                "flat_patch_index": index, "folder": row["folder"],
+                "patch_index": patch,
+                "window_col_off": int(row["window"].col_off) + (patch % columns) * 64,
+                "window_row_off": int(row["window"].row_off) + (patch // columns) * 64,
+            })
+        (output_dir / "calibration_patches.json").write_text(json.dumps(selected, indent=2))
+    example_batch = 1 if args.patching else args.batch_size
+    example = torch.zeros(example_batch, len(products), args.height, args.width, device=device)
 
     kwargs = dict(
         quant_mode=args.quant_mode,

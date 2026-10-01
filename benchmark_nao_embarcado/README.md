@@ -1,293 +1,127 @@
-# Benchmark manual em CPU e GPU
+# Benchmark PyTorch CPU / CUDA
 
-Este diretório executa os modelos PyTorch do projeto em CPU ou GPU CUDA. O
-benchmark mede latência, FPS e qualidade da segmentação usando as amostras do
-STARCOP no dataset selecionado (`full` ou `test`).
-
-## Arquivos
-
-| Arquivo | Função |
-|---|---|
-| `benchmark_geral.py` | Executa e mede o modelo em CPU ou GPU CUDA, escolhidos no programa. |
-| `model_loader.py` | Cria a arquitetura, carrega os pesos e move o modelo para o device recebido. |
-| `dataset.py` | Lê o CSV do dataset escolhido, os quatro canais TIFF e o label. |
-| `preprocess.py` | Normaliza, limita os valores e monta o tensor NCHW. |
-| `postprocess.py` | Aplica sigmoid e limiar de 0,5. |
-| `metricas.py` | Calcula métricas globais e F1 por intensidade da pluma. |
-
-## Requisitos
-
-- Python 3.12 ou uma versão compatível com as dependências do projeto;
-- PyTorch;
-- NumPy;
-- pandas;
-- rasterio;
-- tqdm;
-- uma GPU NVIDIA, driver e instalação CUDA do PyTorch para o benchmark GPU.
-
-Na raiz do repositório, crie um ambiente e instale as dependências:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install --upgrade pip
-python3 -m pip install -r requirements.txt
-```
-
-Confira o ambiente:
-
-```bash
-python3 -c "import torch; print('PyTorch:', torch.__version__); print('CUDA:', torch.cuda.is_available())"
-```
-
-O benchmark CPU não exige CUDA. O benchmark GPU exige que `CUDA` apareça como
-`True`.
-
-## Estrutura do dataset
-
-O benchmark aceita dois conjuntos locais:
-
-- `full`: `/home/thiago/Documents/STARCOP_DATASET`, com `train.csv`;
-- `test`: `STARCOP_test` dentro da raiz do projeto, com `test.csv`.
-
-Cada CSV deve apontar para uma pasta por amostra:
-
-```text
-STARCOP_DATASET/ (ou STARCOP_test/)
-├── train.csv (ou test.csv)
-├── amostra_0001/
-│   ├── mag1c.tif
-│   ├── TOA_AVIRIS_640nm.tif
-│   ├── TOA_AVIRIS_550nm.tif
-│   ├── TOA_AVIRIS_460nm.tif
-│   └── labelbinary.tif
-└── amostra_0002/
-    └── ...
-```
-
-O `train.csv` precisa ter estas colunas:
-
-| Coluna | Uso |
-|---|---|
-| `folder` | Caminho original ou nome da pasta da amostra. O benchmark usa o último componente do caminho e o procura dentro da raiz selecionada. |
-| `has_plume` | Aceita `true`/`false` ou `1`/`0`. Define se a amostra participa dos F1 strong e weak. |
-| `qplume` | Intensidade usada para separar strong e weak. É obrigatória quando `has_plume=true`. |
-
-Os quatro canais e o label devem possuir as mesmas dimensões esperadas pelo
-modelo, normalmente `512 × 512`.
-
-## Configuração
-
-### Caminhos dos pesos
-
-Edite o dicionário `modelos` em `benchmark_nao_embarcado/model_loader.py`. Cada item
-deve conter a classe e o caminho do respectivo arquivo `.pth`:
-
-```python
-modelos = {
-    "baseline": (UNetBaseline, "/caminho/UNET_mag1c_rgb.pth"),
-    "depth_reduced": (UNetDepthReduced, "/caminho/UNET_depth_reduced_mag1c_rgb.pth"),
-    "mobilenet_v2": (UNetMobileNetV2, "/caminho/Mobile_Net_v2_mag1c_rgb.pth"),
-    "mobilenet_v3": (UNetMobileNetV3, "/caminho/Mobile_Net_v3_mag1c_rgb.pth"),
-    "skip": (UNetElementWise, "/caminho/UNET_SkipConnections_mag1c_rgb.pth"),
-}
-```
-
-Os modelos apresentados no menu são:
-
-| Valor | Arquitetura |
-|---|---|
-| `baseline` | U-Net baseline |
-| `depth_reduced` | U-Net com profundidade reduzida |
-| `mobilenet_v2` | U-Net MobileNetV2 |
-| `mobilenet_v3` | U-Net MobileNetV3 |
-| `skip` | U-Net com skip connections element-wise |
-
-## Execução
-
-Execute os comandos a partir da raiz do repositório. O uso de `python3 -m` é
-necessário porque os scripts usam imports relativos do pacote
-`benchmark_nao_embarcado`.
-
-### Benchmark geral
+Execute na raiz do projeto, usando a `.venv` Python 3.10.20 já instalada:
 
 ```bash
 source .venv/bin/activate
-python3 -m benchmark_nao_embarcado.benchmark_geral
+python -m benchmark_nao_embarcado.benchmark_geral
 ```
 
-Ao iniciar, o programa pergunta o modelo, o dataset (`full` ou `test`) e o
-dispositivo (CPU ou GPU CUDA). A GPU exige CUDA disponível no PyTorch. Depois,
-pergunta quantas imagens executar (`0` para todas ou um número entre `1` e o
-total de amostras).
+O menu mostra os modelos cujos checkpoints existem em `Modelos_treinados/`.
+Os caminhos dos pesos são relativos à raiz do projeto, sem depender do
+computador usado anteriormente.
 
-`full` usa `STARCOP_DATASET/train.csv`; `test` usa
-`STARCOP_test/test.csv`.
+## Modelos com pesos disponíveis nesta atualização
 
-Para executar outro modelo, inicie o programa novamente e selecione-o no menu.
-
-## Pipeline executado
-
-Para cada amostra, o benchmark faz:
-
-1. leitura dos quatro canais TIFF;
-2. normalização de `mag1c` por `1750` e RGB por `60`;
-3. clamp de cada canal no intervalo `[0, 2]`;
-4. montagem do tensor `[1, 4, H, W]`;
-5. inferência PyTorch;
-6. sigmoid e limiar estrito `> 0,5` (equivalente a `logit > 0`);
-7. leitura do label e cálculo das métricas por pixel.
-
-Antes das medições são executadas dez inferências de warm-up usando a primeira
-amostra. O warm-up não entra nos tempos reportados.
-
-## Tempos medidos
-
-| Campo | Conteúdo |
+| Nome | Checkpoint |
 |---|---|
-| `model_*` | Somente a chamada do modelo. Na GPU há sincronização CUDA antes e depois da inferência. |
-| `e2e_*` | Leitura dos quatro canais, pré-processamento, transferência para a GPU quando aplicável, modelo e pós-processamento. |
-| `carregamento_ms` | Média da leitura dos quatro canais TIFF. |
-| `preprocess_ms` | Média da normalização e montagem da entrada. Na GPU também inclui a transferência da entrada ao device. |
-| `posprocess_ms` | Média do sigmoid e da criação da máscara binária. |
+| baseline | UNET_mag1c_rgb.pth |
+| depth_reduced | UNET_depth_reduced_mag1c_rgb.pth |
+| mobilenet_v2 | Mobile_Net_v2_mag1c_rgb.pth |
+| mobilenet_v3 | Mobile_Net_v3_mag1c_rgb.pth |
+| skip | UNET_SkipConnections_mag1c_rgb.pth |
+| hyperstarcop | HyperSTARCOP_oficial/final_checkpoint_model.ckpt |
+| mobilenet_v3_focaldice | MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth |
+| mobilenet_v3_attention_gates | UNetMobileNetV3AttentionGates_mag1c_rgb.pth |
+| mobilenet_v3_attention_gates_63epoch | UNetMobileNetV3AttentionGates_mag1c_rgb_3245_63epoch.pth |
+| resnet34 | UNet_ResNet34_mag1c_rgb.pth |
+| segformer | UNet_SegFormer_mag1c_rgb.pth |
 
-A leitura de `labelbinary.tif`, o cálculo das métricas e a escrita do CSV ficam
-fora do tempo E2E.
+Attention Gates da U-Net e PSA também têm classes cadastradas, mas não
+aparecem no menu enquanto faltar o checkpoint padrão. É possível fornecer
+outros pesos com `--checkpoint`, sem substituir os existentes.
 
-Para `model_only` e E2E são mostrados média, mediana, mínimo, máximo, P95, P99
-e FPS. O FPS é calculado como:
-
-```text
-FPS = 1000 / latência média em milissegundos
-```
-
-Esse FPS representa a execução sequencial de uma imagem por vez. Ele não é
-throughput com várias inferências concorrentes.
-
-### Potência e energia
-
-O benchmark lê o contador RAPL do pacote CPU e, quando usa CUDA, o contador
-acumulado de energia da GPU via NVML. Para `model_only` e `end_to_end`, o CSV
-registra a fonte (`energia_fontes`), número de imagens medidas, energia total
-(J), energia por inferência (J) e potência média (W). Mínimo e máximo de
-potência são as médias de cada imagem, não amostras instantâneas. O pacote CPU
-e a GPU são domínios separados; não representam a potência total da tomada.
-O E2E inclui leitura, pré-processamento e pós-processamento, mas exclui a
-validação das métricas. Se RAPL/NVML não existir, não permitir leitura ou não
-suportar contador de energia, a fonte fica ausente do CSV; `energia_fontes`
-mostra `indisponivel` quando nenhuma fonte pôde ser medida. Os CSVs antigos
-não ganham esses valores retroativamente.
-
-## Métricas de qualidade
-
-As contagens são acumuladas por pixel sobre todas as amostras do grupo antes
-do cálculo das métricas, ou seja, são métricas globais agregadas.
-
-| Métrica | Definição |
-|---|---|
-| `tp`, `fp`, `fn`, `tn` | Contagens globais de pixels. |
-| `precision` | `TP / (TP + FP)`. |
-| `recall` | `TP / (TP + FN)`. |
-| `f1_global` | F1 calculado com todas as amostras, inclusive `has_plume=false`. |
-| `f1_strong_plume` | F1 das amostras com `has_plume=true` e `qplume > 1000`. |
-| `f1_weak_plume` | F1 das amostras com `has_plume=true` e `qplume <= 1000`. |
-| `iou` | `TP / (TP + FP + FN)` usando todas as amostras. |
-| `fpr` | `FP / (FP + TN)` usando todas as amostras. |
-
-A quantidade de pixels positivos da máscara não é usada para classificar uma
-amostra como strong ou weak. Amostras com `has_plume=false` continuam no
-`f1_global`, mas não entram em `f1_strong_plume` nem em `f1_weak_plume`.
-
-O pós-processamento deste benchmark não executa abertura morfológica. O loop
-principal usa `> 0,5`; o helper isolado `postprocess.py` usa `>= 0,5` e não é
-chamado pelo loop atual.
-
-## Resultado gerado
-
-Ao terminar, o programa cria:
-
-```text
-benchmark_nao_embarcado/resultado_<dataset>_<device>_<modelo>_AAAAMMDD_HHMM.csv
-```
-
-Exemplo:
-
-```text
-benchmark_nao_embarcado/resultado_test_cpu_mobilenet_v3_20260921_1430.csv
-```
-
-O CSV contém uma linha com:
-
-- data, modelo e quantidade de imagens;
-- latências e FPS de model-only;
-- latências e FPS E2E;
-- médias de carregamento, pré-processamento e pós-processamento;
-- precision, recall, `f1_global`, `f1_strong_plume`, `f1_weak_plume`, IoU e FPR;
-- TP, FP, FN e TN globais.
-- potência e energia de CPU/GPU, quando os contadores estiverem disponíveis.
-
-O nome identifica dataset, dispositivo e modelo, com precisão de um minuto.
-Duas execuções da mesma combinação iniciadas no mesmo minuto usam o mesmo
-caminho e a segunda sobrescreve a primeira.
-
-## Comparações reproduzíveis
-
-Para comparar CPU, GPU e ZCU104:
-
-1. use o mesmo conjunto, CSV e as mesmas amostras, na mesma ordem;
-2. use checkpoints correspondentes às versões quantizadas compiladas para a placa;
-3. confirme que a ordem dos canais, a normalização e o limiar são iguais;
-4. feche cargas concorrentes no computador e registre PyTorch, runtime Vitis AI,
-   arquitetura da DPU e configuração do pipeline;
-5. compare qualidade pelas métricas globais e por amostra. As diferenças
-   residuais podem vir da quantização INT8;
-6. compare desempenho separando latência de inferência, latência E2E e throughput.
-
-A entrada e as métricas de qualidade são comparáveis quando CPU e ZCU104 usam
-exatamente o mesmo CSV e conjunto. O CPU mede PyTorch FP32 sequencial; a placa
-usa XModel quantizado e pode executar várias inferências em paralelo. Por isso,
-FPS sequencial, throughput e latência do pipeline são medidas distintas, mesmo
-com os mesmos dados.
-
-## Verificação rápida da classificação
+## Execução sem perguntas
 
 ```bash
-python3 -m benchmark_nao_embarcado.metricas
+python -m benchmark_nao_embarcado.benchmark_geral   --modelo mobilenet_v3_attention_gates --dataset test   --device cuda --quantidade 0
 ```
 
-A saída esperada é:
+Para comparar os pesos de 63 épocas, use
+`--modelo mobilenet_v3_attention_gates_63epoch`. Para CPU, use `--device cpu`.
+`--quantidade 0` usa todas as imagens; outro número limita as primeiras linhas.
 
-```text
-Self-test OK
-```
+Datasets padrão:
 
-## Erros comuns
+- `full`: `/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv`.
+- `test`: `/media/jacques/games/Datasets/test/STARCOP_test/test.csv`.
 
-### `ImportError: attempted relative import with no known parent package`
+`--data-root` e `--csv-name` permitem usar outro dataset. São respeitadas as
+janelas do CSV e filtradas amostras sem bandas ou máscara obrigatórias.
 
-O arquivo foi executado diretamente. Volte à raiz do repositório e use:
+## Entrada e canais
+
+O padrão é `--input-mode patches`, igual ao `Teste_Unet.py` atual: recortes
+128x128, passo 64. Uma imagem 512x512 produz 49 patches sobrepostos,
+processados juntos. `--input-mode full` mede uma imagem inteira por chamada.
+
+Os modelos antigos e o HyperSTARCOP mantêm a ordem do benchmark anterior:
+`mag1c,640,550,460`. As novas entradas usam a ordem do notebook de treinamento:
+`mag1c,460,550,640`, incluindo FocalDiceLoss, Attention Gates, ResNet34 e
+SegFormer. A ordem é exibida e gravada no CSV. Ela precisa corresponder ao
+experimento que produziu os pesos; o state_dict não registra essa informação.
+Para comparar um modelo antigo com o notebook atual, informe a mesma ordem
+explicitamente, se ela também foi usada no treinamento desses pesos:
 
 ```bash
-python3 -m benchmark_nao_embarcado.benchmark_geral
+--produtos mag1c,TOA_AVIRIS_460nm,TOA_AVIRIS_550nm,TOA_AVIRIS_640nm
 ```
 
-### `FileNotFoundError` para `train.csv` ou TIFF
+Também é possível fornecer outra lista de bandas com o checkpoint compatível.
+O HyperSTARCOP oficial mantém seus quatro canais e ordem obrigatória.
+A normalização reutiliza `DataNormalizer`: mag1c/1750 e bandas visíveis/60,
+limitadas a [0,2].
 
-Confira `DATASET_PATH`, os nomes dos cinco TIFFs e se as pastas listadas em
-`train.csv` existem dentro da raiz configurada.
+## Métricas alinhadas ao Teste_Unet.py
 
-### Erro ao carregar os pesos
+| Cálculo | Protocolo atual |
+|---|---|
+| Máscara prevista | `logit > 0`, seguido de abertura morfológica com cruz 3x3 |
+| Presença de pluma | Pixels positivos na máscara real |
+| F1 global e IoU | Contagens TP/FP/FN acumuladas em todas as imagens |
+| F1 strong | Imagens com pluma e `difficulty == easy` |
+| F1 weak | Demais imagens com pluma |
+| AUPRC | Média de `average_precision_score` por imagem com pluma |
+| fpr_pixel | FP/(FP+TN+1e-6), somente imagens sem pluma |
 
-Confira se cada entrada de `modelos` possui exatamente a classe e um caminho
-válido para o `.pth` correspondente. O checkpoint deve ser compatível com a
-arquitetura selecionada.
+A AUPRC agrupa os pixels de todos os patches de uma imagem antes de calcular
+AP, como no teste. Não calcula uma AP separada para cada patch.
+F1 e IoU usam o mesmo epsilon de 1e-6 do teste. Precisão e recall também são
+reportados. `fpr_pixel_global` conserva explicitamente o FPR de todos os
+pixels; `fpr_tile` e `fpr_tile_tabela` são métricas adicionais do benchmark,
+com o limiar anterior de pixels previstos por área. O teste não calcula
+essas métricas extras.
 
-### `CUDA não disponível`
+O protocolo difere dos CSVs antigos: antes não havia abertura morfológica,
+strong/weak usava qplume, a AUPRC era trapezoidal global e o FPR pixel incluía
+todas as imagens. Não juntar esses resultados como se fossem o mesmo cálculo.
+Também manter o mesmo checkpoint, bandas, dataset e modo de entrada ao
+comparar com Teste_Unet ou com a placa. Patches sobrepostos contam pixels
+repetidos; não equivalem à inferência de uma imagem inteira.
 
-Use o benchmark CPU ou instale uma versão do PyTorch compatível com a GPU, o
-driver NVIDIA e a versão CUDA do ambiente.
+## Latência e FPS
 
-### Coluna ausente ou valor inválido em `train.csv`
+- `model_*`: somente forward, com sincronização CUDA antes/depois.
+- `e2e_*`: leitura das bandas, recortes/normalização/transferência, forward,
+  sigmoid e abertura morfológica.
+- Leitura da máscara, métricas (incluindo AUPRC) e escrita do CSV ficam fora
+  dos tempos acima. A velocidade da barra inclui esse trabalho adicional.
+- Dez inferências de aquecimento usam o mesmo modo de entrada da medição
+  e também aquecem sigmoid e abertura morfológica.
+- FPS = 1000 / latência média em ms: imagens originais por segundo. No modo
+  patches, cada imagem representa o conjunto de recortes, não um único patch.
+- É FPS sequencial baseado na latência, sem múltiplas inferências concorrentes;
+  não é a vazão de um pipeline paralelo na ZCU104.
 
-Confirme a existência de `folder`, `has_plume` e `qplume`. Para amostras com
-`has_plume=true`, `qplume` não pode estar vazio.
+A instrumentação RAPL/NVML de energia foi mantida. Registra energia total,
+energia por inferência e potência média por fonte, quando disponível. Essas
+leituras não representam a potência total da tomada.
+
+## Resultados
+
+Os novos arquivos incluem modelo, dataset, device, modo de entrada e timestamp
+com microssegundos. Os resultados anteriores são preservados. `--output`
+permite escolher outro caminho de saída.
+
+O CSV registra checkpoint, ordem das bandas, CSV do dataset, modo de entrada,
+patches por imagem e `metricas_protocolo`, além das métricas e tempos.

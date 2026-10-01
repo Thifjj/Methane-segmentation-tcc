@@ -62,23 +62,23 @@ def carregar_classificacao_por_pasta(caminho_dataset, nome_csv="test.csv"):
         resultado[nome] = (has_plume, qplume)
     return resultado
 
-def carregar_sample(caminho_amostra):
+def carregar_sample(caminho_amostra, produtos=None, window=None):
     canais = []
 
-    for canal in CANAIS_ENTRADA:
+    for canal in (produtos or CANAIS_ENTRADA):
         caminho = os.path.join(caminho_amostra, f"{canal}.tif")
 
         with rasterio.open(caminho) as arquivo:
-            imagem = arquivo.read(1)
+            imagem = arquivo.read(1, window=window)
 
         canais.append(torch.from_numpy(imagem).float())
 
     return canais
 
-def carregar_label(pasta_amostra):
+def carregar_label(pasta_amostra, window=None):
     caminho = os.path.join(pasta_amostra, "labelbinary.tif")
 
     with rasterio.open(caminho) as arquivo:
-        label = arquivo.read(1)
+        label = arquivo.read(1, window=window)
 
     return torch.from_numpy(label).float()
