@@ -34,8 +34,8 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\n--- Iniciando Treinamento: {nome_modelo_salvar} ---")
 
-    CAMINHO_CSV = "/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
-    DIRETORIO_DADOS = "/media/jacques/games/Datasets/STARCOP_train_remaining_all/"
+    CAMINHO_CSV = "/media/jacques/games/Datasets/train_remaining_only/train.csv"
+    DIRETORIO_DADOS = "/media/jacques/games/Datasets/train_remaining_only/"
 
     CAMINHO_CSV_VALIDACAO = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv"
     DIRETORIO_DADOS_VALIDACAO = "/media/jacques/games/Datasets/test/STARCOP_test/"
@@ -55,11 +55,11 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
     normalizador = DataNormalizer(produtos_entrada).to(device)
     
     dataloader_treino = DataLoader(
-        dataset_treino, batch_size=16, shuffle=True, num_workers=6, pin_memory=True
+        dataset_treino, batch_size=16, shuffle=True, num_workers=8, pin_memory=True
     )
     
     dataloader_val = DataLoader(
-        dataset_val, batch_size=16, shuffle=False, num_workers=6, pin_memory=True
+        dataset_val, batch_size=16, shuffle=False, num_workers=8, pin_memory=True
     )
 
     modelo = modelo_escolhido(in_channels=len(produtos_entrada), out_channels=1).to(device)

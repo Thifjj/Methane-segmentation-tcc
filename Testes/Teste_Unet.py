@@ -65,8 +65,11 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     device_name = device_obj.type.upper()
     print(f"\nIniciando Avaliação do modelo: {nome_modelo_salvo} ({device_name})")
 
-    CAMINHO_CSV_TESTE = "/media/jacques/hdd/Laboratorio/2_2026_lab/Projeto_pesquisaMetano/dataset_STARCOP/train.csv" 
-    DIRETORIO_DADOS_TESTE = "/media/jacques/hdd/Laboratorio/2_2026_lab/Projeto_pesquisaMetano/dataset_STARCOP"
+   #CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
+    #DIRETORIO_DADOS_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/"
+
+    CAMINHO_CSV_TESTE ="/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
+    DIRETORIO_DADOS_TESTE="/media/jacques/games/Datasets/STARCOP_train_remaining_all/"
 
     df_test = carregar_dataframe_starcop(CAMINHO_CSV_TESTE, DIRETORIO_DADOS_TESTE)
     dataset_teste = STARCOPDataset(df_test, produtos_entrada, ["labelbinary"])
@@ -83,8 +86,7 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
 
     kernel_cruz = torch.tensor([[0, 1, 0], [1, 1, 1], [0, 1, 0]]).float().to(device_obj)
 
-    todas_probabilidades = []
-    todos_gabaritos = []
+    auprc_por_imagem = []
     
     # Acumuladores Globais
     TP_tot = FP_tot = FN_tot = TN_tot = 0
@@ -111,9 +113,9 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
             if device_name == "CUDA": 
                 torch.cuda.synchronize()
             inicio = time.perf_counter()
-            
+        
             logits = modelo(inputs)
-            
+        
             if device_name == "CUDA": torch.cuda.synchronize()
             fim = time.perf_counter()
             tempo_total_inferencia += (fim - inicio)
@@ -124,20 +126,20 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
 
             p_flat = previsao_limpa.view(-1)
             g_flat = targets.view(-1)
-            
+        
             tp = (p_flat * g_flat).sum().item()
             fp = (p_flat * (1 - g_flat)).sum().item()
             fn = ((1 - p_flat) * g_flat).sum().item()
             tn = ((1 - p_flat) * (1 - g_flat)).sum().item()
 
             TP_tot += tp; FP_tot += fp; FN_tot += fn; TN_tot += tn
-            
+        
             g_sum = g_flat.sum().item()
             if g_sum > 0:
                 dificuldade = df_test.iloc[i].get('difficulty', '')
-                
+            
                 is_strong = (dificuldade == 'easy')
-                
+            
                 if is_strong:
                     TP_str += tp; FP_str += fp; FN_str += fn
                 else:
@@ -147,24 +149,27 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
                 FP_no_plume += fp
                 TN_no_plume += tn
 
-            todas_probabilidades.extend(probs.view(-1).cpu().numpy())
-            todos_gabaritos.extend(g_flat.cpu().numpy())
+            if g_sum > 0:
+                auprc_img = average_precision_score(
+                    g_flat.cpu().numpy(), probs.view(-1).cpu().numpy()
+                )
+                auprc_por_imagem.append(auprc_img)
 
             if g_sum > 0 and i == 0: 
                 pasta = df_test.iloc[i]['folder']
                 window = df_test.iloc[i]['window']
-                
+            
                 R = ler_tif_para_plot(pasta, window, "TOA_AVIRIS_640nm", div=60.0)
                 G = ler_tif_para_plot(pasta, window, "TOA_AVIRIS_550nm", div=60.0)
                 B = ler_tif_para_plot(pasta, window, "TOA_AVIRIS_460nm", div=60.0)
                 img_rgb = np.stack([R, G, B], axis=-1)
                 img_mag1c = ler_tif_para_plot(pasta, window, "mag1c", div=1750.0)
-                
+            
                 pred_np = previsao_limpa[0, 0].cpu().numpy()
                 gab_np = targets[0, 0].cpu().numpy()
                 diferenca = (2 * pred_np) + gab_np
                 cmap_diff = mcolors.ListedColormap(['black', 'red', 'yellow', 'green'])
-                
+            
                 fig, ax = plt.subplots(1, 5, figsize=(20, 4))
                 ax[0].imshow(img_rgb); ax[0].set_title("RGB (Visível)")
                 ax[1].imshow(img_mag1c, cmap='magma'); ax[1].set_title("Mag1c (Química)")
@@ -178,18 +183,19 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
 
     # Cálculos das Métricas
     vram_pico_mb = ( torch.cuda.max_memory_allocated() / (1024 * 1024) if device_name == "CUDA" else 0.0 )
-    
+
     iou_global = TP_tot / (TP_tot + FP_tot + FN_tot + 1e-6)
     f1_global = 2 * TP_tot / (2 * TP_tot + FP_tot + FN_tot + 1e-6)
-    
+
     f1_strong = 2 * TP_str / (2 * TP_str + FP_str + FN_str + 1e-6) if (TP_str + FP_str + FN_str) > 0 else 0.0
     f1_weak = 2 * TP_weak / (2 * TP_weak + FP_weak + FN_weak + 1e-6) if (TP_weak + FP_weak + FN_weak) > 0 else 0.0
-    
+
     # FPR restrito aos tiles sem pluma
     fpr_no_plume = FP_no_plume / (FP_no_plume + TN_no_plume + 1e-6)
-    
-    auprc = average_precision_score(todos_gabaritos, todas_probabilidades)
-    
+
+    auprc = np.mean(auprc_por_imagem) if auprc_por_imagem else 0.0
+
+
     latencia_media_ms = (tempo_total_inferencia / len(dataloader)) * 1000
 
     print(f" Modelo:           {nome_modelo_salvo}")

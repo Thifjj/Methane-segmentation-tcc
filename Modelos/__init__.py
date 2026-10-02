@@ -15,6 +15,7 @@ _EXPORTS = {
     "UNetPSA": (".UNet_PSA", "UNetPSA"),
     "UNetResNet34": (".UNet_ResNet34", "UNetResNet34"),
     "SegFormerB0": (".UNet_SegFormer", "SegFormerB0"),
+    "UNetMobileNetV3AttentionGatesDPU" : (".Unet_AttentionGates_dpu", "UNetMobileNetV3AttentionGatesDPU")
 }
 
 __all__ = list(_EXPORTS)
