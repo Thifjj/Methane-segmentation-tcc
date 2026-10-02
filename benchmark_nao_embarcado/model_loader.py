@@ -3,6 +3,11 @@ import torch
 from Modelos import UNetBaseline, UNetDepthReduced, UNetMobileNetV2, UNetMobileNetV3, UNetElementWise, carregar_hyperstarcop
 
 def load_model(nome_modelo, device):
+    if nome_modelo in ("attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining"):
+        from VitisAI.common import build_model
+        model, _ = build_model(nome_modelo, None, 4)
+        return model.to(device).eval()
+
     if nome_modelo =="hyperstarcop":
         caminho = (
             "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/Modelos_treinados/HyperSTARCOP_oficial/final_checkpoint_model.ckpt"

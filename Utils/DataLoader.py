@@ -103,9 +103,11 @@ class STARCOPDataset(Dataset):
             elif len(tensors) == 1:
                 out_dict[io_name] = tensors[0].float()
 
-            if self.patching:
+            if self.patching and tensors:
                 tensor = out_dict[io_name]
                 _, height, width = tensor.shape
+                if height < 128 or width < 128:
+                    raise ValueError(f"Recorte menor que o patch 128x128: {height}x{width} ({product_folder})")
                 out_dict[io_name] = torch.stack([
                     tensor[:, y:y + 128, x:x + 128]
                     for y in range(0, height - 128 + 1, 64)

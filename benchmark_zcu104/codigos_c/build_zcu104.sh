@@ -25,5 +25,5 @@ ${CXX:-g++} -O2 -DNDEBUG -std=c++17 -Wall -Wextra \
     sweep.cpp -o sweep_vitis -pthread
 
 ${CXX:-g++} -O2 -std=c++17 -Wall -Wextra \
-    self_test_support.cpp dataset.cpp preprocess.cpp metricas.cpp postprocess.cpp estatisticas.cpp \
+    self_test_support.cpp dataset.cpp preprocess.cpp metricas.cpp postprocess.cpp estatisticas.cpp power.cpp \
     -o self_test_support $(pkg-config --cflags --libs "$opencv") -pthread

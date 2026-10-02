@@ -97,7 +97,8 @@
   std::vector<Amostra> carregar_amostras(
       const fs::path& csv,
       const fs::path& raiz_dataset,
-      std::size_t limite
+      std::size_t limite,
+      bool filtrar_produtos
   ) {
       std::ifstream arquivo(csv);
       if (!arquivo) {
@@ -119,6 +120,7 @@
       const int pasta_col = coluna(cabecalho, "folder");
       const int has_plume_col = coluna(cabecalho, "has_plume");
       const int qplume_col = coluna(cabecalho, "qplume");
+      const int difficulty_col = coluna(cabecalho, "difficulty");
 
       const int x_col = coluna(cabecalho, "window_col_off");
       const int y_col = coluna(cabecalho, "window_row_off");
@@ -169,6 +171,15 @@
                   amostra.id = amostra.pasta.filename().string();
               }
 
+              if (filtrar_produtos) {
+                  bool completa = true;
+                  for (const char* produto : {"mag1c.tif", "TOA_AVIRIS_460nm.tif",
+                       "TOA_AVIRIS_550nm.tif", "TOA_AVIRIS_640nm.tif", "labelbinary.tif"})
+                      completa &= fs::is_regular_file(amostra.pasta / produto);
+                  if (!completa) continue; // Mesmo filtro de evaluate_quantized.py.
+              }
+
+              amostra.difficulty = campo(campos, difficulty_col);
               amostra.has_plume = booleano(campo(campos, has_plume_col));
               const std::string qplume = campo(campos, qplume_col);
               if (qplume.empty()) {
@@ -206,12 +217,12 @@
       return amostras;
   }
 
-  CanaisEntrada carregar_canais(const Amostra& amostra) {
+  CanaisEntrada carregar_canais(const Amostra& amostra, bool ordem_rgb) {
       return {
           ler_tiff(amostra, "mag1c.tif"),
-          ler_tiff(amostra, "TOA_AVIRIS_640nm.tif"),
+          ler_tiff(amostra, ordem_rgb ? "TOA_AVIRIS_460nm.tif" : "TOA_AVIRIS_640nm.tif"),
           ler_tiff(amostra, "TOA_AVIRIS_550nm.tif"),
-          ler_tiff(amostra, "TOA_AVIRIS_460nm.tif")
+          ler_tiff(amostra, ordem_rgb ? "TOA_AVIRIS_640nm.tif" : "TOA_AVIRIS_460nm.tif")
       };
   }
 

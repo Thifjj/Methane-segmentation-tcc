@@ -3,6 +3,7 @@
 #include "dataset.hpp"
 
 #include <atomic>
+#include <chrono>
 #include <cstddef>
   #include <string>
   #include <vector>
@@ -23,6 +24,7 @@
   struct TemposImagem {
       std::size_t trabalho = 0;
       std::size_t indice_amostra = 0;
+      std::string id;
 
       double espera_slot_ms = 0;
       double leitura_ms = 0;
@@ -42,6 +44,10 @@
       std::size_t concluidas = 0;
       double duracao_s = 0;
       double throughput_fps = 0;
+      int tamanho_patch = 512;
+      int patches_por_imagem = 1;
+      bool ordem_rgb = false;
+      std::chrono::steady_clock::time_point inicio_medicao, fim_medicao;
       std::vector<TemposImagem> imagens;
   };
 

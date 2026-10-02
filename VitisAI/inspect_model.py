@@ -12,13 +12,13 @@ from common import DEFAULT_PRODUCTS, MODEL_REGISTRY, build_model, parse_products
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", choices=MODEL_REGISTRY, default="depth_reduced")
+    parser.add_argument("--model", choices=MODEL_REGISTRY, default="attentiongates_dpu_easy_remaining")
     parser.add_argument("--checkpoint", help="Sobrescreve o checkpoint padrao do modelo.")
     parser.add_argument("--products", default=",".join(DEFAULT_PRODUCTS))
-    parser.add_argument("--height", type=int, default=512)
-    parser.add_argument("--width", type=int, default=512)
+    parser.add_argument("--height", type=int, default=128)
+    parser.add_argument("--width", type=int, default=128)
     parser.add_argument("--target", required=True, help="Fingerprint/nome da DPU aceito pelo Inspector.")
-    parser.add_argument("--output-dir", default="build/vitis_ai/inspect")
+    parser.add_argument("--output-dir", default="build/vitis_ai/official/inspect")
     return parser.parse_args()
 
 
@@ -42,4 +42,3 @@ def inspect_model(args):
 
 if __name__ == "__main__":
     inspect_model(parse_args())
-

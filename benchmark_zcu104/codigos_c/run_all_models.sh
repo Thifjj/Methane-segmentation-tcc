@@ -17,9 +17,9 @@ if [[ -z $models_dir || -z $dataset ]]; then
     exit 1
 fi
 
-mapfile -d '' models < <(find "$models_dir" -type f -name 'methane_*.xmodel' -print0 | sort -z)
+mapfile -d '' models < <(find "$models_dir" -type f \( -name 'methane_*.xmodel' -o -name 'attentiongates_dpu_*.xmodel' \) -print0 | sort -z)
 if ((${#models[@]} == 0)); then
-    echo "Nenhum methane_*.xmodel em $models_dir" >&2
+    echo "Nenhum methane_*.xmodel ou attentiongates_dpu_*.xmodel em $models_dir" >&2
     exit 1
 fi
 

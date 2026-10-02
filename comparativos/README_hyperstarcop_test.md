@@ -1,10 +1,10 @@
 # HyperSTARCOP no STARCOP_test (342 imagens)
 
-Resultados locais: CPU e GPU com PyTorch, CPU ARM com ONNX Runtime e DPU da ZCU104 com XModel. As tabelas reúnem os valores agregados; os CSVs por imagem e por amostra preservam os dados individuais. Para a DPU, as tabelas usam a execução validada `manual_1637343199461` (2 runners, 342 inferências), que registrou 49,035 FPS em `model_only`. O [CSV comparativo](comparativo_test_hyperstarcop_zcu104_cpu_gpu.csv) contém outras configurações da ZCU104.
+Resultados locais: CPU e GPU com PyTorch, CPU ARM com ONNX Runtime e DPU da ZCU104 com XModel. As tabelas reúnem os valores agregados; os CSVs por imagem e por amostra preservam os dados individuais. Para a DPU, as tabelas usam a execução validada `manual_1637346267285` (2 runners, 342 inferências), que registrou 48,960 FPS em `model_only`. O [CSV comparativo](comparativo_test_hyperstarcop_zcu104_cpu_gpu.csv) contém outras configurações da ZCU104.
 
 ## Qualidade da segmentação
 
-Os números locais abaixo estão na escala de 0 a 1. O artigo publica percentuais como média ± desvio padrão de cinco treinamentos; as colunas do artigo mantêm essa unidade. `n/d` significa que o CSV não fornece a métrica (ou registra `nan`). O FPR por tile de ARM e DPU foi recalculado dos respectivos CSVs por imagem com o limiar do código oficial: mais de 640 pixels positivos por imagem 512×512 (equivalente a mais de 10 por 64×64). Os CSVs globais antigos usam mais de 10 pixels por 512×512 e, portanto, seus FPRs por tile não são comparáveis aos do artigo.
+Os números locais abaixo estão na escala de 0 a 1. O artigo publica percentuais como média ± desvio padrão de cinco treinamentos; as colunas do artigo mantêm essa unidade. `n/d` significa que o CSV não fornece a métrica. Há uma divergência entre as fontes: o [texto do artigo](https://www.nature.com/articles/s41598-023-44918-6) descreve **mais de 10 pixels ativos por tile**; a [função `pred_classification` do código oficial](https://github.com/spaceml-org/STARCOP/blob/main/starcop/models/model_module.py) escala 10 pixels por 64×64, resultando em **mais de 640 pixels** para 512×512. Os benchmarks ARM e DPU gravaram o limiar de 640. A tabela mostra também o recálculo com 10 a partir de `metricas_por_imagem.csv` para permitir a comparação com o texto do artigo.
 
 | Métrica | CPU PyTorch | GPU CUDA | ARM ONNX | DPU XModel | Artigo: só MAG1C | Artigo: MAG1C + RGB |
 |---|---:|---:|---:|---:|---:|---:|
@@ -21,14 +21,14 @@ Os números locais abaixo estão na escala de 0 a 1. O artigo publica percentuai
 | IoU global | 0.291187 | 0.291198 | 0.291187 | 0.292101 | n/d | n/d |
 | FPR global por pixel | 0.003946342 | 0.003945805 | 0.003946342 | 0.003658277 | n/d | n/d |
 | FPR por pixel em tiles sem pluma | n/d | n/d | 0.006013716 | 0.005662957 | n/d | n/d |
-| AUPRC | 0.506149 | 0.506082 | 0.506112 | n/d | 49.41 ± 5.49% | 51.99 ± 2.76% |
+| AUPRC | 0.506149 | 0.506082 | 0.506112 | 0.471906 | 49.41 ± 5.49% | 51.99 ± 2.76% |
 | Acurácia global | 0.995701¹ | 0.995702¹ | 0.995701 | 0.995910 | n/d | n/d |
-| Tiles com falso positivo (>640 pixels) | n/d | n/d | 23 | 22 | n/d | n/d |
-| Tiles sem falso positivo (≤640 pixels) | n/d | n/d | 153 | 154 | n/d | n/d |
-| FPR por tile (`FP tiles / (FP tiles + TN tiles)`) | n/d | n/d | 0.130682 | 0.125000 | 52.11 ± 10.98% | 43.66 ± 7.36% |
-| Tiles com FP / 342 imagens | n/d | n/d | 0.067251 | 0.064327 | n/d | n/d |
+| Tiles com falso positivo (>10 pixels; texto do artigo) | 73 | 73 | 73 | 75 | n/d | n/d |
+| FPR por tile (>10; `FP tiles / 176 sem pluma`) | 0.414773 | 0.414773 | 0.414773 | 0.426136 | 52.11 ± 10.98% | 43.66 ± 7.36% |
+| Tiles com falso positivo (>640 pixels; código oficial) | n/d | n/d | 23 | 22 | n/d | n/d |
+| FPR por tile (>640; `FP tiles / 176 sem pluma`) | n/d | n/d | 0.130682 | 0.125000 | n/d | n/d |
 
-¹ A acurácia CPU/GPU foi calculada como `(TP + TN) / (TP + FP + FN + TN)`, pois esses dois CSVs não têm a coluna. O AUPRC da DPU aparece como `nan` por uma falha no acumulador de histograma: após o último bin ocupado, o cálculo tenta dividir `0/0`, e o `nan` se propaga. O código foi corrigido, mas o CSV não guarda os scores necessários para recuperar a AUPRC sem repetir a validação. CPU/GPU também exigem nova validação para obter o FPR por tile com o limiar corrigido, pois seus CSVs só guardam os totais. `FP tiles / 342` usa todas as imagens no denominador e não é o FPR do artigo. A diferença entre os valores locais corrigidos e a média publicada permanece sem causa comprovada; o artigo agrega cinco treinamentos, enquanto os benchmarks locais avaliam modelos exportados. Fonte: [artigo, Tabela 2](https://www.nature.com/articles/s41598-023-44918-6#Tab2) e [regra de classificação do código oficial](https://github.com/spaceml-org/STARCOP/blob/main/starcop/models/model_module.py). A variante local usa MAG1C + RGB.
+¹ A acurácia CPU/GPU foi calculada como `(TP + TN) / (TP + FP + FN + TN)`, pois esses dois CSVs não têm a coluna. O FPR por tile usa as 176 imagens marcadas `sem_pluma` como denominador; o FPR por pixel usa `FP / (FP + TN)` e mede outra coisa. Os CSVs CPU/GPU já registravam `73/176` com limiar de 10; as contagens ARM/DPU com esse limiar foram recalculadas somando `tp + fp` por imagem. Com o mesmo limiar do texto do artigo, o FPR da DPU fica 42,61%, próximo dos 43,66% da Tabela 2 (média de cinco treinamentos). O código oficial publicado usa 640 para imagens 512×512; não é possível afirmar apenas com essas fontes qual limiar gerou a tabela do artigo. A variante local usa MAG1C + RGB.
 
 ### Métricas por grupo disponíveis nos CSVs embarcados
 
@@ -52,35 +52,35 @@ CPU/GPU fornecem `model_fps` e `e2e_fps` em seus CSVs; ARM/DPU fornecem `through
 
 | Modo | CPU × GPU (FPS) | GPU / CPU | ARM × DPU (throughput, FPS) | DPU / ARM |
 |---|---:|---:|---:|---:|
-| `model_only` | 5.637294 × 165.920443 | 29.43× | 0.353271 × 49.034568 | 138.80× |
-| `end_to_end` | 5.010424 × 45.512032 | 9.08× | 0.329222 × 14.632430 | 44.45× |
+| `model_only` | 5.637294 × 165.920443 | 29.43× | 0.358934 × 48.960472 | 136.41× |
+| `end_to_end` | 5.010424 × 45.512032 | 9.08× | 0.335090 × 7.005313 | 20.91× |
 
 ### Dados completos dos dois modos
 
 | Modo e campo | CPU PyTorch | GPU CUDA | ARM ONNX | DPU XModel |
 |---|---:|---:|---:|---:|
 | `model_only`: inferências | 342 | 342 | 342 | 342 |
-| `model_only`: duração (s) | n/d | n/d | 968.095161 | 6.974671 |
-| `model_only`: FPS informado pelo benchmark | 5.637294 | 165.920443 | 0.353312 | 24.536744 |
-| `model_only`: throughput medido (FPS) | n/d | n/d | 0.353271 | 49.034568 |
-| `model_only`: latência média (ms) | 177.390069 | 6.026985 | 2830.363382 | 40.755203 |
-| `model_only`: latência mediana (ms) | 176.824412 | 5.901922 | 2842.640850 | 40.452405 |
-| `model_only`: latência mínima / máxima (ms) | n/d | n/d | 2742.564700 / 2888.101000 | 38.944750 / 43.412690 |
-| `model_only`: latência P95 / P99 (ms) | 186.045058 / 211.431945 | 6.621629 / 6.992191 | 2871.550518 / 2884.052937 | 42.507895 / 43.349221 |
-| `model_only`: desvio da latência (ms) | n/d | n/d | 35.058571 | 1.050766 |
+| `model_only`: duração (s) | n/d | n/d | 952.821349 | 6.985227 |
+| `model_only`: FPS informado pelo benchmark | 5.637294 | 165.920443 | 0.358974 | 24.494160 |
+| `model_only`: throughput medido (FPS) | n/d | n/d | 0.358934 | 48.960472 |
+| `model_only`: latência média (ms) | 177.390069 | 6.026985 | 2785.716991 | 40.826058 |
+| `model_only`: latência mediana (ms) | 176.824412 | 5.901922 | 2783.730205 | 40.613875 |
+| `model_only`: latência mínima / máxima (ms) | n/d | n/d | 2747.107430 / 2865.365150 | 39.073240 / 43.612640 |
+| `model_only`: latência P95 / P99 (ms) | 186.045058 / 211.431945 | 6.621629 / 6.992191 | 2806.923476 / 2851.620326 | 42.672430 / 43.271072 |
+| `model_only`: desvio da latência (ms) | n/d | n/d | 13.054801 | 1.065820 |
 | `end_to_end`: inferências | 342 | 342 | 342 | 342 |
-| `end_to_end`: duração (s) | n/d | n/d | 1038.814161 | 23.372741 |
-| `end_to_end`: FPS informado pelo benchmark | 5.010424 | 45.512032 | 0.330032 | 5.418988 |
-| `end_to_end`: throughput medido (FPS) | n/d | n/d | 0.329222 | 14.632430 |
-| `end_to_end`: latência média (ms) | 199.583903 | 21.972211 | 3030.009249 | 184.536298 |
-| `end_to_end`: latência mediana (ms) | 198.737548 | 21.842740 | 3032.877455 | 183.833970 |
-| `end_to_end`: latência mínima / máxima (ms) | n/d | n/d | 2919.632940 / 3269.345660 | 138.398820 / 242.941760 |
-| `end_to_end`: latência P95 / P99 (ms) | 209.767139 / 234.423149 | 23.675849 / 24.390649 | 3088.776454 / 3134.344446 | 218.395371 / 230.012281 |
-| `end_to_end`: desvio da latência (ms) | n/d | n/d | 38.705118 | 19.001470 |
-| `end_to_end`: inferência média (ms) | n/d | n/d | 2821.850917 | 39.751581 |
-| `end_to_end`: leitura média (ms) | 20.988380 | 14.299878 | 179.246061 | 123.243719 |
-| `end_to_end`: pré-processamento médio (ms) | 0.959790 | 1.485289 | 26.441060 | 13.076590 |
-| `end_to_end`: pós-processamento médio (ms) | 0.233450 | 0.144408 | 2.471210 | 1.674550 |
+| `end_to_end`: duração (s) | n/d | n/d | 1020.621338 | 48.820085 |
+| `end_to_end`: FPS informado pelo benchmark | 5.010424 | 45.512032 | 0.336060 | 3.043083 |
+| `end_to_end`: throughput medido (FPS) | n/d | n/d | 0.335090 | 7.005313 |
+| `end_to_end`: latência média (ms) | 199.583903 | 21.972211 | 2975.661221 | 328.614150 |
+| `end_to_end`: latência mediana (ms) | 198.737548 | 21.842740 | 2985.796695 | 339.908480 |
+| `end_to_end`: latência mínima / máxima (ms) | n/d | n/d | 2894.514610 / 3051.152550 | 177.090100 / 401.573420 |
+| `end_to_end`: latência P95 / P99 (ms) | 209.767139 / 234.423149 | 23.675849 / 24.390649 | 3017.504853 / 3026.175611 | 374.997465 / 393.055672 |
+| `end_to_end`: desvio da latência (ms) | n/d | n/d | 30.523152 | 37.852112 |
+| `end_to_end`: inferência média (ms) | n/d | n/d | 2825.460576 | 39.380454 |
+| `end_to_end`: leitura média (ms) | 20.988380 | 14.299878 | 121.386648 | 271.988945 |
+| `end_to_end`: pré-processamento médio (ms) | 0.959790 | 1.485289 | 26.342757 | 13.006024 |
+| `end_to_end`: pós-processamento médio (ms) | 0.233450 | 0.144408 | 2.471241 | 1.657022 |
 
 ### Distribuição das etapas E2E no ARM e na DPU
 
@@ -88,17 +88,17 @@ Cada célula apresenta `média / mediana / mínima / máxima / P95 / P99 / desvi
 
 | Etapa | ARM ONNX | DPU XModel |
 |---|---:|---:|
-| Espera por slot | n/d | 0.001495 / 0.001415 / 0.000480 / 0.007010 / 0.002299 / 0.003472 / 0.000575 |
-| Leitura | 179.246 / 181.346 / 114.910 / 229.416 / 216.906 / 226.383 / 23.9173 | 123.243719 / 126.973625 / 85.156440 / 152.484000 / 137.299993 / 142.852792 / 12.199863 |
-| Pré-processamento | 26.4411 / 26.4485 / 26.2283 / 26.8792 / 26.5808 / 26.6842 / 0.0900222 | 13.076590 / 12.828140 / 12.648270 / 14.995070 / 14.023093 / 14.677905 / 0.496774 |
-| Espera pelo runner | n/d | 6.607999 / 0.059410 / 0.031350 / 40.488450 / 34.466525 / 39.075977 / 11.798935 |
-| Sincronização da entrada | n/d | 0.000362 / 0.000300 / 0.000150 / 0.001130 / 0.000630 / 0.000861 / 0.000139 |
-| Inferência | 2821.85 / 2822.85 / 2742.39 / 3018.22 / 2862.00 / 2939.87 / 30.1057 | 39.751581 / 39.958460 / 38.509590 / 44.418580 / 41.829464 / 43.866630 / 1.084511 |
-| Sincronização da saída | n/d | 0.000604 / 0.000580 / 0.000280 / 0.001540 / 0.000880 / 0.001108 / 0.000160 |
-| Espera pelo pós-processamento | n/d | 0.179398 / 0.048945 / 0.027140 / 1.215730 / 0.998697 / 1.133476 / 0.327878 |
-| Pós-processamento | 2.47121 / 2.47356 / 2.44043 / 2.65435 / 2.56156 / 2.63599 / 0.0396509 | 1.674550 / 1.660350 / 1.614430 / 2.679490 / 1.753806 / 1.920804 / 0.075454 |
+| Espera por slot | n/d | 0.001673 / 0.001610 / 0.000650 / 0.005180 / 0.002337 / 0.003095 / 0.000418 |
+| Leitura | 121.387 / 123.876 / 78.2474 / 156.844 / 146.289 / 151.713 / 14.3363 | 271.988945 / 285.357245 / 123.725320 / 338.387770 / 310.511829 / 329.533994 / 37.288024 |
+| Pré-processamento | 26.3428 / 26.2946 / 26.2149 / 26.9361 / 26.6475 / 26.7322 / 0.126065 | 13.006024 / 12.767960 / 12.627820 / 16.366410 / 14.000604 / 15.733068 / 0.591568 |
+| Espera pelo runner | n/d | 2.500287 / 0.048435 / 0.032600 / 39.982230 / 21.118126 / 31.437480 / 6.983578 |
+| Sincronização da entrada | n/d | 0.000365 / 0.000320 / 0.000180 / 0.000850 / 0.000620 / 0.000772 / 0.000124 |
+| Inferência | 2825.46 / 2832.24 / 2771.47 / 2883.39 / 2865.07 / 2875.53 / 27.8079 | 39.380454 / 39.764675 / 38.299380 / 42.603800 / 40.227196 / 40.725123 / 0.701089 |
+| Sincronização da saída | n/d | 0.000474 / 0.000450 / 0.000260 / 0.000980 / 0.000700 / 0.000750 / 0.000118 |
+| Espera pelo pós-processamento | n/d | 0.078905 / 0.045410 / 0.027480 / 1.178820 / 0.081490 / 0.968397 / 0.160044 |
+| Pós-processamento | 2.47124 / 2.47174 / 2.43984 / 2.81087 / 2.53867 / 2.68001 / 0.0462274 | 1.657022 / 1.648045 / 1.607070 / 1.896060 / 1.751556 / 1.832431 / 0.044226 |
 
-Os CSVs ARM/DPU também repetem `inferencia_media_ms = latencia_media_ms` em `model_only` e registram leitura, pré e pós-processamento iguais a zero nesse modo. A DPU preparou 4 entradas no `model_only`; em E2E, `entradas_preparadas = 0`. Há outra execução DPU com 4 runners e 51.235044 FPS `model_only`, e buscas E2E com 80 inferências; elas não foram misturadas às tabelas da execução de 2 runners.
+Os CSVs ARM/DPU também repetem `inferencia_media_ms = latencia_media_ms` em `model_only` e registram leitura, pré e pós-processamento iguais a zero nesse modo. A DPU preparou 4 entradas no `model_only`; em E2E, `entradas_preparadas = 0`. As buscas E2E com 80 inferências não foram misturadas às tabelas da execução validada de 2 runners.
 
 ## Potência e energia medidas no trilho INA226
 
@@ -106,17 +106,17 @@ Os CSVs históricos de CPU/GPU não têm medições de potência. O benchmark n�
 
 | Modo e campo | ARM ONNX | DPU XModel |
 |---|---:|---:|
-| `model_only`: amostras do sensor | 4827 | 36 |
-| `model_only`: potência média / mínima / máxima (W) | 15.583 / 14.537 / 16.437 | 23.318889 / 14.687 / 26.550 |
-| `model_only`: energia total (J) | 15085.8 | 162.641588 |
-| `model_only`: energia por inferência (J) | 44.110700 | 0.475560 |
-| `end_to_end`: amostras do sensor | 5180 | 118 |
-| `end_to_end`: potência média / mínima / máxima (W) | 15.536300 / 14.525 / 16.450 | 17.960051 / 14.650 / 26.575 |
-| `end_to_end`: energia total (J) | 16139.3 | 419.775622 |
-| `end_to_end`: energia por inferência (J) | 47.190900 | 1.227414 |
+| `model_only`: amostras do sensor | 4751 | 36 |
+| `model_only`: potência média / mínima / máxima (W) | 15.595700 / 14.537 / 16.487 | 22.936556 / 14.700 / 26.437 |
+| `model_only`: energia total (J) | 14859.9 | 160.217043 |
+| `model_only`: energia por inferência (J) | 43.449900 | 0.468471 |
+| `end_to_end`: amostras do sensor | 5089 | 245 |
+| `end_to_end`: potência média / mínima / máxima (W) | 15.573800 / 14.537 / 16.475 | 16.157522 / 14.537 / 20.937 |
+| `end_to_end`: energia total (J) | 15894.9 | 788.811619 |
+| `end_to_end`: energia por inferência (J) | 46.476400 | 2.306467 |
 
 ## Arquivos usados
 
 - [CPU PyTorch](../benchmark_nao_embarcado/resultado_test_cpu_hyperstarcop_20260922_1811.csv) e [GPU CUDA](../benchmark_nao_embarcado/resultado_test_cuda_hyperstarcop_20260922_2129.csv).
 - [ARM: qualidade](../resultados_arm/hyperstarcop_test/metricas_globais.csv), [grupos](../resultados_arm/hyperstarcop_test/metricas_grupos.csv), [desempenho](../resultados_arm/hyperstarcop_test/benchmark_geral.csv), [etapas](../resultados_arm/hyperstarcop_test/benchmark_estagios.csv) e [potência](../resultados_arm/hyperstarcop_test/benchmark_power_rails.csv).
-- [DPU: qualidade](../resultados_zcu104/methane_hyperstarcop_STARCOP_test_manual_1637343199461/metricas_globais.csv), [grupos](../resultados_zcu104/methane_hyperstarcop_STARCOP_test_manual_1637343199461/metricas_grupos.csv), [desempenho](../resultados_zcu104/methane_hyperstarcop_STARCOP_test_manual_1637343199461/benchmark_geral.csv), [etapas](../resultados_zcu104/methane_hyperstarcop_STARCOP_test_manual_1637343199461/benchmark_estagios.csv) e [potência](../resultados_zcu104/methane_hyperstarcop_STARCOP_test_manual_1637343199461/benchmark_power_rails.csv).
+- [DPU: qualidade](../resultados_zcu104/methane_hyperstarcop_STARCOP_com_AUPRC_test_manual_1637346267285/metricas_globais.csv), [grupos](../resultados_zcu104/methane_hyperstarcop_STARCOP_com_AUPRC_test_manual_1637346267285/metricas_grupos.csv), [desempenho](../resultados_zcu104/methane_hyperstarcop_STARCOP_com_AUPRC_test_manual_1637346267285/benchmark_geral.csv), [etapas](../resultados_zcu104/methane_hyperstarcop_STARCOP_com_AUPRC_test_manual_1637346267285/benchmark_estagios.csv) e [potência](../resultados_zcu104/methane_hyperstarcop_STARCOP_com_AUPRC_test_manual_1637346267285/benchmark_power_rails.csv).

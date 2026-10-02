@@ -4,6 +4,7 @@
   #include <algorithm>
   #include <cmath>
   #include <numeric>
+#include <limits>
   #include <stdexcept>
 
   namespace {
@@ -32,8 +33,36 @@
           throw std::runtime_error("Logit FLOAT32 não finito");
       }
 
-      float quantizado = std::clamp(score / escala_saida, -128.0f, 127.0f);
+      const float quantizado = score / escala_saida;
+      if (!std::isfinite(quantizado) || quantizado < -128.0f || quantizado > 127.0f ||
+          std::abs(quantizado - std::round(quantizado)) > 1e-4f)
+          throw std::runtime_error("Saida FLOAT32 nao corresponde a grade INT8 do XModel");
       return static_cast<int>(std::lrint(quantizado)) + 128;
+  }
+
+  // Probabilidades FLOAT32 podem empatar por saturacao do sigmoid.
+  double area_pr(const std::array<std::uint64_t, 256>& positivos,
+                 const std::array<std::uint64_t, 256>& negativos,
+                 float escala, bool average_precision) {
+      const auto total = std::accumulate(positivos.begin(), positivos.end(), std::uint64_t{0});
+      if (!total) return average_precision ? 0.0 : 0.5;
+      std::uint64_t tp = 0, fp = 0;
+      double area = 0, precision_anterior = 1;
+      for (int bin = 255; bin >= 0;) {
+          const float score = 1.0f / (1.0f + std::exp(-(bin - 128) * escala));
+          std::uint64_t p = 0, n = 0;
+          do {
+              p += positivos[bin]; n += negativos[bin]; --bin;
+          } while (bin >= 0 &&
+                   1.0f / (1.0f + std::exp(-(bin - 128) * escala)) == score);
+          if (p + n == 0) continue;
+          tp += p; fp += n;
+          const double precision = static_cast<double>(tp) / (tp + fp);
+          area += static_cast<double>(p) / total *
+                  (average_precision ? precision : (precision_anterior + precision) / 2);
+          precision_anterior = precision;
+      }
+      return area;
   }
 
   } // namespace
@@ -79,11 +108,14 @@
           label.type() != CV_32FC1 || logits == nullptr) {
           throw std::runtime_error("Entrada inválida para calcular métricas");
       }
-      if (saida_float &&
-          (!std::isfinite(escala_saida) || escala_saida <= 0.0f)) {
+      if (!std::isfinite(escala_saida) || escala_saida <= 0.0f) {
           throw std::runtime_error("Escala de saída inválida");
       }
 
+      if (escala_saida_ != 0 && escala_saida_ != escala_saida)
+          throw std::runtime_error("Escala de saida mudou durante a validacao");
+      escala_saida_ = escala_saida;
+      std::array<std::uint64_t, 256> positivos_imagem{}, negativos_imagem{};
       Contagens c;
       std::uint64_t pixels_preditos = 0;
 
@@ -107,8 +139,8 @@
               const int bin = indice_score(
                   logits, saida_float, escala_saida, pixel
               );
-              if (real) ++positivos_[bin];
-              else ++negativos_[bin];
+              if (real) { ++positivos_[bin]; ++positivos_imagem[bin]; }
+              else { ++negativos_[bin]; ++negativos_imagem[bin]; }
           }
       }
 
@@ -116,16 +148,20 @@
       resultado.id = amostra.id;
       resultado.contagens = c;
       resultado.metricas = calcular_metricas(c);
+      resultado.positive = c.tp + c.fn > 0;
+      resultado.difficulty_csv = amostra.difficulty;
+      resultado.average_precision = area_pr(positivos_imagem, negativos_imagem, escala_saida, true);
+      if (resultado.positive) { ++imagens_positivas_; soma_ap_ += resultado.average_precision; }
 
       somar(global_, c);
       ++imagens_;
 
-      if (!amostra.has_plume) {
+      if (protocolo_oficial_ ? !resultado.positive : !amostra.has_plume) {
           resultado.dificuldade = "sem_pluma";
           somar(sem_pluma_, c);
           if (pixels_preditos > 10 * PIXELS_SAIDA / (64 * 64)) ++fp_tiles_;
           else ++tn_tiles_;
-      } else if (amostra.qplume > 1000.0) {
+      } else if (protocolo_oficial_ ? amostra.difficulty == "easy" : amostra.qplume > 1000.0) {
           resultado.dificuldade = "forte";
           somar(forte_, c);
       } else {
@@ -154,27 +190,22 @@
       if (imagens_ > 0)
           r.fpr_tile_tabela = static_cast<double>(fp_tiles_) / imagens_;
 
-      const std::uint64_t total_positivos =
-          std::accumulate(positivos_.begin(), positivos_.end(), std::uint64_t{0});
-
-      // sklearn.precision_recall_curve + auc retorna 0.5 sem pixels positivos.
-      if (total_positivos == 0) {
-          if (imagens_ > 0) r.auprc = 0.5;
-          return r;
-      }
-
-      std::uint64_t tp = total_positivos;
-      std::uint64_t fp =
-          std::accumulate(negativos_.begin(), negativos_.end(), std::uint64_t{0});
-      for (std::size_t bin = 0; bin < positivos_.size(); ++bin) {
-          if (tp + fp == 0) break;
-          const double precision_antes = static_cast<double>(tp) / (tp + fp);
-          tp -= positivos_[bin];
-          fp -= negativos_[bin];
-          const double precision_depois = tp + fp > 0
-              ? static_cast<double>(tp) / (tp + fp) : 1.0;
-          r.auprc += static_cast<double>(positivos_[bin]) / total_positivos *
-                     (precision_antes + precision_depois) / 2.0;
+      r.protocolo_oficial = protocolo_oficial_;
+      r.imagens_positivas = imagens_positivas_;
+      r.auprc = protocolo_oficial_
+          ? (imagens_positivas_ ? soma_ap_ / imagens_positivas_ : std::numeric_limits<double>::quiet_NaN())
+          : (imagens_ ? area_pr(positivos_, negativos_, escala_saida_, false) : 0.0);
+      if (protocolo_oficial_) {
+          // Mesmos denominadores de evaluate_quantized.summarize.
+          const auto ajustar = [](const Contagens& c, Metricas& m) {
+              m.f1 = 2.0 * c.tp / (2.0 * c.tp + c.fp + c.fn + 1e-6);
+              m.iou = static_cast<double>(c.tp) / (c.tp + c.fp + c.fn + 1e-6);
+          };
+          ajustar(global_, r.metricas_globais);
+          ajustar(forte_, r.metricas_fortes);
+          ajustar(fraca_, r.metricas_fracas);
+          r.fpr_sem_pluma = static_cast<double>(sem_pluma_.fp) /
+                           (sem_pluma_.fp + sem_pluma_.tn + 1e-6);
       }
 
       return r;

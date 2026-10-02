@@ -15,21 +15,23 @@ ResultadoValidacao validar_modelo(const std::string& caminho_xmodel,
 
     auto runner = carregar_xmodel(caminho_xmodel);
     auto& slot = *runner.slots.front();
-    auto canais = carregar_canais(amostras.front());
+    auto canais = carregar_canais(amostras.front(), runner.ordem_rgb);
     preprocessar(canais, slot.dados_entrada(), slot.bytes_entrada(),
-                 runner.escala_entrada);
+                 runner.escala_entrada, runner.tamanho_patch);
     runner.sincronizar_entrada(slot);
     for (int i = 0; i < warmup; ++i) runner.inferir(slot);
 
     AcumuladorMetricas acumulador;
+    AcumuladorMetricas oficial(true);
     ResultadoValidacao resultado;
     resultado.imagens.reserve(amostras.size());
+    resultado.imagens_oficiais.reserve(amostras.size());
     std::vector<std::uint8_t> mascara(PIXELS_SAIDA);
 
     for (const auto& amostra : amostras) {
-        canais = carregar_canais(amostra);
+        canais = carregar_canais(amostra, runner.ordem_rgb);
         preprocessar(canais, slot.dados_entrada(), slot.bytes_entrada(),
-                     runner.escala_entrada);
+                     runner.escala_entrada, runner.tamanho_patch);
         runner.sincronizar_entrada(slot);
         runner.inferir(slot);
         runner.sincronizar_saida(slot);
@@ -39,8 +41,13 @@ ResultadoValidacao validar_modelo(const std::string& caminho_xmodel,
         resultado.imagens.push_back(acumulador.adicionar(
             amostra, mascara, label, slot.dados_saida(),
             runner.saida_float, runner.escala_saida));
+        abrir_mascara(mascara);
+        resultado.imagens_oficiais.push_back(oficial.adicionar(
+            amostra, mascara, label, slot.dados_saida(),
+            runner.saida_float, runner.escala_saida));
         if (progresso) progresso->fetch_add(1, std::memory_order_relaxed);
     }
     resultado.resumo = acumulador.resumo();
+    resultado.resumo_oficial = oficial.resumo();
     return resultado;
 }

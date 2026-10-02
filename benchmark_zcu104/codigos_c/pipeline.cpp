@@ -6,6 +6,7 @@
 #include "xmodel_runner.hpp"
 
 #include <atomic>
+#include <algorithm>
 #include <chrono>
 #include <condition_variable>
 #include <deque>
@@ -122,9 +123,9 @@ public:
     explicit Controle(std::size_t total) : total_(total) {}
 
     void concluir(Clock::time_point instante) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        fim_ = std::max(fim_, instante);
         if (++concluidas_ == total_) {
-            std::lock_guard<std::mutex> lock(mutex_);
-            fim_ = instante;
             finalizado_ = true;
             cv_.notify_all();
         }
@@ -170,10 +171,10 @@ void preparar_slots(std::vector<XModelRunner>& runners,
         auto& runner = runners[r];
         for (std::size_t s = 0; s < runner.slots.size(); ++s) {
             auto canais = carregar_canais(
-                amostras[(r * runner.slots.size() + s) % amostras.size()]);
+                amostras[(r * runner.slots.size() + s) % amostras.size()], runner.ordem_rgb);
             auto& slot = *runner.slots[s];
             preprocessar(canais, slot.dados_entrada(), slot.bytes_entrada(),
-                         runner.escala_entrada);
+                         runner.escala_entrada, runner.tamanho_patch);
             runner.sincronizar_entrada(slot);
         }
         for (int i = 0; i < warmup; ++i)
@@ -211,6 +212,9 @@ ResultadoExecucao executar_model_only(
     ResultadoExecucao resultado;
     resultado.modo = "model_only";
     resultado.configuracao = configuracao;
+    resultado.tamanho_patch = runners.front().tamanho_patch;
+    resultado.patches_por_imagem = runners.front().patches_por_imagem;
+    resultado.ordem_rgb = runners.front().ordem_rgb;
     resultado.imagens.resize(total);
     Controle controle(total);
     std::atomic<std::size_t> proximo{0};
@@ -238,6 +242,7 @@ ResultadoExecucao executar_model_only(
                         t.trabalho = job;
                         t.indice_amostra =
                             (r * runner.slots.size() + s) % amostras.size();
+                        t.id = amostras[t.indice_amostra].id;
                         t.inferencia_ms = ms(t0, t1);
                         t.latencia_total_ms = t.inferencia_ms;
                         if (progresso) progresso->fetch_add(1, std::memory_order_relaxed);
@@ -261,6 +266,8 @@ ResultadoExecucao executar_model_only(
     controle.relancar_erro();
 
     resultado.concluidas = controle.concluidas();
+    resultado.inicio_medicao = inicio;
+    resultado.fim_medicao = fim;
     resultado.duracao_s = segundos(inicio, fim);
     resultado.throughput_fps = resultado.concluidas / resultado.duracao_s;
     return resultado;
@@ -284,6 +291,9 @@ ResultadoExecucao executar_end_to_end(
     ResultadoExecucao resultado;
     resultado.modo = "end_to_end";
     resultado.configuracao = configuracao;
+    resultado.tamanho_patch = runners.front().tamanho_patch;
+    resultado.patches_por_imagem = runners.front().patches_por_imagem;
+    resultado.ordem_rgb = runners.front().ordem_rgb;
     resultado.imagens.resize(total);
     Controle controle(total);
     std::atomic<std::size_t> proximo{0};
@@ -383,13 +393,14 @@ ResultadoExecucao executar_end_to_end(
                         w->tempos = {};
                         w->tempos.trabalho = job;
                         w->tempos.indice_amostra = job % amostras.size();
+                        w->tempos.id = amostras[w->tempos.indice_amostra].id;
                         w->tempos.espera_slot_ms = ms(t0, t1);
-                        auto canais = carregar_canais(amostras[w->tempos.indice_amostra]);
+                        auto canais = carregar_canais(amostras[w->tempos.indice_amostra], w->runner->ordem_rgb);
                         const auto t2 = Clock::now();
                         w->tempos.leitura_ms = ms(t1, t2);
                         preprocessar(canais, w->slot->dados_entrada(),
                                      w->slot->bytes_entrada(),
-                                     w->runner->escala_entrada);
+                                     w->runner->escala_entrada, w->runner->tamanho_patch);
                         const auto t3 = Clock::now();
                         w->tempos.preprocess_ms = ms(t2, t3);
                         w->enfileirado_runner = t3;
@@ -412,6 +423,8 @@ ResultadoExecucao executar_end_to_end(
     controle.relancar_erro();
 
     resultado.concluidas = controle.concluidas();
+    resultado.inicio_medicao = inicio;
+    resultado.fim_medicao = fim;
     resultado.duracao_s = segundos(inicio, fim);
     resultado.throughput_fps = resultado.concluidas / resultado.duracao_s;
     return resultado;

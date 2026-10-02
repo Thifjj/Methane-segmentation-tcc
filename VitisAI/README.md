@@ -1,440 +1,110 @@
-# Conversao para Vitis AI 3.5 / ZCU104
+# Vitis AI — modelos oficiais
 
-## Notebook
+Os dois modelos oficiais foram escolhidos pelo maior F1 global INT8 nas
+342 imagens de `STARCOP_test/test.csv`. A avaliacao usa patches 128x128 sem
+sobreposicao, logits > 0 e abertura morfologica, com comparacao FP32 equivalente.
 
-Na primeira execucao, crie o container com o Vitis AI, este projeto e o dataset
-completo montados:
+| Modelo | Imagens selecionadas | Patches por grupo | Amostras por camada | Refinamento | F1 INT8 | AUPRC |
+|---|---:|---:|---:|---:|---:|---:|
+| `attentiongates_dpu_easy_remaining` | 300 | 900 | 2048 | 12 camadas | 0.623353 | 0.560959 |
+| `attentiongates_dpu_only_remaining` | 100 | 300 | 512 | desativado | 0.660944 | 0.531214 |
 
-```bash
-docker run -it \
-  --name methane-vitis-ai-cpu \
-  --network host \
-  -v /dev/shm:/dev/shm \
-  -v "/home/thiago/Documents/aplicativos/Vitis-AI":/vitis_ai_home \
-  -v "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc":/workspace \
-  -v "/home/thiago/Documents/STARCOP_DATASET":/dataset_STARCOP:ro \
-  -w /workspace/VitisAI \
-  xilinx/vitis-ai-pytorch-cpu:ubuntu2004-3.5.0.306 \
-  bash
-```
+O easy usa 2700 patches provenientes de 298 das 300 imagens selecionadas.
+O only usa 900 patches das 100 imagens. A selecao oficial prioriza F1;
+no easy, a configuracao escolhida tinha AUPRC inferior a outra configuracao.
+Os resultados sao de simulacao INT8 no Vitis AI 3.5, ainda sem validacao na placa.
 
-Nas execucoes seguintes:
+## Arquivos oficiais
 
-```bash
-docker start methane-vitis-ai-cpu
-docker exec -it -w /workspace/VitisAI methane-vitis-ai-cpu bash
-conda activate vitis-ai-pytorch
-```
+Os artefatos dos dois AttentionGates ficam em `build/vitis_ai/official/`:
 
-Dentro do container, o projeto fica em `/workspace`, o dataset em
-`/dataset_STARCOP` e o codigo-fonte do Vitis AI em `/vitis_ai_home`.
+- `quantize/<modelo>/`: configuracao INT8, bias correction, manifesto e faixas.
+- `evaluation/`: resultados por imagem e resumo da avaliacao dos dois modelos.
+- `summary.csv`: comparacao FP32/INT8 dos modelos oficiais nas 342 imagens.
+- `official.json`: criterio de selecao, configuracoes e metricas oficiais.
+- `compiled_zcu104/<modelo>/<modelo>.xmodel`: modelos oficiais compilados.
+- `inspect/`: inspecoes disponiveis dos dois checkpoints.
+- Logs de calibracao dos modelos escolhidos.
 
-Os scripts sao a interface principal e devem ser executados **dentro do container PyTorch do Vitis AI**. Use `--model` com `baseline`, `depth_reduced`, `skip_connections`, `mobilenet_v2`, `mobilenet_v3` ou `hyperstarcop`. Por padrao, cada nome seleciona seu checkpoint em `Modelos_treinados/` e usa os quatro canais `mag1c,R,G,B` do projeto. O HyperSTARCOP exige as dependencias adicionais descritas ao final deste guia.
+Os checkpoints FP32 ficam em `../Modelos_treinados/`. `common.py` registra
+somente os dois modelos oficiais e suas configuracoes em `OFFICIAL_CALIBRATION`.
 
-> Use uma versao do container Vitis AI compativel com a imagem/bitstream instalado na ZCU104. O `arch.json` tambem deve ser exatamente o dessa DPU; nao use um arquivo apenas porque ele tem o nome ZCU104.
+## Pre-processamento e calibracao
 
-Este fluxo usa o container oficial **CPU** `xilinx/vitis-ai-pytorch-cpu:ubuntu2004-3.5.0.306`. A GPU NVIDIA usada no treinamento nao e necessaria para quantizar ou compilar. A mensagem `No CUDA runtime is found` e esperada neste container.
+Canais: `mag1c, TOA_AVIRIS_460nm, TOA_AVIRIS_550nm, TOA_AVIRIS_640nm`.
+Usa `STARCOPDataset` e `DataNormalizer` do treinamento: mag1c / 1750,
+RGB / 60, clip [0, 2], patches 128x128 com passo 64 na calibracao.
+Os grupos forte, fraco e fundo recebem a mesma quantidade de patches.
+Os rotulos selecionam patches e nunca entram como entrada do modelo.
 
-## 0. Entrar no ambiente Vitis AI
+A politica `layer_mse` escolhe faixas por camada com clipping amostrado de
+ate 0,1%, antes dos ajustes nativos da DPU. No easy, o refinamento testa
+posicoes vizinhas nas camadas de maior erro e aceita reducoes do erro dos
+logits frente ao FP32 em 24 patches de calibracao. Preserva as restricoes
+nativas e as faixas dos parametros. O test nao participa do refinamento.
+O limite de clipping e uma estimativa; ajustes obrigatorios da DPU podem
+excede-lo. `layer_ranges.json` e `refinement.json` registram os resultados.
 
-O container CPU deste projeto chama-se `methane-vitis-ai-cpu`. No terminal do
-host, inicie-o e entre nele:
+O manifesto v2 confere hashes SHA-256 dos pesos e artefatos, canais,
+normalizacao, dimensoes, patching e target antes de avaliar ou exportar.
+Diretorios ja calibrados sao protegidos contra sobrescrita.
 
-```bash
-docker start methane-vitis-ai-cpu
-docker exec -it methane-vitis-ai-cpu bash
-```
+## Uso no container
 
-Os comandos restantes deste guia devem ser executados **dentro do container**.
-Ative o ambiente e entre na pasta dos scripts:
+Ambiente: Vitis AI 3.5, `conda activate vitis-ai-pytorch`, diretorio
+`/workspace/VitisAI`. Dependencias adicionais usadas: rasterio 1.3.11 e
+kornia 0.6.12. O dataset de calibracao fica em `/dataset_STARCOP`.
 
-```bash
-conda activate vitis-ai-pytorch
-cd /workspace/VitisAI
-```
-
-O prompt deve ficar parecido com:
-
-```text
-(vitis-ai-pytorch) vitis-ai-user@jacquespc:/workspace/VitisAI$
-```
-
-Confirme os arquivos antes de começar:
+Para avaliar os modelos oficiais:
 
 ```bash
-test -f /dataset_STARCOP/train.csv && echo "CSV OK"
-test -f ../Modelos_treinados/UNET_depth_reduced_mag1c_rgb.pth && echo "CHECKPOINT OK"
-python -c 'import torch, rasterio; print("PyTorch", torch.__version__); print("Rasterio", rasterio.__version__)'
+python evaluate_quantized.py --dataset test
 ```
 
-## 1. Inspecionar os modelos
-
-Descubra os targets presentes no container e use o target correspondente a sua DPU. Exemplo (o nome exato depende da versao/imagem):
+Para reproduzir calibracao e avaliacao com as configuracoes oficiais,
+use um diretorio novo:
 
 ```bash
-for MODEL in baseline depth_reduced skip_connections mobilenet_v2 mobilenet_v3
-do
-  python inspect_model.py \
-    --model "$MODEL" \
-    --target DPUCZDX8G_ISA1_B4096 \
-    --output-dir build/vitis_ai/inspect
-done
+python run_layer_validation.py --output-dir build/vitis_ai/nova_execucao
 ```
 
-Consulte `build/vitis_ai/inspect/<modelo>/` e as imagens geradas.
-`ConvTranspose2d`, interpolacao bilinear e operadores de concatenacao podem
-produzir subgrafos fora da DPU; o Inspector e a fonte de verdade.
-
-## 2. Calibrar INT8
-
-Use imagens reais e representativas. O preprocessamento e exatamente o `DataNormalizer` usado no teste original.
-O subconjunto e sorteado de forma reproduzivel (`--seed 12345`) e os rotulos
-nao sao carregados, pois nao participam da calibracao. Por padrao, dois workers
-antecipam a leitura dos GeoTIFFs; use `--num-workers 0` se o ambiente limitar
-multiprocessamento. `--batch-size` permanece em 1 por seguranca de memoria, mas
-pode ser aumentado durante a calibracao apos medir o consumo de RAM.
-
-Calibre e, em seguida, exporte cada modelo. Se qualquer etapa falhar, `set -e`
-interrompe o loop e evita exportar com uma calibracao ausente ou incompleta.
+Para exportar um modelo oficial (batch 1, uma inferencia):
 
 ```bash
-set -e
-
-for MODEL in mobilenet_v2 mobilenet_v3
-do
-  echo "=== CALIBRANDO $MODEL ==="
-  python3 quantize_model.py \
-    --model "$MODEL" \
-    --quant-mode calib \
-    --csv /dataset_STARCOP/train.csv \
-    --data-root /dataset_STARCOP \
-    --subset-len 1000 \
-    --target DPUCZDX8G_ISA1_B4096 \
-    --output-dir build/vitis_ai/quantize
-
-  echo "=== EXPORTANDO $MODEL ==="
-
-  python quantize_model.py \
-    --model "$MODEL" \
-    --quant-mode test \
-    --csv /dataset_STARCOP/train.csv \
-    --data-root /dataset_STARCOP \
-    --target DPUCZDX8G_ISA1_B4096 \
-    --output-dir build/vitis_ai/quantize \
-    --deploy
-done
+python quantize_model.py --model attentiongates_dpu_easy_remaining \
+  --quant-mode test --deploy --csv /dataset_STARCOP/train.csv \
+  --data-root /dataset_STARCOP
 ```
 
-O deploy força automaticamente `batch_size=1` e uma unica inferencia. Confira
-os arquivos INT8 exportados:
-
-```bash
-find build/vitis_ai/quantize -name '*_int.xmodel'
-```
-
-## 3. Compilar para o bitstream da ZCU104
-
-O arquivo exportado pelo quantizador ainda nao e o artefato final da placa. Ele
-precisa ser compilado com o `arch.json` **exato do bitstream/DPU instalado na
-ZCU104**. O nome do target usado acima nao substitui essa verificacao.
-
-Procure as configuracoes disponiveis:
-
-```bash
-find /opt/vitis_ai -path '*ZCU104*' -name arch.json 2>/dev/null
-```
-
-Compile os cinco modelos originais diretamente para a ZCU104. Execute dentro de
-`/workspace/VitisAI`; tanto a entrada quanto a saida ficam no `build` dessa
-pasta:
-
-```bash
-set -e
-ARCH=/opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json
-test -f "$ARCH" || { echo "arch.json da ZCU104 ausente"; exit 1; }
-
-for MODEL in baseline depth_reduced skip_connections mobilenet_v2 mobilenet_v3
-do
-  XMODEL="$(find "build/vitis_ai/quantize/$MODEL" -maxdepth 1 -name '*_int.xmodel' -print -quit)"
-  test -n "$XMODEL" || { echo "XModel ausente para $MODEL"; exit 1; }
-
-  python compile_xmodel.py \
-    --xmodel "$XMODEL" \
-    --arch "$ARCH" \
-    --output-dir "build/vitis_ai/compiled_zcu104/$MODEL" \
-    --name "methane_$MODEL"
-done
-```
-
-O HyperSTARCOP usa um fluxo separado porque requer dependências adicionais e
-calibração própria. Execute `bash run_hyperstarcop_full.sh` conforme a seção
-[HyperSTARCOP oficial](#hyperstarcop-oficial); o script também compila seu
-XModel para a ZCU104.
-
-Confira os artefatos compilados:
-
-```bash
-find build/vitis_ai/compiled_zcu104 -name '*.xmodel'
-```
-
-Uma compilacao cujo arquivo de saida esteja atualizado e ignorada
-automaticamente. Acrescente `--force` ao comando para recompilar.
-
-## 4. Copiar para a placa
-
-Saia do container:
-
-```bash
-exit
-```
-
-No host, copie os modelos, substituindo o usuario e o IP da ZCU104:
-
-```bash
-scp -r VitisAI/build/vitis_ai/compiled_zcu104 \
-  root@IP_DA_ZCU104:/home/root/models/
-```
-
-O comando acima copia a pasta `compiled_zcu104` para
-`/home/root/models/compiled_zcu104`. Para o benchmark C++ deste projeto, que
-procura os modelos em `/home/root/thiago/benchmark/modelos/<modelo>/`, copie-os
-para o caminho esperado, por exemplo:
-
-```bash
-scp -r VitisAI/build/vitis_ai/compiled_zcu104/* \
-  root@IP_DA_ZCU104:/home/root/thiago/benchmark/modelos/
-```
-
-Copiar o modelo nao inicia a inferencia. A placa tambem precisa do Vitis AI
-Runtime compativel com o bitstream e de um aplicativo VART que carregue os
-quatro canais, aplique o mesmo `DataNormalizer`, execute a DPU e gere a mascara.
-
-Na placa, primeiro confirme que a DPU esta acessivel e que os modelos chegaram:
-
-```bash
-xdputil query
-find /home/root/models/compiled_zcu104 -name '*.xmodel'
-xdputil xmodel /home/root/models/compiled_zcu104/depth_reduced/methane_depth_reduced.xmodel -l
-```
-
-Para medir apenas o desempenho da DPU com entrada sintetica, consulte a sintaxe
-instalada e execute o benchmark com uma thread:
-
-```bash
-xdputil benchmark --help
-xdputil benchmark /home/root/models/compiled_zcu104/depth_reduced/methane_depth_reduced.xmodel 1
-```
-
-Esse benchmark nao mede leitura dos GeoTIFFs, normalizacao, pos-processamento,
-IoU ou F1. Para o benchmark completo, copie `benchmark_zcu104/codigos_c/` para
-`/home/root/thiago/benchmark/` e siga
-[`benchmark_zcu104/codigos_c/README.md`](../benchmark_zcu104/codigos_c/README.md).
-O código atual mede os datasets `STARCOP_test` e `dataset_starcop` e mantém
-saídas separadas para cada dataset.
-
-## 5. Como adicionar manualmente um modelo ao código
-
-Os scripts `inspect_model.py` e `quantize_model.py` usam o dicionário `MODEL_REGISTRY`, localizado em `VitisAI/common.py`. Para disponibilizar uma arquitetura nova por meio de `--model`, é necessário cadastrar sua classe e seu checkpoint nesse dicionário.
-
-### Passo 1 — adicionar a implementação
-
-Coloque o arquivo Python da arquitetura em `Modelos/`. A classe precisa herdar de `torch.nn.Module`, implementar `forward()` e aceitar os argumentos utilizados pelo carregador:
-
-```python
-class MeuModelo(torch.nn.Module):
-    def __init__(self, in_channels=4, out_channels=1):
-        super().__init__()
-        # Definição das camadas
-
-    def forward(self, x):
-        # Inferência
-        return logits
-```
-
-Para os dados `mag1c + RGB` deste projeto, o modelo recebe quatro canais e produz um canal de logits de segmentação.
-
-### Passo 2 — adicionar o checkpoint
-
-Copie o `state_dict` treinado para `Modelos_treinados/`:
-
-```text
-Modelos_treinados/MeuModelo_mag1c_rgb.pth
-```
-
-O checkpoint deve pertencer exatamente à arquitetura adicionada. Alterar somente o nome de um `.pth` não converte seus pesos para outra arquitetura.
-
-### Passo 3 — importar a classe
-
-Abra `VitisAI/common.py` e adicione o import junto aos imports dos outros modelos:
-
-```python
-from Modelos.MeuModelo import MeuModelo
-```
-
-A estrutura do import é:
-
-```python
-from Modelos.NOME_DO_ARQUIVO import NOME_DA_CLASSE
-```
-
-### Passo 4 — registrar classe e checkpoint
-
-No mesmo arquivo, encontre `MODEL_REGISTRY` e acrescente uma entrada:
-
-```python
-MODEL_REGISTRY = {
-    "baseline": (UNetBaseline, "UNET_mag1c_rgb.pth"),
-    "depth_reduced": (UNetDepthReduced, "UNET_depth_reduced_mag1c_rgb.pth"),
-    "skip_connections": (UNetElementWise, "UNET_SkipConnections_mag1c_rgb.pth"),
-    "mobilenet_v2": (UNetMobileNetV2, "Mobile_Net_v2_mag1c_rgb.pth"),
-    "mobilenet_v3": (UNetMobileNetV3, "Mobile_Net_v3_mag1c_rgb.pth"),
-    "meu_modelo": (MeuModelo, "MeuModelo_mag1c_rgb.pth"),
-}
-```
-
-Cada registro segue o formato:
-
-```python
-"nome_usado_no_argumento": (ClasseDoModelo, "checkpoint.pth")
-```
-
-Portanto, `"meu_modelo"` será o valor fornecido a `--model`. O nome deve ser único e o checkpoint é procurado automaticamente dentro de `Modelos_treinados/`.
-
-O baseline deste projeto foi cadastrado dessa forma:
-
-```python
-from Modelos.UNet_baseline import UNetBaseline
-
-MODEL_REGISTRY = {
-    "baseline": (UNetBaseline, "UNET_mag1c_rgb.pth"),
-    # Outros modelos...
-}
-```
-
-### Passo 5 — verificar o cadastro
-
-Dentro do container Vitis AI e da pasta `/workspace/VitisAI`, execute:
-
-```bash
-python inspect_model.py --help
-```
-
-O novo nome deverá aparecer nas opções de `--model`. Em seguida, teste o carregamento e a compatibilidade com a DPU:
-
-```bash
-python inspect_model.py \
-  --model meu_modelo \
-  --target DPUCZDX8G_ISA1_B4096 \
-  --output-dir build/vitis_ai/inspect
-```
-
-Se aparecer erro em `load_state_dict`, a classe não corresponde ao checkpoint, o número de canais está incorreto ou os pesos foram salvos usando uma estrutura diferente.
-
-### Passo 6 — calibrar e exportar
-
-Depois que a inspeção funcionar, calibre o modelo:
-
-```bash
-python quantize_model.py \
-  --model meu_modelo \
-  --quant-mode calib \
-  --csv /dataset_STARCOP/train.csv \
-  --data-root /dataset_STARCOP \
-  --subset-len 1000 \
-  --target DPUCZDX8G_ISA1_B4096 \
-  --output-dir build/vitis_ai/quantize
-```
-
-Finalmente, teste e exporte o `.xmodel` INT8 usando exatamente o mesmo nome e target:
-
-```bash
-python quantize_model.py \
-  --model meu_modelo \
-  --quant-mode test \
-  --csv /dataset_STARCOP/train.csv \
-  --data-root /dataset_STARCOP \
-  --target DPUCZDX8G_ISA1_B4096 \
-  --output-dir build/vitis_ai/quantize \
-  --deploy
-```
-
-Não é necessário modificar `inspect_model.py` nem `quantize_model.py`: ambos obtêm automaticamente os modelos disponíveis a partir de `MODEL_REGISTRY`.
-
-## 6. Diagnostico rapido
-
-- `Nenhuma amostra valida`: confirme o CSV, o volume `/dataset_STARCOP` e os quatro TIFFs exigidos em uma pasta de amostra.
-- `FileNotFoundError: /dataset_STARCOP/train.csv`: o container foi criado sem o volume correto; recrie-o conforme [`iniciar_vitisAI_desktop.txt`](../iniciar_vitisAI_desktop.txt).
-- `FutureWarning` vindo de `scipy.stats.mode`: e um aviso de compatibilidade da versao interna do quantizador; aguarde a linha de progresso antes de concluir que travou.
-- Leitura lenta ou erro de multiprocessing: repita com `--num-workers 0`.
-- `No CUDA runtime is found`: normal no container CPU usado neste projeto.
-- Nao execute `test --deploy` sem a calibracao correspondente no mesmo `--output-dir`.
-
-Os diretorios `build/vitis_ai/quantize`, `build/vitis_ai/inspect` e
-`build/vitis_ai/compiled_zcu104` sao artefatos gerados. Preserve-os para o
-deploy, mas evite adiciona-los ao Git sem uma decisao explicita sobre o tamanho
-do repositorio.
-
-## HyperSTARCOP oficial
-
-O modelo `hyperstarcop` usa o checkpoint Lightning em
-`Modelos_treinados/HyperSTARCOP_oficial/final_checkpoint_model.ckpt`. Seu
-carregamento preserva os quatro canais `mag1c, 640, 550, 460 nm` e a mesma
-normalizacao dos demais modelos. O container Vitis AI 3.5 usa Python 3.8;
-instale nele as dependencias abaixo, mantendo o PyTorch do container:
-
-```bash
-pip install --no-deps segmentation-models-pytorch==0.3.3 \
-  pretrainedmodels==0.7.4 efficientnet-pytorch==0.7.1 timm==0.9.2
-pip install omegaconf==2.3.0
-pip install rasterio==1.3.11
-```
-
-O container `methane-vitis-ai-cpu` existente nesta maquina nao tem o
-`train.csv` montado em `/dataset_STARCOP`. Para calibrar com o dataset full em
-`/media/jacques/games/Datasets/STARCOP_train_remaining_all`, crie no host um
-container com o volume correto:
-
-```bash
-docker run -it --name methane-vitis-ai-full --network host \
-  -v /dev/shm:/dev/shm \
-  -v /media/jacques/hdd/Laboratorio/Projeto_joao/Methane_segmentation:/workspace \
-  -v /media/jacques/games/Datasets/STARCOP_train_remaining_all:/dataset_STARCOP:ro \
-  -w /workspace/VitisAI \
-  xilinx/vitis-ai-pytorch-cpu:ubuntu2004-3.5.0.306 bash
-```
-
-Se `methane-vitis-ai-full` ja existir, reutilize-o em vez de repetir
-`docker run`:
-
-```bash
-docker start methane-vitis-ai-full
-docker exec -it -w /workspace/VitisAI methane-vitis-ai-full bash
-```
-
-Dentro desse container, ative `conda activate vitis-ai-pytorch`, instale as
-dependencias acima e execute `bash run_hyperstarcop_full.sh` para calibrar,
-exportar e compilar em sequencia. Os comandos individuais equivalentes sao:
-
-```bash
-python inspect_model.py --model hyperstarcop --target DPUCZDX8G_ISA1_B4096
-python quantize_model.py --model hyperstarcop --quant-mode calib \
-  --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP \
-  --subset-len 1000 --seed 12345 --target DPUCZDX8G_ISA1_B4096 \
-  --output-dir build/vitis_ai/quantize
-python quantize_model.py --model hyperstarcop --quant-mode test --deploy \
-  --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP \
-  --target DPUCZDX8G_ISA1_B4096 --output-dir build/vitis_ai/quantize
-```
-
-Confirme `calib: 1000/1000 amostras` no log. Para compilar, use o `arch.json`
-correspondente ao bitstream da placa, conforme a secao 3 deste guia:
-
-```bash
-XMODEL="$(find build/vitis_ai/quantize/hyperstarcop -maxdepth 1 \
-  -name '*_int.xmodel' -print -quit)"
-test -n "$XMODEL" || { echo "XModel INT8 ausente"; exit 1; }
-python compile_xmodel.py --xmodel "$XMODEL" \
-  --arch /opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json \
-  --output-dir build/vitis_ai/compiled_zcu104/hyperstarcop \
-  --name methane_hyperstarcop
-```
+Repita com `attentiongates_dpu_only_remaining`. Os padroes por modelo ja
+reproduzem a configuracao oficial; a saida e `official/quantize/<modelo>`.
+Para inspecionar, use `inspect_model.py --model MODELO --target DPUCZDX8G_ISA1_B4096`.
+Para compilar o XModel exportado, use `compile_xmodel.py --xmodel ARQUIVO \
+--arch ARCH_JSON --name NOME`, informando o arch.json do bitstream da placa.
+
+## Compilacao oficial concluida
+
+Os dois XModels em `official/compiled_zcu104/` foram compilados para
+`DPUCZDX8G_ISA1_B4096`, usando o arch.json da ZCU104 do Vitis AI 3.5.
+Cada modelo tem um subgrafo DPU com 324 operacoes. A interface DPU e INT8
+NHWC: entrada `[1, 128, 128, 4]` com fix_point 5 e saida
+`[1, 128, 128, 1]` com fix_point 1. O grafo inclui a conversao final
+`fix2float` na CPU. `compilation_manifest.json` registra interfaces e hashes;
+o arch.json utilizado tambem foi copiado para esse diretorio.
+A compilacao foi conferida com XIR; a execucao na placa ainda precisa ser validada.
+
+
+## Artefatos anteriores restaurados
+
+Os modelos `baseline`, `depth_reduced`, `skip_connections`, `mobilenet_v2`,
+`mobilenet_v3` e `hyperstarcop` foram restaurados do Git/Git LFS:
+
+- `build/vitis_ai/compiled_zcu104/<modelo>/`: compilado ZCU104, meta e MD5.
+- `build/vitis_ai/quantize/<modelo>/`: XModel quantizado, configuração e bias.
+- `build/vitis_ai/restoration_manifest.json`: commit, tamanhos e SHA-256.
+
+Foram conferidos os hashes, o target ISA1 B4096 e a abertura dos 12 XModels
+no XIR. São os arquivos históricos, sem recalibração ou recompilação.
+Os scripts atuais continuam configurados para os dois AttentionGates.
+Os comandos de cópia e execução dos oito modelos estão no
+[README do benchmark](../benchmark_zcu104/codigos_c/README.md).

@@ -29,6 +29,9 @@
       std::string dificuldade;
       Contagens contagens;
       Metricas metricas;
+      double average_precision = 0;
+      bool positive = false;
+      std::string difficulty_csv;
   };
 
   struct ResumoMetricas {
@@ -46,12 +49,16 @@
       std::uint64_t tn_tiles = 0;
       double fpr_tile = 0;
       double fpr_tile_tabela = 0;
+      bool protocolo_oficial = false;
+      std::size_t imagens_positivas = 0;
   };
 
   Metricas calcular_metricas(const Contagens& contagens);
 
   class AcumuladorMetricas {
   public:
+      explicit AcumuladorMetricas(bool protocolo_oficial = false)
+          : protocolo_oficial_(protocolo_oficial) {}
       ResultadoImagem adicionar(
           const Amostra& amostra,
           const std::vector<std::uint8_t>& mascara,
@@ -65,6 +72,10 @@
 
   private:
       std::size_t imagens_ = 0;
+      bool protocolo_oficial_ = false;
+      std::size_t imagens_positivas_ = 0;
+      double soma_ap_ = 0;
+      float escala_saida_ = 0;
       Contagens global_;
       Contagens forte_;
       Contagens fraca_;

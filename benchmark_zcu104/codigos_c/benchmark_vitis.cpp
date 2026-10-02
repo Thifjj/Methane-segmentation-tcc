@@ -154,7 +154,18 @@ void salvar_configuracao(const Opcoes& o, std::size_t amostras,
             << "subgrafos_cpu=" << modelo.subgrafos_cpu << '\n'
             << "escala_entrada=" << modelo.escala_entrada << '\n'
             << "escala_saida=" << modelo.escala_saida << '\n'
-            << "saida_float=" << modelo.saida_float << '\n';
+            << "saida_float=" << modelo.saida_float << '\n'
+            << "nome_grafo=" << modelo.graph->get_name() << '\n'
+            << "imagem=512x512\npatch=" << modelo.tamanho_patch << '\n'
+            << "patches_por_imagem=" << modelo.patches_por_imagem << '\n'
+            << "ordem_canais=" << (modelo.ordem_rgb ? "mag1c,460,550,640" : "mag1c,640,550,460") << '\n'
+            << "criterio_amostras=" << (modelo.ordem_rgb ? "cinco_tiffs_presentes" : "pastas_presentes") << '\n'
+            << "arredondamento_entrada=floor(x+0.5)\n"
+            << "unidade_desempenho=imagem_512x512\n"
+            << "protocolo_desempenho=pipeline_concorrente\n"
+            << "energia_metodo=integral_trapezoidal_hwmon\n"
+            << "validacao_principal=sem_abertura_auprc_global_qplume\n"
+            << "validacao_oficial=abertura_cruz_3x3_ap_medio_positivas_difficulty\n";
     if (!arquivo) throw std::runtime_error("Falha ao gravar config.txt");
 }
 
@@ -176,7 +187,7 @@ void executar_modo(const Opcoes& o, const std::vector<Amostra>& amostras,
                                   monitor.get(), progresso.contador());
     }();
     const auto medidas = monitor
-        ? monitor->resumo(execucao.duracao_s) : std::vector<MedidaPotencia>{};
+        ? monitor->resumo(execucao.inicio_medicao, execucao.fim_medicao) : std::vector<MedidaPotencia>{};
     salvar_desempenho(o.saida, o.modelo.filename().string(), o.run_id, o.csv,
                        execucao, medidas, o.potencia);
 
@@ -194,13 +205,14 @@ void executar_modo(const Opcoes& o, const std::vector<Amostra>& amostras,
 int main(int argc, char** argv) {
     try {
         const auto o = interpretar(argc, argv);
-        const auto amostras = carregar_amostras(o.csv, o.dataset, o.amostras);
-        if (amostras.empty()) throw std::runtime_error("CSV sem amostras");
+        std::vector<Amostra> amostras;
         fs::create_directories(o.saida);
 
         // Inspeciona o grafo antes das regioes medidas, sem manter um runner extra.
         {
             const auto modelo = carregar_xmodel(o.modelo.string());
+            amostras = carregar_amostras(o.csv, o.dataset, o.amostras, modelo.ordem_rgb);
+            if (amostras.empty()) throw std::runtime_error("CSV sem amostras");
             salvar_configuracao(o, amostras.size(), modelo);
             std::cout << "XModel: " << modelo.subgrafos_dpu << " subgrafos DPU, "
                       << modelo.subgrafos_cpu << " CPU; " << amostras.size()
@@ -222,6 +234,11 @@ int main(int argc, char** argv) {
             salvar_metricas(o.saida, o.modelo.filename().string(), o.run_id,
                             o.csv, o.modo, o.pipeline,
                             validacao.imagens, validacao.resumo);
+            salvar_metricas(o.saida / "validacao_oficial", o.modelo.filename().string(), o.run_id,
+                            o.csv, o.modo, o.pipeline,
+                            validacao.imagens_oficiais, validacao.resumo_oficial);
+            std::cout << "Validacao oficial: F1=" << validacao.resumo_oficial.metricas_globais.f1
+                      << " AP medio=" << validacao.resumo_oficial.auprc << '\n';
             std::cout << "F1=" << validacao.resumo.metricas_globais.f1
                       << " IoU=" << validacao.resumo.metricas_globais.iou
                       << " AUPRC=" << validacao.resumo.auprc

@@ -40,6 +40,9 @@
       float escala_entrada = 0.0f;
       float escala_saida = 0.0f;
       bool saida_float = false;
+      int tamanho_patch = 512;
+      int patches_por_imagem = 1;
+      bool ordem_rgb = false;
       int subgrafos_dpu = 0;
       int subgrafos_cpu = 0;
 

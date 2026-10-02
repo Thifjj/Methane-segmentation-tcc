@@ -148,11 +148,19 @@ def medir_energia(medidor, antes, depois):
 
 parser = argparse.ArgumentParser(description="Benchmark manual geral de inferência")
 
+# Extensao DPU: as opcoes e medicoes dos modelos antigos seguem no fluxo abaixo.
+import sys
+if any(a == "--attention-dpu" or a.startswith("--attention-dpu=") for a in sys.argv[1:]):
+    from .benchmark_dpu import main
+    main(MedidorEnergia, medir_energia)
+    raise SystemExit(0)
+
 args = parser.parse_args()
 
 modelos_disponiveis = (
     "baseline", "depth_reduced", "mobilenet_v2", "mobilenet_v3", "skip",
     "hyperstarcop",
+    "attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining",
 )
 print("Modelos disponíveis:")
 for indice, nome_modelo in enumerate(modelos_disponiveis, start=1):
@@ -163,6 +171,11 @@ while True:
         break
     print(f"Opção inválida. Digite um número de 1 a {len(modelos_disponiveis)}.")
 args.modelo = modelos_disponiveis[int(escolha_modelo) - 1]
+
+if args.modelo.startswith("attentiongates_dpu_"):
+    from .benchmark_dpu import interativo
+    interativo(args.modelo, DATASETS, MedidorEnergia, medir_energia)
+    raise SystemExit(0)
 
 print("Datasets disponíveis:")
 print("1 - full")

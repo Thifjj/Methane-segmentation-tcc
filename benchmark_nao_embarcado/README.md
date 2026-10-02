@@ -1,5 +1,118 @@
 # Benchmark manual em CPU e GPU
 
+## AttentionGates DPU: CPU/GPU comparáveis com a ZCU104
+
+A extensão `benchmark_dpu.py` adiciona as duas variantes DPU ao menu de
+`benchmark_geral.py` (opções 7 e 8). O fluxo dos seis modelos anteriores permanece
+o mesmo. Para executar sem perguntas, use os comandos abaixo **na raiz do projeto**.
+Eles usam os checkpoints FP32 correspondentes aos modelos quantizados da placa.
+
+### Dois modelos na CPU — TEST completo, 342 imagens válidas
+
+```bash
+source venv/bin/activate
+for MODELO in attentiongates_dpu_easy_remaining attentiongates_dpu_only_remaining; do
+  python -m benchmark_nao_embarcado.benchmark_geral \
+    --attention-dpu "$MODELO" --device cpu --dataset test \
+    --num-threads 4 --patch-size 128 --patch-batch-size 1 || break
+done
+```
+
+### Dois modelos na GPU CUDA — mesmo conjunto e geometria
+
+```bash
+source venv/bin/activate
+for MODELO in attentiongates_dpu_easy_remaining attentiongates_dpu_only_remaining; do
+  python -m benchmark_nao_embarcado.benchmark_geral \
+    --attention-dpu "$MODELO" --device cuda --dataset test \
+    --num-threads 4 --patch-size 128 --patch-batch-size 1 || break
+done
+```
+
+Para uma conferência curta, acrescente `--limit 2 --warmup 1`. Sem `--limit`,
+executa todas as imagens válidas do CSV. Confira a quantidade mostrada na
+inicialização e o término `Validacao: 342/342` no TEST completo.
+
+### Entrada, medição e métricas da extensão
+
+- Reutiliza `STARCOPDataset` e `DataNormalizer` do treinamento: janelas do CSV,
+  MAG1C/1750, bandas/60, clamp `[0,2]` e ordem **MAG1C, 460, 550, 640 nm**.
+- Por padrão, cada imagem 512×512 vira **16 patches 128×128 sem sobreposição**,
+  processados com batch 1 e reconstruídos na ordem usada na ZCU104.
+- `model_only` reutiliza até quatro entradas preparadas, excluindo leitura,
+  pré/pós-processamento e transferência; `end_to_end` lê cada imagem. Warm-up
+  fica fora das medidas; há sincronização CUDA nas fronteiras das etapas.
+- E2E inclui leitura, normalização/organização dos patches, transferência de
+  entrada, modelo, transferência/reconstrução da saída e máscara `logit > 0`.
+  Abertura, leitura do label, métricas e escrita dos CSVs ficam na validação
+  separada, como no benchmark da placa.
+- `throughput_fps = imagens / duração medida` e
+  `fps_latencia = 1000 / latência média`. O pipeline CPU/GPU é sequencial;
+  a placa pode executar runners concorrentes. Os campos têm a mesma definição,
+  mas as configurações de execução diferem.
+- Registra média, mediana, mínimo, máximo, P95, P99, desvio e tempos por imagem
+  e etapa. Potência/energia reutilizam os contadores RAPL/NVML existentes, com
+  leituras nos limites de cada fase e a cada 200 ms. Potência mínima/máxima
+  corresponde às médias dos intervalos, não a valores instantâneos. Fontes
+  indisponíveis ou com leituras parciais ficam identificadas;
+  estes domínios diferem do trilho INA226 da placa.
+- Validação bruta: sem abertura, grupos por `has_plume/qplume` e AUC da curva PR
+  global por pixel. `validacao_oficial`: abertura em cruz 3×3, grupos por pixels
+  positivos do label e `difficulty=easy`, AUPRC como média de AP das imagens
+  positivas. Ambas registram TP/FP/FN/TN, precisão, recall, F1, IoU, acurácia,
+  FPR global/sem pluma e FPR por tile (**mais de 640 pixels** por imagem 512×512).
+- Registra hash do checkpoint/CSV, IDs das imagens, geometria, batch, threads,
+  versões, CPU/GPU e pico de VRAM. Confere o hash do checkpoint com o manifesto
+  oficial de calibração quando esse manifesto está disponível.
+
+`threads_pytorch` é a quantidade de threads configurada e `cpus_permitidas` é
+a quantidade de CPUs permitida pelo sistema; nenhuma afinidade é imposta pela
+extensão. `runners=0` indica que esta execução PyTorch não utiliza runners VART;
+há uma instância do modelo, com uma imagem por vez.
+
+`--patch-size 512` avalia a imagem inteira para comparar com o histórico FP32.
+`--patch-batch-size 16` agrupa patches em uma chamada; muda o protocolo de
+desempenho em relação às 16 chamadas da placa. Ambos são registrados na saída.
+Para FULL ou outros caminhos, use `--dataset full --data-root /caminho/dataset`
+e, se necessário, `--csv /caminho/train.csv`.
+
+### Resultados da extensão
+
+Cada execução cria uma pasta única, sem sobrescrever os CSVs antigos:
+
+```text
+benchmark_nao_embarcado/resultados_dpu/<modelo>_<dataset>_<cpu|cuda>_<horario>/
+├── config.json
+├── amostras.csv
+├── benchmark_geral.csv
+├── benchmark_estagios.csv
+├── benchmark_samples.csv
+├── benchmark_power_rails.csv
+├── metricas_globais.csv
+├── metricas_grupos.csv
+├── metricas_por_imagem.csv
+└── validacao_oficial/
+    ├── metricas_globais.csv
+    ├── metricas_grupos.csv
+    └── metricas_por_imagem.csv
+```
+
+Compare vazão em `benchmark_geral.csv` e qualidade recente em
+`validacao_oficial/metricas_globais.csv`, com os arquivos equivalentes da ZCU104.
+FP32 CPU/GPU pode diferir do INT8 da placa pela quantização. A AUPRC bruta usa
+arquivos temporários para scores/labels; sua ordenação global ainda exige RAM,
+principalmente no FULL. Para executar os comandos da extensão, o ambiente
+também precisa das dependências do treinamento, incluindo torchvision, Kornia
+e scikit-learn. A extensão não executa calibração nem quantização.
+
+Verificação curta dos patches e das métricas, sem dataset/checkpoints:
+
+```bash
+python -m benchmark_nao_embarcado.test_benchmark_dpu
+```
+
+## Benchmark existente
+
 Este diretório executa os modelos PyTorch do projeto em CPU ou GPU CUDA. O
 benchmark mede latência, FPS e qualidade da segmentação usando as amostras do
 STARCOP no dataset selecionado (`full` ou `test`).

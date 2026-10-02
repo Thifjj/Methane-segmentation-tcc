@@ -9,6 +9,8 @@
 struct ResultadoValidacao {
     std::vector<ResultadoImagem> imagens;
     ResumoMetricas resumo;
+    std::vector<ResultadoImagem> imagens_oficiais;
+    ResumoMetricas resumo_oficial;
 };
 
 ResultadoValidacao validar_modelo(

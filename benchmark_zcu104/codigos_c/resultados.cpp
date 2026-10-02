@@ -121,7 +121,8 @@ void salvar_desempenho(const fs::path& pasta, const std::string& modelo,
         "fixar_afinidade,warmup,inferencias,entradas_preparadas,duracao_s,throughput_fps,fps_latencia,"
         "latencia_media_ms,latencia_mediana_ms,latencia_min_ms,latencia_max_ms,"
         "latencia_p95_ms,latencia_p99_ms,latencia_desvio_ms,inferencia_media_ms,"
-        "leitura_media_ms,preprocess_media_ms,postprocess_media_ms," + COLUNAS_AMBIENTE);
+        "leitura_media_ms,preprocess_media_ms,postprocess_media_ms," + COLUNAS_AMBIENTE +
+        ",imagem_altura,imagem_largura,tamanho_patch,patches_por_imagem,execucoes_runner,ordem_canais,unidade,protocolo");
     geral << csv(modelo) << ',' << csv(run_id) << ','
           << csv(fs::absolute(csv_dataset).string()) << ',' << execucao.modo << ','
           << c.runners << ',' << c.nucleos_cpu << ',' << c.workers_pre << ','
@@ -137,7 +138,10 @@ void salvar_desempenho(const fs::path& pasta, const std::string& modelo,
           << r.leitura.media << ',' << r.preprocess.media << ','
           << r.postprocess.media;
     escrever_ambiente(geral);
-    geral << '\n';
+    geral << ",512,512," << execucao.tamanho_patch << ',' << execucao.patches_por_imagem
+          << ',' << execucao.concluidas * execucao.patches_por_imagem
+          << ',' << csv(execucao.ordem_rgb ? "mag1c,460,550,640" : "mag1c,640,550,460")
+          << ",imagem_512x512,pipeline_concorrente\n";
 
     auto estagios = abrir(pasta / "benchmark_estagios.csv",
         "modelo,run_id,modo,estagio,amostras,media_ms,mediana_ms,minimo_ms,"
@@ -162,7 +166,7 @@ void salvar_desempenho(const fs::path& pasta, const std::string& modelo,
     auto amostras = abrir(pasta / "benchmark_samples.csv",
         "modelo,run_id,modo,trabalho,indice_amostra,espera_slot_ms,leitura_ms,"
         "preprocess_ms,espera_runner_ms,sync_entrada_ms,inferencia_ms,"
-        "sync_saida_ms,espera_pos_ms,postprocess_ms,latencia_total_ms");
+        "sync_saida_ms,espera_pos_ms,postprocess_ms,latencia_total_ms,id");
     for (const auto& t : execucao.imagens) {
         amostras << csv(modelo) << ',' << csv(run_id) << ',' << execucao.modo
                  << ',' << t.trabalho << ',' << t.indice_amostra << ','
@@ -170,17 +174,17 @@ void salvar_desempenho(const fs::path& pasta, const std::string& modelo,
                  << t.preprocess_ms << ',' << t.espera_runner_ms << ','
                  << t.sync_entrada_ms << ',' << t.inferencia_ms << ','
                  << t.sync_saida_ms << ',' << t.espera_pos_ms << ','
-                 << t.postprocess_ms << ',' << t.latencia_total_ms << '\n';
+                 << t.postprocess_ms << ',' << t.latencia_total_ms << ',' << csv(t.id) << '\n';
     }
 
     auto energia = abrir(pasta / "benchmark_power_rails.csv",
         "modelo,run_id,modo,trilho,sensor_chip,fonte_name,fonte_label,fonte_power_input,"
-        "status,amostras,media_w,minima_w,maxima_w,energia_j,energia_por_inferencia_j,duracao_s");
+        "status,amostras,media_w,minima_w,maxima_w,energia_j,energia_por_inferencia_j,duracao_s,metodo,unidade");
     if (potencia.empty())
         energia << csv(modelo) << ',' << csv(run_id) << ',' << execucao.modo
                 << (potencia_solicitada ? ",,,,,,indisponivel,0,,,,,," :
                                          ",,,,,,desativada,0,,,,,,")
-                << execucao.duracao_s << '\n';
+                << execucao.duracao_s << ",integral_trapezoidal_hwmon,imagem_512x512\n";
     for (const auto& p : potencia)
         energia << csv(modelo) << ',' << csv(run_id) << ',' << execucao.modo
                 << ',' << csv(p.trilho) << ',' << csv(p.sensor_chip)
@@ -189,7 +193,7 @@ void salvar_desempenho(const fs::path& pasta, const std::string& modelo,
                 << ',' << p.media_w
                 << ',' << p.minima_w << ',' << p.maxima_w << ',' << p.energia_j
                 << ',' << (execucao.concluidas > 0 ? p.energia_j / execucao.concluidas : 0.0)
-                << ',' << execucao.duracao_s << '\n';
+                << ',' << execucao.duracao_s << ",integral_trapezoidal_hwmon,imagem_512x512\n";
 }
 
 void salvar_metricas(const fs::path& pasta, const std::string& modelo,
@@ -205,7 +209,7 @@ void salvar_metricas(const fs::path& pasta, const std::string& modelo,
     std::ofstream por_imagem(pasta / "metricas_por_imagem.csv");
     if (!por_imagem) throw std::runtime_error("Nao foi possivel salvar metricas por imagem");
     por_imagem << std::setprecision(12)
-               << "modelo,id,dificuldade,tp,fp,fn,tn,precision,recall,f1,iou,fpr,acuracia\n";
+               << "modelo,id,dificuldade,tp,fp,fn,tn,precision,recall,f1,iou,fpr,acuracia,average_precision,positive,difficulty_csv\n";
     for (const auto& imagem : imagens) {
         const auto& c = imagem.contagens;
         const auto& m = imagem.metricas;
@@ -213,7 +217,9 @@ void salvar_metricas(const fs::path& pasta, const std::string& modelo,
                    << imagem.dificuldade << ',' << c.tp << ',' << c.fp << ','
                    << c.fn << ',' << c.tn << ',' << m.precision << ',' << m.recall
                    << ',' << m.f1 << ',' << m.iou << ',' << m.fpr << ','
-                   << m.acuracia << '\n';
+                   << m.acuracia << ',';
+        if (imagem.positive) por_imagem << imagem.average_precision;
+        por_imagem << ',' << imagem.positive << ',' << csv(imagem.difficulty_csv) << '\n';
     }
 
     std::ofstream global(pasta / "metricas_globais.csv");
@@ -224,7 +230,7 @@ void salvar_metricas(const fs::path& pasta, const std::string& modelo,
            << "tp,fp,fn,tn,precision,recall,f1_global,iou,fpr,acuracia,"
            << "f1_strong_plume,f1_weak_plume,auprc,fpr_sem_pluma,"
            << "fpr_tile,fpr_tile_tabela,fp_tiles,tn_tiles,"
-           << COLUNAS_AMBIENTE << '\n';
+           << COLUNAS_AMBIENTE << ",protocolo,auprc_metodo,posprocessamento,grupo_forte,imagens_positivas\n";
     const auto& c = resumo.global;
     const auto& m = resumo.metricas_globais;
     global << csv(modelo) << ',' << csv(run_id) << ','
@@ -242,7 +248,11 @@ void salvar_metricas(const fs::path& pasta, const std::string& modelo,
            << ',' << resumo.fpr_tile << ',' << resumo.fpr_tile_tabela
            << ',' << resumo.fp_tiles << ',' << resumo.tn_tiles;
     escrever_ambiente(global);
-    global << '\n';
+    global << ',' << (resumo.protocolo_oficial ? "vitis_ai_evaluate_quantized" : "benchmark_nao_embarcado")
+           << ',' << (resumo.protocolo_oficial ? "media_average_precision_imagens_positivas" : "auc_pr_global_trapezoidal")
+           << ',' << (resumo.protocolo_oficial ? "abertura_cruz_3x3" : "logit_maior_zero")
+           << ',' << (resumo.protocolo_oficial ? "label_positivo_e_difficulty_easy" : "has_plume_e_qplume_maior_1000")
+           << ',' << resumo.imagens_positivas << '\n';
 
     std::ofstream grupos(pasta / "metricas_grupos.csv");
     if (!grupos) throw std::runtime_error("Nao foi possivel salvar metricas por grupo");

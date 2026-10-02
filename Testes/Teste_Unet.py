@@ -64,12 +64,19 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     device_obj = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     device_name = device_obj.type.upper()
     print(f"\nIniciando Avaliação do modelo: {nome_modelo_salvo} ({device_name})")
-
-   #CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
+    #notebook caminhos:
+    CAMINHO_CSV_TESTE ="/home/thiago/Documents/STARCOP_DATASET/train.csv"
+    DIRETORIO_DADOS_TESTE ="/home/thiago/Documents/STARCOP_DATASET/"
+    
+    #CAMINHO_CSV_TESTE ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
+    #DIRETORIO_DADOS_TESTE = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
+    
+    #caminhos desktop
+    #CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
     #DIRETORIO_DADOS_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/"
 
-    CAMINHO_CSV_TESTE ="/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
-    DIRETORIO_DADOS_TESTE="/media/jacques/games/Datasets/STARCOP_train_remaining_all/"
+    #CAMINHO_CSV_TESTE ="/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
+    #DIRETORIO_DADOS_TESTE="/media/jacques/games/Datasets/STARCOP_train_remaining_all/"
 
     df_test = carregar_dataframe_starcop(CAMINHO_CSV_TESTE, DIRETORIO_DADOS_TESTE)
     dataset_teste = STARCOPDataset(df_test, produtos_entrada, ["labelbinary"])

@@ -47,3 +47,22 @@ scp -O -r root@192.168.2.100:/home/root/thiago/benchmark/codigos_c/resultados_zc
 
 Edite os valores de execução em `pipeline.hpp` e `benchmark_vitis.cpp`, e os
 valores da busca no início de `sweep.cpp`. O README explica cada métrica.
+
+
+## Dois AttentionGates oficiais
+
+Recompile os fontes atualizados antes de usar os binários:
+
+```bash
+cd /home/root/thiago/benchmark/codigos_c
+./build_zcu104.sh
+./self_test_support
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/attentiongates_dpu_easy_remaining/attentiongates_dpu_easy_remaining.xmodel --dataset /home/root/thiago/STARCOP_test
+./benchmark_vitis --model /home/root/thiago/benchmark/modelos/attentiongates_dpu_only_remaining/attentiongates_dpu_only_remaining.xmodel --dataset /home/root/thiago/STARCOP_test
+```
+
+Troque o dataset por `/home/root/thiago/dataset_starcop` para full remaining+easy.
+Para comparar com a validação recente/histórico, use as métricas da subpasta
+`validacao_oficial/` de cada execução. Os relatórios existentes continuam
+seguindo o protocolo de `benchmark_nao_embarcado`. FPS e energia são por
+imagem 512×512, formada por 16 patches nos AttentionGates.

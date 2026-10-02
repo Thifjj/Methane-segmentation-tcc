@@ -4,6 +4,7 @@
 #include "postprocess.hpp"
 #include "preprocess.hpp"
 #include "progresso.hpp"
+#include "power.hpp"
 
 #include <algorithm>
 #include <array>
@@ -99,10 +100,79 @@ int main() {
                 const float normalizado = std::clamp(
                     canais[c].at<float>(y, x) / divisores[c], 0.0f, 2.0f);
                 const auto esperado = static_cast<std::int8_t>(
-                    std::clamp(std::lrint(normalizado * 32.0f), -128L, 127L));
+                    std::clamp(static_cast<long>(std::floor(normalizado * 32.0f + 0.5f)), -128L, 127L));
                 exigir(entrada[(static_cast<std::size_t>(y) * 512 + x) * 4 + c] ==
                        esperado);
             }
+    exigir(entrada[0] == 1); // Empate 0.5: Vitis/DPU arredonda para cima.
+    std::vector<std::int8_t> patches(TAMANHO_ENTRADA);
+    preprocessar(canais, patches.data(), patches.size(), 32.0f, 128);
+    // Reconstrucao canal a canal; o layout de entrada e NHWC.
+    std::vector<float> saida_patches(PIXELS_SAIDA), saida_reconstruida(PIXELS_SAIDA);
+    std::vector<std::int8_t> saida_patches_int8(PIXELS_SAIDA), saida_reconstruida_int8(PIXELS_SAIDA);
+    for (int y = 0; y < 512; ++y)
+        for (int x = 0; x < 512; ++x) {
+            const std::size_t pixel = y * 512 + x;
+            const std::size_t patch_pixel = ((y / 128) * 4 + x / 128) * 128 * 128 +
+                                            (y % 128) * 128 + x % 128;
+            for (std::size_t c = 0; c < 4; ++c)
+                exigir(patches[patch_pixel * 4 + c] == entrada[pixel * 4 + c]);
+            saida_patches[patch_pixel] = static_cast<float>(pixel);
+            saida_patches_int8[patch_pixel] = static_cast<std::int8_t>(pixel % 127);
+        }
+    reconstruir_patches(saida_patches.data(), saida_reconstruida.data(), 128, sizeof(float));
+    reconstruir_patches(saida_patches_int8.data(), saida_reconstruida_int8.data(), 128, 1);
+    for (std::size_t i = 0; i < PIXELS_SAIDA; ++i) {
+        exigir(saida_reconstruida[i] == static_cast<float>(i));
+        exigir(saida_reconstruida_int8[i] == static_cast<std::int8_t>(i % 127));
+    }
+
+    // Cruz atravessa a fronteira entre patches; abertura so depois de recompor.
+    std::fill(mascara.begin(), mascara.end(), 0);
+    for (auto i : {128*512+128, 127*512+128, 129*512+128, 128*512+127, 128*512+129})
+        mascara[i] = 1;
+    mascara[0] = 1; // Pixel isolado na borda.
+    abrir_mascara(mascara);
+    exigir(std::count(mascara.begin(), mascara.end(), 1) == 5 && !mascara[0]);
+
+    // Scores 17 e 20 empatam em sigmoid FLOAT32=1: AP=1/2, AUC PR=3/4.
+    std::fill(logits.begin(), logits.end(), -128);
+    logits[0] = 40; logits[1] = 34;
+    posprocessar(logits.data(), logits.size(), false, mascara);
+    amostra.has_plume = false; amostra.qplume = 0; amostra.difficulty = "easy";
+    AcumuladorMetricas oficial(true), legado;
+    auto positivo = oficial.adicionar(amostra, mascara, label, logits.data(), false, 0.5f);
+    legado.adicionar(amostra, mascara, label, logits.data(), false, 0.5f);
+    exigir(positivo.dificuldade == "forte" && positivo.positive);
+    exigir(std::abs(positivo.average_precision - 0.5) < 1e-12);
+    exigir(std::abs(legado.resumo().auprc - 0.75) < 1e-12);
+    oficial.adicionar(amostra, mascara, cv::Mat(512, 512, CV_32FC1, cv::Scalar(0)),
+                      logits.data(), false, 0.5f);
+    exigir(oficial.resumo().imagens_positivas == 1 && oficial.resumo().auprc == 0.5);
+    exigir(oficial.resumo().sem_pluma.fp == 2);
+    std::vector<float> logits_float(PIXELS_SAIDA);
+    for (std::size_t i = 0; i < PIXELS_SAIDA; ++i) logits_float[i] = logits[i] * 0.5f;
+    AcumuladorMetricas oficial_float(true);
+    const auto float_imagem = oficial_float.adicionar(amostra, mascara, label,
+                                                      logits_float.data(), true, 0.5f);
+    exigir(float_imagem.average_precision == positivo.average_precision);
+    AcumuladorMetricas sem_positivos(true);
+    sem_positivos.adicionar(amostra, mascara, cv::Mat(512, 512, CV_32FC1, cv::Scalar(0)),
+                           logits.data(), false, 0.5f);
+    exigir(std::isnan(sem_positivos.resumo().auprc));
+    logits_float[0] = 0.1f;
+    bool rejeitou_grade = false;
+    try {
+        AcumuladorMetricas fora_da_grade;
+        fora_da_grade.adicionar(amostra, mascara, label, logits_float.data(), true, 0.5f);
+    } catch (const std::runtime_error&) { rejeitou_grade = true; }
+    exigir(rejeitou_grade);
+    exigir(std::abs(integrar_potencia({{0, 0}, {1, 2}, {3, 2}}, 0.5, 2.5) - 3.75) < 1e-12);
+    exigir(integrar_potencia({{1, 2}}, 0, 3) == 6);
+    exigir(integrar_potencia({}, 0, 3) == 0);
+    MonitorPotencia monitor(1);
+    monitor.iniciar(); monitor.parar(); // Pode funcionar sem sensores no computador.
+
     canais[0].at<float>(0, 0) = std::numeric_limits<float>::quiet_NaN();
     bool rejeitou_nan = false;
     try {

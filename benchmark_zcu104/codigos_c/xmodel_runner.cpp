@@ -1,4 +1,6 @@
  #include "xmodel_runner.hpp"
+#include "postprocess.hpp"
+#include <xir/op/op.hpp>
 
   #include <cmath>
   #include <cstdlib>
@@ -78,15 +80,6 @@
       std::uint8_t* memoria_;
   };
 
-  struct BufferProprio {
-      explicit BufferProprio(const xir::Tensor* tensor)
-          : memoria(tensor->get_data_size()),
-            buffer(memoria.dados(), tensor) {}
-
-      MemoriaAlinhada memoria;
-      BufferCpu buffer;
-  };
-
   void contar_subgrafos(
       const xir::Subgraph* subgrafo,
       int& dpu,
@@ -108,76 +101,71 @@
       }
   }
 
-  int fix_point(const xir::Tensor* tensor, int padrao) {
+  int fix_point(const xir::Tensor* tensor) {
       for (const char* nome : {"fix_point", "fixpos"}) {
-          try {
-              if (tensor->has_attr(nome)) return tensor->get_attr<int>(nome);
-          } catch (...) {
-              // Alguns tensores não expõem esse atributo como inteiro.
-          }
+          if (tensor->has_attr(nome)) return tensor->get_attr<int>(nome);
       }
-      return padrao;
+      throw std::runtime_error("Tensor sem fix_point/fixpos: " + tensor->get_name());
   }
 
   } // namespace
 
   struct SlotXModel::Impl {
       Impl(const xir::Tensor* tensor_entrada, const xir::Tensor* tensor_saida)
-          : entrada(tensor_entrada),
-            saida(tensor_saida),
-            entradas{&entrada.buffer},
-            saidas{&saida.buffer} {}
-
-      BufferProprio entrada;
-      BufferProprio saida;
-      std::vector<vart::TensorBuffer*> entradas;
-      std::vector<vart::TensorBuffer*> saidas;
+          : tamanho_patch(tensor_entrada->get_shape()[1]),
+            patches((512 / tamanho_patch) * (512 / tamanho_patch)),
+            bytes_patch_entrada(tensor_entrada->get_data_size()),
+            bytes_patch_saida(tensor_saida->get_data_size()),
+            entrada(bytes_patch_entrada * patches),
+            saida(bytes_patch_saida * patches),
+            reconstruida(patches > 1 ? bytes_patch_saida * patches : 64) {
+          for (int p = 0; p < patches; ++p) {
+              entradas.push_back(std::make_unique<BufferCpu>(
+                  entrada.dados() + p * bytes_patch_entrada, tensor_entrada));
+              saidas.push_back(std::make_unique<BufferCpu>(
+                  saida.dados() + p * bytes_patch_saida, tensor_saida));
+          }
+      }
+      int tamanho_patch;
+      int patches;
+      std::size_t bytes_patch_entrada, bytes_patch_saida;
+      MemoriaAlinhada entrada, saida, reconstruida;
+      std::vector<std::unique_ptr<BufferCpu>> entradas, saidas;
   };
 
   SlotXModel::SlotXModel(const xir::Tensor* entrada, const xir::Tensor* saida)
       : impl_(std::make_unique<Impl>(entrada, saida)) {}
-
   SlotXModel::~SlotXModel() = default;
 
   std::int8_t* SlotXModel::dados_entrada() {
-      return reinterpret_cast<std::int8_t*>(impl_->entrada.memoria.dados());
+      return reinterpret_cast<std::int8_t*>(impl_->entrada.dados());
   }
-
   const void* SlotXModel::dados_saida() const {
-      return impl_->saida.memoria.dados();
+      return impl_->patches > 1 ? impl_->reconstruida.dados() : impl_->saida.dados();
   }
-
-  std::size_t SlotXModel::bytes_entrada() const {
-      return impl_->entrada.memoria.bytes();
-  }
-
-  std::size_t SlotXModel::bytes_saida() const {
-      return impl_->saida.memoria.bytes();
-  }
+  std::size_t SlotXModel::bytes_entrada() const { return impl_->entrada.bytes(); }
+  std::size_t SlotXModel::bytes_saida() const { return impl_->saida.bytes(); }
 
   void XModelRunner::sincronizar_entrada(SlotXModel& slot) {
-      slot.impl_->entrada.buffer.sync_for_write(0, slot.bytes_entrada());
+      for (auto& buffer : slot.impl_->entradas)
+          buffer->sync_for_write(0, slot.impl_->bytes_patch_entrada);
   }
-
   void XModelRunner::inferir(SlotXModel& slot) {
-      auto job = runner->execute_async(
-          slot.impl_->entradas,
-          slot.impl_->saidas
-      );
-      if (job.second != 0) {
-          throw std::runtime_error("execute_async falhou");
-      }
-
-      int status = runner->wait(static_cast<int>(job.first), -1);
-      if (status != 0) {
-          throw std::runtime_error(
-              "VART wait falhou: " + std::to_string(status)
-          );
+      for (int p = 0; p < slot.impl_->patches; ++p) {
+          auto job = runner->execute_async({slot.impl_->entradas[p].get()},
+                                           {slot.impl_->saidas[p].get()});
+          if (job.second != 0) throw std::runtime_error("execute_async falhou");
+          const int status = runner->wait(static_cast<int>(job.first), -1);
+          if (status != 0)
+              throw std::runtime_error("VART wait falhou: " + std::to_string(status));
       }
   }
-
   void XModelRunner::sincronizar_saida(SlotXModel& slot) {
-      slot.impl_->saida.buffer.sync_for_read(0, slot.bytes_saida());
+      for (auto& buffer : slot.impl_->saidas)
+          buffer->sync_for_read(0, slot.impl_->bytes_patch_saida);
+      if (slot.impl_->patches > 1)
+          reconstruir_patches(slot.impl_->saida.dados(), slot.impl_->reconstruida.dados(),
+                              slot.impl_->tamanho_patch, saida_float ? sizeof(float) : 1);
   }
 
   std::vector<XModelRunner> carregar_runners(
@@ -237,28 +225,40 @@
           const auto* tensor_entrada = entradas[0];
           const auto* tensor_saida = saidas[0];
 
-          if (tensor_entrada->get_shape() !=
-                  std::vector<std::int32_t>{1, 512, 512, 4} ||
-              tensor_entrada->get_data_size() != 512 * 512 * 4) {
-              throw std::runtime_error("Entrada deve ser INT8 [1,512,512,4]");
+          const auto shape = tensor_entrada->get_shape();
+          if (shape.size() != 4 || shape[0] != 1 || shape[3] != 4 ||
+              shape[1] != shape[2] || (shape[1] != 128 && shape[1] != 512) ||
+              (tensor_entrada->get_data_type() != xir::DataType("XINT8") &&
+               tensor_entrada->get_data_type() != xir::DataType("INT8")))
+              throw std::runtime_error("Entrada deve ser INT8 NHWC [1,128/512,128/512,4]");
+          contexto.tamanho_patch = shape[1];
+          contexto.patches_por_imagem = (512 / shape[1]) * (512 / shape[1]);
+          contexto.ordem_rgb = graph->get_name() == "UNetMobileNetV3AttentionGatesDPU";
+          if (tensor_saida->get_shape() != std::vector<std::int32_t>{1, shape[1], shape[1], 1})
+              throw std::runtime_error("Saida deve ter a mesma geometria da entrada e um canal");
+          const auto tipo_saida = tensor_saida->get_data_type();
+          contexto.saida_float = tipo_saida == xir::DataType("FLOAT32");
+          if (!contexto.saida_float && tipo_saida != xir::DataType("XINT8") &&
+              tipo_saida != xir::DataType("INT8"))
+              throw std::runtime_error("Saida deve ser INT8 ou FLOAT32");
+          const xir::Tensor* tensor_quantizado = tensor_saida;
+          if (contexto.saida_float && !tensor_saida->has_attr("fix_point") &&
+              !tensor_saida->has_attr("fixpos")) {
+              const auto* tensor_grafo = graph->get_tensor(tensor_saida->get_name());
+              const auto* produtor = tensor_grafo ? tensor_grafo->get_producer() : nullptr;
+              if (!produtor || produtor->get_type() != "fix2float")
+                  throw std::runtime_error("Saida FLOAT32 sem escala quantizada conhecida");
+              const auto entradas_fix = produtor->get_input_tensors();
+              if (entradas_fix.size() != 1)
+                  throw std::runtime_error("fix2float com entrada ambigua");
+              tensor_quantizado = entradas_fix.front();
           }
-
-          if (tensor_saida->get_shape() !=
-              std::vector<std::int32_t>{1, 512, 512, 1}) {
-              throw std::runtime_error("Saída deve ser [1,512,512,1]");
-          }
-
-          const std::size_t bytes_saida = tensor_saida->get_data_size();
-          if (bytes_saida != 512 * 512 &&
-              bytes_saida != 512 * 512 * sizeof(float)) {
-              throw std::runtime_error("Saída deve ser INT8 ou FLOAT32");
-          }
-
-          contexto.saida_float = bytes_saida == 512 * 512 * sizeof(float);
-          contexto.escala_entrada =
-              std::exp2(static_cast<float>(fix_point(tensor_entrada, 5)));
-          contexto.escala_saida =
-              std::exp2(-static_cast<float>(fix_point(tensor_saida, 2)));
+          if (!tensor_entrada->has_attr("fix_point") && !tensor_entrada->has_attr("fixpos"))
+              throw std::runtime_error("Entrada sem fix_point/fixpos");
+          if (!tensor_quantizado->has_attr("fix_point") && !tensor_quantizado->has_attr("fixpos"))
+              throw std::runtime_error("Saida sem fix_point/fixpos");
+          contexto.escala_entrada = std::exp2(static_cast<float>(fix_point(tensor_entrada)));
+          contexto.escala_saida = std::exp2(-static_cast<float>(fix_point(tensor_quantizado)));
 
           for (int s = 0; s < slots_por_runner; ++s) {
               contexto.slots.push_back(

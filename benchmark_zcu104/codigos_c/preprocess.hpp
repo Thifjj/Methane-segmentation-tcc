@@ -12,5 +12,6 @@
       const CanaisEntrada& canais,
       std::int8_t* destino,
       std::size_t capacidade_destino,
-      float escala_entrada
+      float escala_entrada,
+      int tamanho_patch = 512
   );

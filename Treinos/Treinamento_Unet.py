@@ -33,9 +33,23 @@ def calcular_f1_score(previsao_logits, gabarito, threshold=0.0):
 def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produtos_entrada):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\n--- Iniciando Treinamento: {nome_modelo_salvar} ---")
+    
+    #notebook caminhos:
+    #CAMINHO_CSV_TESTE ="/home/thiago/Documents/STARCOP_DATASET/train.csv"
+    #DIRETORIO_DADOS_TESTE ="/home/thiago/Documents/STARCOP_DATASET/"
+    
+    #CAMINHO_CSV_TESTE ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
+    #DIRETORIO_DADOS_TESTE = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
+    
+    #caminhos desktop
+    #CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
+    #DIRETORIO_DADOS_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/"
 
-    CAMINHO_CSV = "/media/jacques/games/Datasets/train_remaining_only/train.csv"
-    DIRETORIO_DADOS = "/media/jacques/games/Datasets/train_remaining_only/"
+    #CAMINHO_CSV_TESTE ="/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
+    #DIRETORIO_DADOS_TESTE="/media/jacques/games/Datasets/STARCOP_train_remaining_all/"
+
+    #CAMINHO_CSV = "/media/jacques/games/Datasets/train_remaining_only/train.csv"
+    #DIRETORIO_DADOS = "/media/jacques/games/Datasets/train_remaining_only/"
 
     CAMINHO_CSV_VALIDACAO = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv"
     DIRETORIO_DADOS_VALIDACAO = "/media/jacques/games/Datasets/test/STARCOP_test/"
