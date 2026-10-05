@@ -2,9 +2,11 @@
 
 Histórico do Git, do commit mais recente para o mais antigo. Os identificadores abaixo são os hashes reais dos commits.
 
-## Próximo commit — alterações locais atuais
+## Commit cd0b856 — 2026-10-05
 
-Estas alterações ainda não têm hash de commit:
+Mensagem: `Adding new mobilinet_v3_dpu to work 4 dpu compiled to zcu104`
+
+Modificações:
 
 * Generaliza o carregamento de checkpoints e arquiteturas da pasta `Modelos` para o fluxo do Vitis AI.
 * Adiciona a configuração de calibração da MobileNet V3 DPU em imagens completas de 512×512.
