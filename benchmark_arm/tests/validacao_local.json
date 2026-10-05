@@ -1,0 +1,75 @@
+{
+  "ambiente": "Computador x86_64; não é medição na placa",
+  "onnxruntime": "1.14.1",
+  "opencv": "4.6.0",
+  "verificacoes": [
+    "Compilação C++17 com build.sh e ORT 1.14.1",
+    "Core: SHA256 conhecido, AP/PR e potência trapezoidal",
+    "Integração sintética: 35 imagens, patches 128/512, batches 1/3/16, recortes, canais, morfologia, grupos, merge PR, CSVs e hashes",
+    "Imagens reais STARCOP: negativa, pluma easy e pluma hard; métricas C++ conferidas com rasterio/ONNX Runtime/PyTorch/Kornia/sklearn"
+  ],
+  "exports": {
+    "attentiongates_dpu_easy_remaining": {
+      "onnxruntime_versao": "1.14.1",
+      "provider": "CPUExecutionProvider",
+      "rtol": 0.0001,
+      "atol": 0.0001,
+      "resultados": [
+        {
+          "batch": 1,
+          "max_abs_error": 0.0001220703125,
+          "mean_abs_error": 1.4794495655223727e-05
+        }
+      ]
+    },
+    "attentiongates_dpu_easy_remaining_batch_dynamic": {
+      "onnxruntime_versao": "1.14.1",
+      "provider": "CPUExecutionProvider",
+      "rtol": 0.0001,
+      "atol": 0.0001,
+      "resultados": [
+        {
+          "batch": 1,
+          "max_abs_error": 0.000125885009765625,
+          "mean_abs_error": 1.471908763051033e-05
+        },
+        {
+          "batch": 16,
+          "max_abs_error": 0.00026702880859375,
+          "mean_abs_error": 1.5334964700741693e-05
+        }
+      ]
+    },
+    "attentiongates_dpu_only_remaining_batch_dynamic": {
+      "onnxruntime_versao": "1.14.1",
+      "provider": "CPUExecutionProvider",
+      "rtol": 0.0001,
+      "atol": 0.0001,
+      "resultados": [
+        {
+          "batch": 1,
+          "max_abs_error": 4.00543212890625e-05,
+          "mean_abs_error": 7.0641981437802315e-06
+        },
+        {
+          "batch": 16,
+          "max_abs_error": 0.000335693359375,
+          "mean_abs_error": 1.3965809557703324e-05
+        }
+      ]
+    },
+    "attentiongates_dpu_only_remaining": {
+      "onnxruntime_versao": "1.14.1",
+      "provider": "CPUExecutionProvider",
+      "rtol": 0.0001,
+      "atol": 0.0001,
+      "resultados": [
+        {
+          "batch": 1,
+          "max_abs_error": 4.00543212890625e-05,
+          "mean_abs_error": 7.02723627910018e-06
+        }
+      ]
+    }
+  }
+}

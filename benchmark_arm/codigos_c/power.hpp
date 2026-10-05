@@ -1,6 +1,10 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <utility>
 #include <cstddef>
 #include <filesystem>
 #include <string>
@@ -20,6 +24,10 @@ struct MedidaPotencia {
     double energia_j = 0;
 };
 
+// Pares (tempo monotonic em segundos, watts), ordenados pelo tempo.
+double integrar_potencia(const std::vector<std::pair<double, double>>& leituras,
+                        double inicio_s, double fim_s);
+
 class MonitorPotencia {
 public:
     explicit MonitorPotencia(int intervalo_ms = 200);
@@ -27,7 +35,8 @@ public:
 
     void iniciar();
     void parar();
-    std::vector<MedidaPotencia> resumo(double duracao_s) const;
+    std::vector<MedidaPotencia> resumo(std::chrono::steady_clock::time_point inicio,
+                                       std::chrono::steady_clock::time_point fim) const;
     bool disponivel() const;
 
 private:
@@ -37,7 +46,7 @@ private:
         std::string fonte_name;
         std::string fonte_label;
         std::filesystem::path arquivo;
-        std::vector<double> watts;
+        std::vector<std::pair<double, double>> leituras;
     };
 
     void amostrar();
@@ -45,5 +54,7 @@ private:
     int intervalo_ms_;
     std::atomic<bool> parar_{false};
     std::thread thread_;
+    std::mutex mutex_;
+    std::condition_variable cv_;
     std::vector<Trilho> trilhos_;
 };

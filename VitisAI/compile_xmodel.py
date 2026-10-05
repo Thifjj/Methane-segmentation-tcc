@@ -13,7 +13,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--xmodel", required=True)
     parser.add_argument("--arch", required=True, help="arch.json que corresponde exatamente ao bitstream da placa.")
-    parser.add_argument("--output-dir", default="build/vitis_ai/official/compiled_zcu104")
+    parser.add_argument("--output-dir", default="build/vitis_ai/compiled_zcu104")
     parser.add_argument("--name", default="methane_segmentation")
     parser.add_argument("--force", action="store_true", help="Recompila mesmo se a saida estiver atualizada.")
     return parser.parse_args()

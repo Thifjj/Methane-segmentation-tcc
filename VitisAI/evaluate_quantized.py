@@ -1,5 +1,6 @@
 """Compara FP32 e simulacao INT8 nas mesmas imagens e metricas do historico."""
 import argparse
+import json
 import shutil
 import time
 from pathlib import Path
@@ -9,7 +10,7 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.metrics import average_precision_score
 
-from common import PROJECT_ROOT, DEFAULT_PRODUCTS, build_model, validate_calibration
+from common import PROJECT_ROOT, DEFAULT_PRODUCTS, build_model, validate_calibration, add_model_arguments, resolve_model
 from Utils.DataLoader import carregar_dataframe_starcop, STARCOPDataset, DataNormalizer
 from Testes.Teste_Unet import binary_opening
 
@@ -55,15 +56,19 @@ def summarize(rows):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--limit", type=int, default=0)
-    parser.add_argument("--model", choices=["attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining"])
+    add_model_arguments(parser)
     parser.add_argument("--dataset", choices=["test", "full_remaining_easy"])
+    parser.add_argument("--csv", help="CSV do conjunto selecionado por --dataset.")
+    parser.add_argument("--data-root", help="Diretorio das imagens do conjunto selecionado.")
     parser.add_argument("--num-threads", type=int, default=2)
     parser.add_argument("--shard-index", type=int, default=0)
     parser.add_argument("--shard-count", type=int, default=1)
-    parser.add_argument("--output-dir", default="build/vitis_ai/official/evaluation")
-    parser.add_argument("--quant-dir", default="build/vitis_ai/official/quantize",
+    parser.add_argument("--output-dir", default="build/vitis_ai/evaluation")
+    parser.add_argument("--quant-dir", default="build/vitis_ai/quantize",
                         help="Diretorio com as configuracoes calibradas de cada modelo.")
     args = parser.parse_args()
+    if (args.csv or args.data_root) and not (args.csv and args.data_root and args.dataset):
+        parser.error("--csv e --data-root devem ser usados juntos com --dataset.")
     if args.shard_count < 1 or not 0 <= args.shard_index < args.shard_count:
         parser.error("Indice de particao invalido.")
     from pytorch_nndct.apis import torch_quantizer
@@ -73,19 +78,27 @@ def main():
     normalizer = DataNormalizer(PRODUCTS).eval()
     kernel = torch.tensor([[0., 1., 0.], [1., 1., 1.], [0., 1., 0.]])
     summaries = []
-    for name in ["attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining"]:
-        if args.model and name != args.model:
-            continue
-        model, checkpoint = build_model(name, None, 4)
-        validate_calibration(Path(args.quant_dir) / name, name, checkpoint, PRODUCTS,
-                             128, 128, "DPUCZDX8G_ISA1_B4096", True)
-        quant_dir = output / name
+    selected = [resolve_model(args.model, args.checkpoint, args.architecture)] if (args.model or args.checkpoint or args.architecture) else [
+        resolve_model("attentiongates_dpu_easy_remaining"), resolve_model("attentiongates_dpu_only_remaining")]
+    for name, architecture in selected:
+        model, checkpoint = build_model(name, args.checkpoint, 4, architecture)
+        source_dir = Path(args.quant_dir) / name
+        contract = json.loads((source_dir / "calibration_manifest.json").read_text())
+        height, width = contract["height"], contract["width"]
+        patching, target_name = contract["patching"], contract["target"]
+        if (height, width, patching) not in ((128, 128, True), (512, 512, False)):
+            raise ValueError("A avaliacao suporta patches 128x128 ou imagens inteiras 512x512.")
+        validate_calibration(source_dir, name, checkpoint, PRODUCTS,
+                             height, width, target_name, patching, architecture)
+        model_output = output / name
+        model_output.mkdir(exist_ok=True)
+        quant_dir = model_output / "quantize"
         quant_dir.mkdir(exist_ok=True)
         for filename in ["quant_info.json", "bias_corr.pth", "calibration_manifest.json"]:
             shutil.copyfile(Path(args.quant_dir) / name / filename, quant_dir / filename)
-        quant_source, _ = build_model(name, None, 4)
-        quantizer = torch_quantizer("test", quant_source, (torch.zeros(1, 4, 128, 128),),
-                                   output_dir=str(quant_dir), device=torch.device("cpu"), target="DPUCZDX8G_ISA1_B4096")
+        quant_source, _ = build_model(name, args.checkpoint, 4, architecture)
+        quantizer = torch_quantizer("test", quant_source, (torch.zeros(1, 4, height, width),),
+                                   output_dir=str(quant_dir), device=torch.device("cpu"), target=target_name)
         quant_model = quantizer.quant_model.eval()
         for dataset_name, csv, root in [
             ("test", PROJECT_ROOT / "STARCOP_test/test.csv", PROJECT_ROOT / "STARCOP_test"),
@@ -93,30 +106,40 @@ def main():
         ]:
             if args.dataset and dataset_name != args.dataset:
                 continue
+            if args.csv:
+                csv, root = Path(args.csv), Path(args.data_root)
             df = carregar_dataframe_starcop(str(csv), str(root), produtos_obrigatorios=PRODUCTS + ["labelbinary"])
             if args.limit:
                 df = df.iloc[:args.limit].reset_index(drop=True)
             df = df.iloc[args.shard_index::args.shard_count].reset_index(drop=True)
             loader = DataLoader(STARCOPDataset(df, PRODUCTS, ["labelbinary"]), batch_size=1, num_workers=0)
-            rows = {mode: [] for mode in ["FP32_512", "FP32_patches128", "INT8_patches128"]}
+            modes = ["FP32_512", "FP32_patches128", "INT8_patches128"] if patching else ["FP32_512", "INT8_512"]
+            rows = {mode: [] for mode in modes}
             started = time.perf_counter()
             with torch.no_grad():
                 for i, batch in enumerate(loader):
                     inputs = normalizer(batch["input"])
                     target = batch["output"]
                     for mode in rows:
-                        logits = model(inputs) if mode == "FP32_512" else tiled_logits(quant_model if mode == "INT8_patches128" else model, inputs)
+                        if mode == "FP32_512":
+                            logits = model(inputs)
+                        elif mode == "INT8_512":
+                            if tuple(inputs.shape[2:]) != (height, width):
+                                raise ValueError("Imagem diferente da resolucao calibrada.")
+                            logits = quant_model(inputs)
+                        else:
+                            logits = tiled_logits(quant_model if mode == "INT8_patches128" else model, inputs)
                         if logits.shape != target.shape or not torch.isfinite(logits).all():
                             raise ValueError(f"Saida invalida: {mode}, {df.iloc[i]['id']}")
                         tp, fp, fn, tn, ap = image_metrics(logits, target, kernel)
                         rows[mode].append(dict(id=df.iloc[i]["id"], difficulty=df.iloc[i].get("difficulty", ""),
                                                positive=bool(target.sum() > 0), TP=tp, FP=fp, FN=fn, TN=tn, AUPRC=ap))
-                    if (i + 1) % 100 == 0 or i + 1 == len(df):
+                    if (i + 1) % 10 == 0 or i + 1 == len(df):
                         print(f"{name} {dataset_name}: {i+1}/{len(df)} imagens, {time.perf_counter()-started:.1f}s", flush=True)
             for mode, values in rows.items():
-                pd.DataFrame(values).to_csv(output / f"{name}_{dataset_name}_{mode}.csv", index=False)
+                pd.DataFrame(values).to_csv(model_output / f"{name}_{dataset_name}_{mode}.csv", index=False)
                 summaries.append(dict(model=name, dataset=dataset_name, mode=mode, checkpoint=str(checkpoint), **summarize(values)))
-            pd.DataFrame(summaries).to_csv(output / "summary.csv", index=False)
+            pd.DataFrame([row for row in summaries if row["model"] == name]).to_csv(model_output / "summary.csv", index=False)
             print(pd.DataFrame(summaries).tail(3).to_string(index=False), flush=True)
 
 

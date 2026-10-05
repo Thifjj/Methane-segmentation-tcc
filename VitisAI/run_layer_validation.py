@@ -5,12 +5,13 @@ import subprocess
 import sys
 import traceback
 from pathlib import Path
-from common import OFFICIAL_CALIBRATION
+from common import calibration_defaults, add_model_arguments, resolve_model
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", required=True)
+    add_model_arguments(parser)
     args = parser.parse_args()
     root = Path(args.output_dir)
     if root.exists() and any(root.iterdir()):
@@ -25,7 +26,7 @@ def main():
 
     save()
     try:
-        models = ["attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining"]
+        models = [resolve_model(args.model, args.checkpoint, args.architecture)[0]] if (args.model or args.checkpoint or args.architecture) else ["attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining"]
         for stage in ["calib", "validation"]:
             jobs = []
             for model in models:
@@ -35,12 +36,16 @@ def main():
                                "--data-root", "/dataset_STARCOP", "--range-policy", "layer_mse",
                                "--max-clipping-percent", "0.1", "--num-workers", "2",
                                "--target", "DPUCZDX8G_ISA1_B4096", "--output-dir", str(root / "quantize")]
-                    for key, value in OFFICIAL_CALIBRATION[model].items():
+                    for key, value in calibration_defaults(model).items():
                         command.extend(["--" + key.replace("_", "-"), str(value)])
                 else:
                     command = [sys.executable, "-u", "evaluate_quantized.py", "--model", model,
                                "--dataset", "test", "--quant-dir", str(root / "quantize"),
-                               "--output-dir", str(root / "evaluation" / model)]
+                               "--output-dir", str(root / "evaluation")]
+                if args.checkpoint:
+                    command.extend(["--checkpoint", args.checkpoint])
+                if args.architecture:
+                    command.extend(["--architecture", args.architecture])
                 log = open(root / (model + "_" + stage + ".log"), "w")
                 process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
                 jobs.append((model, process, log))

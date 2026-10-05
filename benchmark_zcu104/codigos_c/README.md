@@ -36,8 +36,8 @@ Os seis MD5 e o target `DPUCZDX8G_ISA1_B4096` foram conferidos;
 os seis quantizados e seis compilados abriram no XIR.
 
 Os dois AttentionGates continuam em
-`VitisAI/build/vitis_ai/official/compiled_zcu104/` e
-`VitisAI/build/vitis_ai/official/quantize/`.
+`VitisAI/build/vitis_ai/compiled_zcu104/` e
+`VitisAI/build/vitis_ai/quantize/`.
 A pasta de modelos da placa recebe os arquivos de **compiled_zcu104**;
 os grafos em **quantize** são os artefatos anteriores à compilação.
 
@@ -51,12 +51,10 @@ Os destinos correspondem às pastas que já existem na placa.
 # Copia os fontes atualizados para /home/root/thiago/benchmark/codigos_c/.
 scp -O -r benchmark_zcu104/codigos_c root@192.168.2.100:/home/root/thiago/benchmark/
 
-# Copia os seis compilados restaurados, incluindo HyperSTARCOP.
+# Copia todos os compilados, incluindo HyperSTARCOP, AttentionGates e MobileNet DPU.
 # Os subdiretórios baseline, hyperstarcop etc. ficam diretamente em modelos/.
 scp -O -r VitisAI/build/vitis_ai/compiled_zcu104/* root@192.168.2.100:/home/root/thiago/benchmark/modelos/
 
-# Copia os dois AttentionGates compilados, arch.json e o manifesto de compilação.
-scp -O -r VitisAI/build/vitis_ai/official/compiled_zcu104/* root@192.168.2.100:/home/root/thiago/benchmark/modelos/
 
 # Opcional: envia o test set se ele ainda não estiver na placa.
 # A pasta deve conter test.csv e os TIFFs das 342 imagens.
@@ -139,7 +137,7 @@ de cada modelo. Os comandos acima usam diretamente a configuração atual.
 Os modelos anteriores são `baseline`, `depth_reduced`,
 `skip_connections`, `mobilenet_v2`, `mobilenet_v3` e `hyperstarcop`.
 Os dois AttentionGates oficiais estão no repositório em
-`VitisAI/build/vitis_ai/official/compiled_zcu104/`. Na placa, considerando que
+`VitisAI/build/vitis_ai/compiled_zcu104/`. Na placa, considerando que
 os arquivos foram copiados para `/home/root/thiago/benchmark/modelos` e os
 datasets estão em `/home/root/thiago`, compile e execute todos os modelos nos
 dois conjuntos: `STARCOP_test` e o full, chamado `dataset_starcop` na placa:

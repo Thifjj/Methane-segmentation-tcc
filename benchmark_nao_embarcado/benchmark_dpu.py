@@ -164,7 +164,7 @@ def executar(args, medidor_class, medir_energia):
         raise RuntimeError("CUDA solicitada, mas indisponivel.")
     torch.set_num_threads(args.num_threads)
     root = Path(args.data_root or (PROJECT_ROOT / "STARCOP_test" if args.dataset == "test"
-                                  else Path("/home/thiago/Documents/STARCOP_DATASET"))).resolve()
+                                  else Path("/media/jacques/games/Datasets/test/STARCOP_test/"))).resolve()
     dataset_csv = Path(args.csv).resolve() if args.csv else root / ("test.csv" if args.dataset == "test" else "train.csv")
     df = carregar_dataframe_starcop(str(dataset_csv), str(root),
                                    produtos_obrigatorios=list(DEFAULT_PRODUCTS) + ["labelbinary"])
@@ -188,7 +188,7 @@ def executar(args, medidor_class, medir_energia):
         raise ValueError("O protocolo oficial exige a coluna difficulty.")
     checkpoint = PROJECT_ROOT / "Modelos_treinados" / MODEL_REGISTRY[args.attention_dpu][1]
     checkpoint_hash = file_sha256(checkpoint)
-    calibration = PROJECT_ROOT / "VitisAI/build/vitis_ai/official/quantize" / args.attention_dpu / "calibration_manifest.json"
+    calibration = PROJECT_ROOT / "VitisAI/build/vitis_ai/quantize" / args.attention_dpu / "calibration_manifest.json"
     if calibration.exists() and json.loads(calibration.read_text()).get("checkpoint_sha256") != checkpoint_hash:
         raise ValueError("Checkpoint diferente do usado na calibracao oficial da DPU.")
     model = load_model(args.attention_dpu, device)

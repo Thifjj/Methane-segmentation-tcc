@@ -14,7 +14,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from Modelos.UNet_MobileNetV3_AttentionGates_DPU import UNetMobileNetV3AttentionGatesDPU
+import Modelos
 from Utils.DataLoader import BAND_NORMALIZATION, DataNormalizer, STARCOPDataset, carregar_dataframe_starcop
 
 
@@ -26,14 +26,14 @@ def file_sha256(path):
     return digest.hexdigest()
 
 
-def calibration_contract(model, checkpoint, products, height, width, target, patching):
-    return dict(manifest_version=2, model=model, checkpoint_sha256=file_sha256(checkpoint),
+def calibration_contract(model, checkpoint, products, height, width, target, patching, architecture=None):
+    return dict(manifest_version=2, model=model, architecture=resolve_model(model, checkpoint, architecture)[1], checkpoint_sha256=file_sha256(checkpoint),
                 products=list(products), height=height, width=width, target=target,
                 patching=patching, patch_stride=64 if patching else None,
                 normalization=json.loads(json.dumps({p: BAND_NORMALIZATION[p] for p in products})))
 
 
-def validate_calibration(directory, model, checkpoint, products, height, width, target, patching):
+def validate_calibration(directory, model, checkpoint, products, height, width, target, patching, architecture=None):
     directory = Path(directory)
     path = directory / "calibration_manifest.json"
     if not path.is_file():
@@ -41,7 +41,10 @@ def validate_calibration(directory, model, checkpoint, products, height, width, 
     saved = json.loads(path.read_text())
     if saved.get("manifest_version") != 2:
         raise ValueError(f"Manifesto legado sem hash/normalizacao: {path}. Recalibre em outro diretorio; preserve o resultado antigo.")
-    expected = calibration_contract(model, checkpoint, products, height, width, target, patching)
+    expected = calibration_contract(model, checkpoint, products, height, width, target, patching, architecture)
+    # Manifestos oficiais anteriores usam as arquiteturas fixas do registro.
+    if "architecture" not in saved and model in MODEL_REGISTRY and expected["architecture"] == MODEL_REGISTRY[model][0]:
+        expected.pop("architecture")
     different = [key for key, value in expected.items() if saved.get(key) != value]
     if different:
         raise ValueError(f"Calibracao incompativel ({', '.join(different)}): {path}")
@@ -63,8 +66,26 @@ DEFAULT_PRODUCTS = (
 )
 
 MODEL_REGISTRY = {
-    "attentiongates_dpu_easy_remaining": (UNetMobileNetV3AttentionGatesDPU, "UnetMobilenetV3AttentionGates_dpu_easy_remaining_mag1c_rgb.pth"),
-    "attentiongates_dpu_only_remaining": (UNetMobileNetV3AttentionGatesDPU, "UnetMobilenetV3AttentionGates_dpu_only_remaining_mag1c_rgb.pth"),
+    "attentiongates_dpu_easy_remaining": ("UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_easy_remaining_mag1c_rgb.pth"),
+    "attentiongates_dpu_only_remaining": ("UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_only_remaining_mag1c_rgb.pth"),
+    "baseline": ("UNetBaseline", "UNET_mag1c_rgb.pth"),
+    "depth_reduced": ("UNetDepthReduced", "UNET_depth_reduced_mag1c_rgb.pth"),
+    "skip_connections": ("UNetElementWise", "UNET_SkipConnections_mag1c_rgb.pth"),
+    "mobilenet_v2": ("UNetMobileNetV2", "Mobile_Net_v2_mag1c_rgb.pth"),
+    "mobilenet_v3": ("UNetMobileNetV3", "Mobile_Net_v3_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu": ("UNetMobileNetV3_dpu", "Mobile_Net_v3_dpu_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu_512": ("UNetMobileNetV3_dpu", "Mobile_Net_v3_dpu_mag1c_rgb.pth"),
+    "mobilenet_v3_attentiongates": ("UNetMobileNetV3AttentionGates", "MobileNetV3_AttentionGates_mag1c_rgb.pth"),
+    "resnet34": ("UNetResNet34", "UNet_ResNet34_mag1c_rgb.pth"),
+    "segformer": ("SegFormerB0", "UNet_SegFormer_mag1c_rgb.pth"),
+    "attentiongates": ("UNetAttentionGates", None),
+    "psa": ("UNetPSA", None),
+    "hyperstarcop": ("HyperSTARCOPOficial", "HyperSTARCOP_oficial/final_checkpoint_model.ckpt"),
+}
+
+CHECKPOINT_ALIASES = {
+    "UNetMobileNetV3AttentionGates_mag1c_rgb.pth": "mobilenet_v3_attentiongates",
+    "Mobile_Net_v3_mag1c_rgb_dpu.pth": "mobilenet_v3_dpu",
 }
 
 OFFICIAL_CALIBRATION = {
@@ -83,12 +104,54 @@ def parse_products(value: str | Iterable[str]) -> list[str]:
     return products
 
 
-def build_model(model_name: str, checkpoint: str | Path | None, in_channels: int):
-    model_class, default_checkpoint = MODEL_REGISTRY[model_name]
+def add_model_arguments(parser):
+    parser.add_argument("--model", help="Alias registrado ou classe exportada por Modelos.")
+    parser.add_argument("--checkpoint", help="Caminho dos pesos; nomes conhecidos identificam a arquitetura.")
+    parser.add_argument("--architecture", choices=[n for n in Modelos.__all__ if n != "carregar_hyperstarcop"],
+                        help="Classe em Modelos para checkpoints com nome personalizado.")
+
+
+def resolve_model(model_name=None, checkpoint=None, architecture=None):
+    if model_name is None:
+        if checkpoint:
+            filename = Path(checkpoint).name
+            model_name = CHECKPOINT_ALIASES.get(filename)
+            if model_name is None:
+                model_name = next((name for name, (_, path) in MODEL_REGISTRY.items()
+                                   if path and Path(path).name == filename), None)
+            if model_name is None:
+                if architecture is None:
+                    raise ValueError("Nome de checkpoint desconhecido: informe --architecture (classe de Modelos).")
+                model_name = Path(checkpoint).stem
+        else:
+            model_name = architecture or "attentiongates_dpu_easy_remaining"
+    if architecture is None:
+        architecture = MODEL_REGISTRY[model_name][0] if model_name in MODEL_REGISTRY else model_name
+    if architecture not in Modelos.__all__ or architecture == "carregar_hyperstarcop":
+        raise ValueError(f"Arquitetura nao exportada por Modelos: {architecture}")
+    if Path(model_name).name != model_name or model_name in (".", ".."):
+        raise ValueError("--model deve ser um nome simples, sem diretorios.")
+    return model_name, architecture
+
+
+def calibration_defaults(model_name):
+    return OFFICIAL_CALIBRATION.get(model_name, OFFICIAL_CALIBRATION["attentiongates_dpu_easy_remaining"])
+
+
+def build_model(model_name: str, checkpoint: str | Path | None, in_channels: int, architecture=None):
+    model_name, architecture = resolve_model(model_name, checkpoint, architecture)
+    default_checkpoint = MODEL_REGISTRY.get(model_name, (None, None))[1]
+    if not checkpoint and not default_checkpoint:
+        raise ValueError(f"Informe --checkpoint para {model_name}.")
     checkpoint_path = Path(checkpoint) if checkpoint else PROJECT_ROOT / "Modelos_treinados" / default_checkpoint
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Checkpoint nao encontrado: {checkpoint_path}")
 
+    if architecture == "HyperSTARCOPOficial":
+        if in_channels != 4:
+            raise ValueError("HyperSTARCOPOficial requer quatro canais.")
+        return Modelos.carregar_hyperstarcop(checkpoint_path, torch.device("cpu")), checkpoint_path
+    model_class = getattr(Modelos, architecture)
     model = model_class(in_channels=in_channels, out_channels=1)
     try:
         state = torch.load(checkpoint_path, map_location="cpu", weights_only=True)

@@ -1,4 +1,4 @@
-# Vitis AI — modelos oficiais
+# Vitis AI — quantizacao e compilacao dos modelos
 
 Os dois modelos oficiais foram escolhidos pelo maior F1 global INT8 nas
 342 imagens de `STARCOP_test/test.csv`. A avaliacao usa patches 128x128 sem
@@ -16,18 +16,21 @@ Os resultados sao de simulacao INT8 no Vitis AI 3.5, ainda sem validacao na plac
 
 ## Arquivos oficiais
 
-Os artefatos dos dois AttentionGates ficam em `build/vitis_ai/official/`:
+Os artefatos ficam em `build/vitis_ai/`, agrupados por etapa e modelo:
 
 - `quantize/<modelo>/`: configuracao INT8, bias correction, manifesto e faixas.
-- `evaluation/`: resultados por imagem e resumo da avaliacao dos dois modelos.
-- `summary.csv`: comparacao FP32/INT8 dos modelos oficiais nas 342 imagens.
-- `official.json`: criterio de selecao, configuracoes e metricas oficiais.
-- `compiled_zcu104/<modelo>/<modelo>.xmodel`: modelos oficiais compilados.
+- `evaluation/<modelo>/`: resultados por imagem, resumo e protocolo da avaliacao.
+- `evaluation/summary.csv`: comparacao FP32/INT8 de todos os modelos avaliados.
+- `evaluation/attentiongates_selection.json`: criterio de selecao e metricas dos AttentionGates.
 - `inspect/`: inspecoes disponiveis dos dois checkpoints.
-- Logs de calibracao dos modelos escolhidos.
+- `logs/<modelo>/`: logs de calibracao, exportacao, compilacao e avaliacao.
+
+Os modelos compilados ficam em `build/vitis_ai/compiled_zcu104/<modelo>/`,
+com os demais compilados ZCU104.
 
 Os checkpoints FP32 ficam em `../Modelos_treinados/`. `common.py` registra
-somente os dois modelos oficiais e suas configuracoes em `OFFICIAL_CALIBRATION`.
+os checkpoints conhecidos e importa as arquiteturas pelo `Modelos/__init__.py`.
+`OFFICIAL_CALIBRATION` preserva as configuracoes dos dois modelos oficiais.
 
 ## Pre-processamento e calibracao
 
@@ -77,14 +80,14 @@ python quantize_model.py --model attentiongates_dpu_easy_remaining \
 ```
 
 Repita com `attentiongates_dpu_only_remaining`. Os padroes por modelo ja
-reproduzem a configuracao oficial; a saida e `official/quantize/<modelo>`.
+reproduzem a configuracao oficial; a saida e `quantize/<modelo>`.
 Para inspecionar, use `inspect_model.py --model MODELO --target DPUCZDX8G_ISA1_B4096`.
 Para compilar o XModel exportado, use `compile_xmodel.py --xmodel ARQUIVO \
 --arch ARCH_JSON --name NOME`, informando o arch.json do bitstream da placa.
 
 ## Compilacao oficial concluida
 
-Os dois XModels em `official/compiled_zcu104/` foram compilados para
+Os dois XModels em `build/vitis_ai/compiled_zcu104/` foram compilados para
 `DPUCZDX8G_ISA1_B4096`, usando o arch.json da ZCU104 do Vitis AI 3.5.
 Cada modelo tem um subgrafo DPU com 324 operacoes. A interface DPU e INT8
 NHWC: entrada `[1, 128, 128, 4]` com fix_point 5 e saida
@@ -105,6 +108,140 @@ Os modelos `baseline`, `depth_reduced`, `skip_connections`, `mobilenet_v2`,
 
 Foram conferidos os hashes, o target ISA1 B4096 e a abertura dos 12 XModels
 no XIR. São os arquivos históricos, sem recalibração ou recompilação.
-Os scripts atuais continuam configurados para os dois AttentionGates.
+Os scripts atuais tambem aceitam os demais modelos exportados por `Modelos`.
 Os comandos de cópia e execução dos oito modelos estão no
 [README do benchmark](../benchmark_zcu104/codigos_c/README.md).
+
+
+## Usar outros checkpoints
+
+`quantize_model.py`, `inspect_model.py`, `evaluate_quantized.py` e
+`run_layer_validation.py` aceitam `--checkpoint CAMINHO`. Para os nomes de
+checkpoints existentes em `Modelos_treinados`, a arquitetura e identificada
+pelo nome do arquivo e importada sob demanda de `Modelos`. Tambem e possivel
+usar `--model` com um alias de `common.MODEL_REGISTRY` ou uma classe exportada.
+Para um arquivo renomeado ou uma arquitetura nova, informe
+`--architecture NOME_DA_CLASSE`, exportada pelo `Modelos/__init__.py`.
+Os pesos sao carregados com `strict=True`; arquiteturas incompativeis falham
+antes da quantizacao. HyperSTARCOP usa seu carregador especifico.
+
+Os novos modelos recebem os mesmos padroes do AttentionGates easy:
+300 imagens, 900 patches por grupo, 2048 amostras por camada, refinamento de
+12 camadas, clipping 0,1%, seed 12345, batch 1, dois workers, patches 128x128
+e target `DPUCZDX8G_ISA1_B4096`. O perfil only preserva seus padroes originais.
+A normalizacao e a ordem dos canais continuam as documentadas acima.
+O nome do checkpoint identifica a arquitetura; os pesos `.pth` sozinhos nao
+codificam configuracoes como `align_corners`. A variante `mobilenet_v3_dpu`
+usa `UNetMobileNetV3_dpu`, com `align_corners=False`.
+
+Dentro do container, em `/workspace/VitisAI` com `vitis-ai-pytorch` ativo:
+
+```bash
+python quantize_model.py \
+  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --quant-mode calib --csv /dataset_STARCOP/train.csv \
+  --data-root /dataset_STARCOP
+
+python quantize_model.py \
+  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --quant-mode test --deploy --csv /dataset_STARCOP/train.csv \
+  --data-root /dataset_STARCOP
+
+python compile_xmodel.py \
+  --xmodel build/vitis_ai/quantize/mobilenet_v3_dpu/UNetMobileNetV3_dpu_int.xmodel \
+  --arch /opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json \
+  --output-dir build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu \
+  --name mobilenet_v3_dpu
+```
+
+Para outro checkpoint, troque o caminho em `--checkpoint`. Os artefatos sao
+separados por modelo; uma calibracao existente continua protegida contra
+sobrescrita. O compilador aceita qualquer XModel exportado, sujeito aos
+operadores suportados pelo Vitis AI e pela DPU; aceitar uma arquitetura no
+carregador nao garante que todas as suas operacoes sejam executadas na placa.
+
+### MobileNet V3 DPU: execucao concluida
+
+Checkpoint: `Mobile_Net_v3_dpu_mag1c_rgb.pth`; arquitetura:
+`Modelos.UNetMobileNetV3_dpu`. A calibracao usou 300 imagens e 2700 patches
+equilibrados, com todos os padroes acima. Foram exportados:
+
+- `build/vitis_ai/quantize/mobilenet_v3_dpu/UNetMobileNetV3_dpu_int.xmodel`.
+- `build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu/mobilenet_v3_dpu.xmodel`.
+
+A verificacao XIR confirmou um subgrafo DPU com 276 operacoes, entrada INT8
+NHWC `[1,128,128,4]` com fix_point 5 e saida INT8 `[1,128,128,1]` com fix_point 2.
+Existe uma conversao final `fix2float` na CPU. O diretorio compilado contem
+`compilation_manifest.json` com hashes e interfaces e uma copia do `arch.json`.
+Logs: `build/vitis_ai/logs/mobilenet_v3_dpu/{calib,export,compile}.log`.
+A comparacao de qualidade FP32/INT8 foi concluida nas 342 imagens do test set:
+[relatorio](build/vitis_ai/evaluation/mobilenet_v3_dpu/comparacao_fp32_int8.md).
+F1 global: FP32 imagem inteira 0,516919; FP32 patches 128x128 0,114279;
+INT8 nos mesmos patches 0,118082. O INT8 foi simulado em CPU pelo Vitis AI 3.5.
+A execucao fisica na placa ainda nao foi validada.
+
+Para avaliar com o conjunto de teste montado em outro caminho, use
+`evaluate_quantized.py --checkpoint CAMINHO --dataset test --csv /dataset_test/test.csv
+--data-root /dataset_test --output-dir DIRETORIO_NOVO`.
+
+Testes do carregador e do perfil JSON: `python -m unittest discover -s tests -v`,
+a partir de `VitisAI/`.
+
+## Calibracao da MobileNet V3 DPU em imagens completas
+
+O perfil [`configs/mobilenet_v3_dpu_512.json`](configs/mobilenet_v3_dpu_512.json)
+usa entrada de 512x512, sem dividir a imagem em patches. Isso preserva o
+contexto espacial da inferencia FP32 de referencia. A selecao de 300 imagens
+do treinamento e aleatoria e reproduzivel (seed 12345), com batch 1,
+faixas por camada, clipping de 0,1% e refinamento de 12 camadas.
+Argumentos CLI tem prioridade sobre o JSON. A quantizacao fica em
+`build/vitis_ai/quantize/mobilenet_v3_dpu_512/` e a avaliacao em
+`build/vitis_ai/evaluation/mobilenet_v3_dpu_512/`.
+O compilado fica em `build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu_512/`,
+separado da versao de 128x128 em `compiled_zcu104/mobilenet_v3_dpu/`.
+
+No container com os dois datasets montados, execute em `/workspace/VitisAI`:
+
+```bash
+python quantize_model.py --config configs/mobilenet_v3_dpu_512.json \
+  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --quant-mode calib --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP
+
+python evaluate_quantized.py --model mobilenet_v3_dpu_512 \
+  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --dataset test --csv /dataset_test/test.csv --data-root /dataset_test \
+  --quant-dir build/vitis_ai/quantize \
+  --output-dir build/vitis_ai/evaluation
+
+python quantize_model.py --config configs/mobilenet_v3_dpu_512.json \
+  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --quant-mode test --deploy --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP
+
+python compile_xmodel.py \
+  --xmodel build/vitis_ai/quantize/mobilenet_v3_dpu_512/UNetMobileNetV3_dpu_int.xmodel \
+  --arch /opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json \
+  --output-dir build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu_512 \
+  --name mobilenet_v3_dpu_512
+```
+
+O avaliador le as dimensoes no manifesto e compara FP32 e INT8 na imagem
+inteira para este perfil. O limiar `logit > 0` e a abertura morfologica sao
+os mesmos em ambos. Os dados de teste nao entram na calibracao nem no
+refinamento de faixas.
+
+### Resultado aceito em 512x512
+
+Nas mesmas 342 imagens de teste, o F1 global foi **0,516919 em FP32** e
+**0,512693 em INT8**, com perda de **0,4226 ponto percentual**, abaixo do
+criterio de 1 ponto. A referencia FP32 reproduziu as contagens do teste
+anterior. Os 300 IDs de calibracao nao aparecem no conjunto de teste.
+AUPRC: 0,745439 / 0,722560; F1 fraco: 0,562549 / 0,518384 (FP32 / INT8).
+
+O arquivo `build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu_512/mobilenet_v3_dpu_512.xmodel`
+foi compilado para a ZCU104. XIR confirmou um unico subgrafo DPU com 276
+operacoes e entrada INT8 NHWC `[1,512,512,4]`; a CPU faz apenas `fix2float`
+na saida. O runner deve usar a entrada 512x512 deste artefato.
+
+[Relatorio e protocolo](build/vitis_ai/evaluation/mobilenet_v3_dpu_512/comparacao_fp32_int8.md).
+Os resultados INT8 sao de simulacao Vitis AI 3.5 na CPU; a execucao fisica
+na placa ainda nao foi validada.

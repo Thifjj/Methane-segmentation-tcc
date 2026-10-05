@@ -1,0 +1,118 @@
+{
+  "target": "DPUCZDX8G_ISA1_B4096",
+  "arch_sha256": "1f47e9d34febc6b5b12ebf0cc73431b5c6f2b281ee7052a7d715b684a39aa671",
+  "models": {
+    "attentiongates_dpu_easy_remaining": {
+      "path": "build/vitis_ai/compiled_zcu104/attentiongates_dpu_easy_remaining/attentiongates_dpu_easy_remaining.xmodel",
+      "sha256": "76e6697b27ece4a81114f61f3abf8c58c85d294d002eb00769af3b07f24c7d38",
+      "size_bytes": 2779778,
+      "subgraphs": [
+        {
+          "name": "subgraph_UNetMobileNetV3AttentionGatesDPU__input_0",
+          "device": "USER",
+          "operations": 1,
+          "operation_types": [
+            "data-fix"
+          ]
+        },
+        {
+          "name": "subgraph_UNetMobileNetV3AttentionGatesDPU__UNetMobileNetV3AttentionGatesDPU_AttentionGateDPU_ag1__Sequential_W_g__Conv2d_0__ret_231",
+          "device": "DPU",
+          "operations": 324,
+          "inputs": [
+            {
+              "name": "UNetMobileNetV3AttentionGatesDPU__input_0_fix",
+              "shape": [
+                1,
+                128,
+                128,
+                4
+              ],
+              "dtype": "xint8",
+              "fix_point": 5
+            }
+          ],
+          "outputs": [
+            {
+              "name": "UNetMobileNetV3AttentionGatesDPU__UNetMobileNetV3AttentionGatesDPU_Sequential_out_conv__Conv2d_2__ret_fix",
+              "shape": [
+                1,
+                128,
+                128,
+                1
+              ],
+              "dtype": "xint8",
+              "fix_point": 1
+            }
+          ],
+          "fingerprint": null,
+          "dpu_name": "DPUCZDX8G_ISA1_B4096"
+        },
+        {
+          "name": "subgraph_UNetMobileNetV3AttentionGatesDPU__UNetMobileNetV3AttentionGatesDPU_Sequential_out_conv__Conv2d_2__ret_fix_",
+          "device": "CPU",
+          "operations": 1,
+          "operation_types": [
+            "fix2float"
+          ]
+        }
+      ]
+    },
+    "attentiongates_dpu_only_remaining": {
+      "path": "build/vitis_ai/compiled_zcu104/attentiongates_dpu_only_remaining/attentiongates_dpu_only_remaining.xmodel",
+      "sha256": "3faee007aee96682e8577ec65551646db7d1072c6e06c35d9539fd055868b2db",
+      "size_bytes": 2779841,
+      "subgraphs": [
+        {
+          "name": "subgraph_UNetMobileNetV3AttentionGatesDPU__input_0",
+          "device": "USER",
+          "operations": 1,
+          "operation_types": [
+            "data-fix"
+          ]
+        },
+        {
+          "name": "subgraph_UNetMobileNetV3AttentionGatesDPU__UNetMobileNetV3AttentionGatesDPU_AttentionGateDPU_ag1__Sequential_W_g__Conv2d_0__ret_231",
+          "device": "DPU",
+          "operations": 324,
+          "inputs": [
+            {
+              "name": "UNetMobileNetV3AttentionGatesDPU__input_0_fix",
+              "shape": [
+                1,
+                128,
+                128,
+                4
+              ],
+              "dtype": "xint8",
+              "fix_point": 5
+            }
+          ],
+          "outputs": [
+            {
+              "name": "UNetMobileNetV3AttentionGatesDPU__UNetMobileNetV3AttentionGatesDPU_Sequential_out_conv__Conv2d_2__ret_fix",
+              "shape": [
+                1,
+                128,
+                128,
+                1
+              ],
+              "dtype": "xint8",
+              "fix_point": 1
+            }
+          ],
+          "fingerprint": null,
+          "dpu_name": "DPUCZDX8G_ISA1_B4096"
+        },
+        {
+          "name": "subgraph_UNetMobileNetV3AttentionGatesDPU__UNetMobileNetV3AttentionGatesDPU_Sequential_out_conv__Conv2d_2__ret_fix_",
+          "device": "CPU",
+          "operations": 1,
+          "operation_types": [
+            "fix2float"
+          ]
+        }
+      ]
+    }
+  }
+}

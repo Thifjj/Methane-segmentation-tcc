@@ -1,0 +1,30 @@
+{
+  "modelo": "attentiongates_dpu_easy_remaining",
+  "arquitetura": "Modelos.UNet_MobileNetV3_AttentionGates_DPU:UNetMobileNetV3AttentionGatesDPU",
+  "checkpoint": "/media/jacques/games/Laboratorio_LEDS/Methane-segmentation-tcc/Modelos_treinados/UnetMobilenetV3AttentionGates_dpu_easy_remaining_mag1c_rgb.pth",
+  "checkpoint_sha256": "d2f1087cba0aa67a1d183689fce12378834b67b44a43c0df5e3eabebbe360493",
+  "parametros": 1690777,
+  "ordem_canais": "mag1c,460,550,640",
+  "tamanho_patch": 128,
+  "batch_dinamico": false,
+  "precisao": "FP32",
+  "normalizacao": "mag1c/1750;bandas/60;clip[0,2]",
+  "saida": "logits",
+  "opset": 16,
+  "ir_version": 8,
+  "pytorch_versao": "2.5.1+cu124",
+  "onnx_sha256": "c1bf8ed06eeb16fe4e06ec6f83ff4b982ee58c8e3751c87024095ca6b59543bc",
+  "validacao": {
+    "onnxruntime_versao": "1.14.1",
+    "provider": "CPUExecutionProvider",
+    "rtol": 0.0001,
+    "atol": 0.0001,
+    "resultados": [
+      {
+        "batch": 1,
+        "max_abs_error": 0.0001220703125,
+        "mean_abs_error": 1.4794495655223727e-05
+      }
+    ]
+  }
+}

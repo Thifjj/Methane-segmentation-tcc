@@ -11,8 +11,9 @@ import torch
 
 from common import (
     DEFAULT_PRODUCTS,
-    MODEL_REGISTRY,
-    OFFICIAL_CALIBRATION,
+    calibration_defaults,
+    add_model_arguments,
+    resolve_model,
     build_calibration_loader,
     build_model,
     normalized_inputs,
@@ -23,10 +24,10 @@ from common import (
 )
 
 
-def parse_args():
+def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--model", choices=MODEL_REGISTRY, default="attentiongates_dpu_easy_remaining")
-    parser.add_argument("--checkpoint")
+    add_model_arguments(parser)
+    parser.add_argument("--config", help="JSON com padroes de calibracao; argumentos CLI tem prioridade.")
     parser.add_argument("--quant-mode", choices=("calib", "test"), required=True)
     parser.add_argument("--csv", required=True, help="CSV STARCOP usado na calibracao/validacao.")
     parser.add_argument("--data-root", required=True, help="Diretorio que contem as pastas das imagens.")
@@ -55,10 +56,22 @@ def parse_args():
     parser.add_argument("--height", type=int)
     parser.add_argument("--width", type=int)
     parser.add_argument("--target", help="Opcional: habilita quantizacao consciente do hardware.")
-    parser.add_argument("--output-dir", default="build/vitis_ai/official/quantize")
+    parser.add_argument("--output-dir", default="build/vitis_ai/quantize")
     parser.add_argument("--deploy", action="store_true", help="No modo test, exporta o xmodel INT8.")
     parser.add_argument("--deploy-check", action="store_true")
-    return parser.parse_args()
+    config_parser = argparse.ArgumentParser(add_help=False)
+    config_parser.add_argument("--config")
+    config_args, _ = config_parser.parse_known_args(argv)
+    if config_args.config:
+        try:
+            config = json.loads(Path(config_args.config).read_text())
+        except (OSError, ValueError) as exc:
+            parser.error(f"Configuracao invalida: {exc}")
+        allowed = {action.dest for action in parser._actions} - {"help", "config", "deploy", "deploy_check", "quant_mode", "csv", "data_root"}
+        if not isinstance(config, dict) or set(config) - allowed:
+            parser.error("JSON deve conter apenas parametros conhecidos de calibracao.")
+        parser.set_defaults(**config)
+    return parser.parse_args(argv)
 
 
 class WidestRangeHistory(list):
@@ -75,7 +88,8 @@ def preserve_widest_ranges(quantizer):
 
 
 def quantize(args):
-    for key, value in OFFICIAL_CALIBRATION[args.model].items():
+    args.model, args.architecture = resolve_model(args.model, args.checkpoint, args.architecture)
+    for key, value in calibration_defaults(args.model).items():
         if getattr(args, key) is None:
             setattr(args, key, value)
     try:
@@ -93,12 +107,11 @@ def quantize(args):
         raise SystemExit("--max-clipping-percent deve estar entre 0 e 100.")
     if args.range_samples < 1 or args.refine_layers < 0:
         raise SystemExit("--range-samples deve ser positivo e --refine-layers nao negativo.")
-    attention_dpu = args.model.startswith("attentiongates_dpu_")
     if args.patching is None:
-        args.patching = attention_dpu
+        args.patching = args.model != "mobilenet_v3_dpu_512"
     if args.balanced is None:
-        args.balanced = attention_dpu and args.patching and args.quant_mode == "calib"
-    if args.target is None and attention_dpu:
+        args.balanced = args.patching and args.quant_mode == "calib"
+    if args.target is None:
         args.target = "DPUCZDX8G_ISA1_B4096"
     if args.balanced and (args.quant_mode != "calib" or not args.patching):
         raise SystemExit("--balanced-patches requer --quant-mode calib e --patching.")
@@ -116,7 +129,7 @@ def quantize(args):
         args.subset_len = 1
 
     products = parse_products(args.products)
-    model, checkpoint = build_model(args.model, args.checkpoint, len(products))
+    model, checkpoint = build_model(args.model, args.checkpoint, len(products), args.architecture)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     loader = build_calibration_loader(
@@ -138,7 +151,7 @@ def quantize(args):
         raise SystemExit(f"Calibre primeiro: configuracao ausente em {output_dir / 'quant_info.json'}")
     if args.quant_mode == "test":
         validate_calibration(output_dir, args.model, checkpoint, products,
-                             args.height, args.width, args.target, args.patching)
+                             args.height, args.width, args.target, args.patching, args.architecture)
     elif (output_dir / "quant_info.json").exists():
         raise SystemExit(f"Diretorio ja calibrado: {output_dir}. Use outro --output-dir.")
     example = torch.zeros(args.batch_size, len(products), args.height, args.width, device=device)
@@ -213,8 +226,8 @@ def quantize(args):
         quantizer.export_quant_config()
         refinement = None
         if ranges is not None and args.refine_layers:
-            reference, _ = build_model(args.model, args.checkpoint, len(products))
-            source, _ = build_model(args.model, args.checkpoint, len(products))
+            reference, _ = build_model(args.model, args.checkpoint, len(products), args.architecture)
+            source, _ = build_model(args.model, args.checkpoint, len(products), args.architecture)
             kwargs.update(quant_mode="test", module=source.to(device))
             refined = torch_quantizer(**kwargs)
             refinement = ranges.refine(refined.processor.quantizer, refined.quant_model.eval(),
@@ -226,7 +239,7 @@ def quantize(args):
         if ranges is not None:
             (output_dir / "layer_ranges.json").write_text(json.dumps(ranges.report(quantizer.processor.quantizer), indent=2))
         metadata = dict(calibration_contract(args.model, checkpoint, products, args.height,
-                                             args.width, args.target, args.patching),
+                                             args.width, args.target, args.patching, args.architecture),
                         checkpoint=str(checkpoint), max_clipping_percent=args.max_clipping_percent,
                         range_samples=args.range_samples, refine_layers=args.refine_layers,
                         csv=str(Path(args.csv).resolve()), csv_sha256=file_sha256(args.csv),
