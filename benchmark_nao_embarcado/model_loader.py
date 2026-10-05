@@ -1,9 +1,24 @@
 import torch
+from pathlib import Path
+import Modelos
+
+NOVOS_MODELOS = {
+    "mobilenet_v3_focaldice": ("UNetMobileNetV3_dpu", "MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth"),
+    "attentiongates_bce": ("UNetMobileNetV3AttentionGates", "MobileNetV3_AttentionGates_BCE_mag1c_rgb.pth"),
+    "attentiongates_checkpoint_unet": ("UNetMobileNetV3AttentionGates", "UNetMobileNetV3AttentionGates_mag1c_rgb.pth"),
+}
 
 from Modelos import UNetBaseline, UNetDepthReduced, UNetMobileNetV2, UNetMobileNetV3, UNetElementWise, carregar_hyperstarcop
 
 def load_model(nome_modelo, device):
-    if nome_modelo in ("attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining"):
+    if nome_modelo in NOVOS_MODELOS:
+        arquitetura, checkpoint = NOVOS_MODELOS[nome_modelo]
+        model = getattr(Modelos, arquitetura)(in_channels=4, out_channels=1)
+        caminho = Path(__file__).resolve().parents[1] / "Modelos_treinados" / checkpoint
+        model.load_state_dict(torch.load(caminho, map_location=device, weights_only=True))
+        return model.to(device).eval()
+    if nome_modelo in ("attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining",
+                       "mobilenet_v3_attentiongates"):
         from VitisAI.common import build_model
         model, _ = build_model(nome_modelo, None, 4)
         return model.to(device).eval()

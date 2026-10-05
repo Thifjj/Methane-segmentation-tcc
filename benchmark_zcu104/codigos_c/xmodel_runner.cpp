@@ -233,7 +233,8 @@
               throw std::runtime_error("Entrada deve ser INT8 NHWC [1,128/512,128/512,4]");
           contexto.tamanho_patch = shape[1];
           contexto.patches_por_imagem = (512 / shape[1]) * (512 / shape[1]);
-          contexto.ordem_rgb = graph->get_name() == "UNetMobileNetV3AttentionGatesDPU";
+          contexto.ordem_rgb = graph->get_name() == "UNetMobileNetV3AttentionGatesDPU" ||
+                               graph->get_name() == "UNetMobileNetV3_dpu";
           if (tensor_saida->get_shape() != std::vector<std::int32_t>{1, shape[1], shape[1], 1})
               throw std::runtime_error("Saida deve ter a mesma geometria da entrada e um canal");
           const auto tipo_saida = tensor_saida->get_data_type();

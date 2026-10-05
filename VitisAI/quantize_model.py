@@ -21,6 +21,7 @@ from common import (
     calibration_contract,
     validate_calibration,
     file_sha256,
+    load_quantized_parameters,
 )
 
 
@@ -168,6 +169,8 @@ def quantize(args):
     from nndct_shared.utils import NndctOption
     NndctOption.nndct_diffs_mode.value = "maxmin"
     quantizer = torch_quantizer(**kwargs)
+    if args.quant_mode == "test":
+        load_quantized_parameters(quantizer, output_dir)
     if args.quant_mode == "calib":
         preserve_widest_ranges(quantizer.processor.quantizer)
     quant_model = quantizer.quant_model.eval()

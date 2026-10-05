@@ -1,5 +1,49 @@
 # Benchmark manual em CPU e GPU
 
+## Potencia media real da CPU
+
+O benchmark le o contador RAPL do pacote CPU e calcula **potencia media (W) =
+energia medida (J) / duracao medida (s)**. Registra separadamente `model_only`
+(inferencia) e `end_to_end` (fluxo completo), excluindo o warm-up.
+A medida inclui o consumo do pacote CPU durante o intervalo, inclusive outros
+processos; nao estima o consumo a partir de TDP ou porcentagem de utilizacao.
+
+Na extensao, `benchmark_geral.csv` e o console mostram `cpu_potencia_media_w`,
+`cpu_energia_j`, `cpu_energia_por_inferencia_j` e `cpu_energia_status`.
+`benchmark_power_rails.csv` preserva as medidas por pacote CPU/GPU. No fluxo
+manual, os campos recebem prefixos `model_only_` e `end_to_end_`.
+Sem leitura real, os novos campos numericos ficam `nan`; leituras incompletas
+recebem status `parcial`.
+
+Neste computador, o Linux exige permissao para o contador. Para liberar somente
+a leitura do pacote CPU ate a reinicializacao, execute no seu terminal:
+
+```bash
+sudo chmod a+r /sys/class/powercap/intel-rapl:0/energy_uj
+```
+
+Depois execute o benchmark normalmente, sem sudo. Se outro computador usar um
+caminho diferente, o benchmark informa o caminho exato bloqueado.
+
+## Novos checkpoints: MobileNet Focal Dice e Attention Gate BCE
+
+Na raiz do projeto, para CPU e as 342 imagens do TEST com entrada inteira 512×512:
+
+```bash
+for MODELO in mobilenet_v3_focaldice attentiongates_bce; do
+  venv/bin/python -m benchmark_nao_embarcado.benchmark_geral \
+    --attention-dpu "$MODELO" --device cpu --dataset test \
+    --num-threads 4 --patch-size 512 \
+    --output-dir benchmark_nao_embarcado/resultados_cpu || break
+done
+```
+
+`mobilenet_v3_focaldice` usa `MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth`
+com `UNetMobileNetV3_dpu`, conforme o `main.ipynb` atual.
+`attentiongates_bce` usa `MobileNetV3_AttentionGates_BCE_mag1c_rgb.pth`
+com `UNetMobileNetV3AttentionGates`. A opção `--attention-dpu` seleciona
+o modelo na extensão existente; estas execuções são PyTorch FP32 na CPU.
+
 ## AttentionGates DPU: CPU/GPU comparáveis com a ZCU104
 
 A extensão `benchmark_dpu.py` adiciona as duas variantes DPU ao menu de

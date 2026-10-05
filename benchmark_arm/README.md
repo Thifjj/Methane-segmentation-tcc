@@ -6,47 +6,108 @@ protocolos de qualidade dos benchmarks CPU/GPU e DPU: `model_only`,
 FP32 no ARM; exportar a arquitetura compatível com DPU para ONNX não a torna
 uma execução INT8 nem usa a DPU.
 
+## MobileNetV3: cinco modelos selecionados
+
+Exportados com o script existente para `exportar_to_onnx/modelos_convertidos_onnx/`,
+em FP32, batch fixo 1, opset 16 / IR 8:
+
+| ONNX | Checkpoint em `Modelos_treinados/` | Entrada |
+|---|---|---|
+| `mobilenet_v3_attentiongates.onnx` | `UNetMobileNetV3AttentionGates_mag1c_rgb.pth` | `[1,4,512,512]` |
+| `attentiongates_dpu_easy_remaining_512.onnx` | `UnetMobilenetV3AttentionGates_dpu_easy_remaining_mag1c_rgb.pth` | `[1,4,512,512]` |
+| `attentiongates_dpu_only_remaining_512.onnx` | `UnetMobilenetV3AttentionGates_dpu_only_remaining_mag1c_rgb.pth` | `[1,4,512,512]` |
+| `mobilenet_v3_dpu.onnx` | `Mobile_Net_v3_dpu_mag1c_rgb.pth` | `[1,4,512,512]` |
+| `mobilenet_v3.onnx` | `Mobile_Net_v3_mag1c_rgb.pth` | `[1,4,512,512]` |
+
+Todos gravam `mag1c,460,550,640`, conforme a ordem de treinamento em
+`main.ipynb`; o ARM lê essa ordem automaticamente dos metadados.
+O checkpoint `MobileNetV3_AttentionGates_mag1c_rgb.pth` também existe e tem
+hash diferente; esta entrega usa explicitamente `UNetMobileNetV3AttentionGates_mag1c_rgb.pth`.
+MobileNetV3 DPU usa `UNetMobileNetV3_dpu`, preservando `align_corners=False`.
+Todos executam a imagem inteira em 512×512. Todos produzem logits NCHW com um canal.
+
+Verificação local: PyTorch 2.5.1, ONNX 1.16.2, ONNX Runtime 1.20.1 CPU,
+`onnx.checker` e otimização básica como no executável ARM. A comparação usa
+entrada aleatória normalizada, seed 12345, batch 1, `rtol=1e-4`;
+`atol=1e-4` nos AttentionGates e `atol=2e-4` nos dois MobileNetV3 sem gates.
+Estes últimos excederam a tolerância original em poucos pixels.
+A verificação imprime os erros e as divergências da máscara `logit > 0` no terminal.
+Isso não mede qualidade no dataset nem confirma execução física no Cortex-A53
+ou no ORT 1.14.1 da placa. As variantes de batch dinâmico anteriores não foram reexportadas.
+
+### Reexportar os cinco modelos no computador
+
+Na raiz do repositório:
+
+```bash
+venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3_attentiongates --verify
+venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates_dpu_easy_remaining --verify
+venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates_dpu_only_remaining --verify
+venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3_dpu --verify --verify-atol 0.0002
+venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3 --verify --verify-atol 0.0002
+venv/bin/python benchmark_arm/tests/test_exportados.py
+```
+
+### Executar individualmente na ZCU104
+
+Copie a pasta `benchmark_arm` atualizada para `/home/root/thiago/benchmark_arm/`.
+Na placa, compile e escolha um dos comandos:
+
+```bash
+cd /home/root/thiago/benchmark_arm/codigos_c
+./build.sh
+./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/mobilenet_v3_attentiongates.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
+./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/attentiongates_dpu_easy_remaining_512.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
+./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/attentiongates_dpu_only_remaining_512.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
+./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/mobilenet_v3_dpu.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
+./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/mobilenet_v3.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
+```
+
+Para uma conferência curta, acrescente `--limit 2 --warmup 1`.
+Para full, substitua o dataset por `/home/root/thiago/dataset_starcop`.
+O executável C++ já aceita os cinco contratos; nenhuma alteração nele foi necessária.
+O novo `mobilenet_v3.onnx` grava RGB; para reproduzir benchmarks antigos com
+canais invertidos, informe `--channel-order legacy` e registre essa diferença.
+
 ## Attention Gates DPU: modelos prontos
 
 Em `exportar_to_onnx/modelos_convertidos_onnx/`:
 
 | Arquivo | Entrada | Uso |
 |---|---|---|
-| `attentiongates_dpu_easy_remaining.onnx` | `[1,4,128,128]` | 16 chamadas por imagem |
-| `attentiongates_dpu_only_remaining.onnx` | `[1,4,128,128]` | 16 chamadas por imagem |
-| `attentiongates_dpu_easy_remaining_batch_dynamic.onnx` | `[B,4,128,128]` | B de 1 a 16 |
-| `attentiongates_dpu_only_remaining_batch_dynamic.onnx` | `[B,4,128,128]` | B de 1 a 16 |
+| `attentiongates_dpu_easy_remaining_512.onnx` | `[1,4,512,512]` | Imagem inteira |
+| `attentiongates_dpu_only_remaining_512.onnx` | `[1,4,512,512]` | Imagem inteira |
+
+Os arquivos antigos sem `_512` usam patches 128×128 e são mantidos para
+comparação com os xmodels DPU; não são usados pelos comandos atuais.
 
 Os checkpoints são os dois `UnetMobilenetV3AttentionGates_dpu_*_mag1c_rgb.pth`
 em `Modelos_treinados/`; ambos usam `UNetMobileNetV3AttentionGatesDPU` com
 1.690.777 parâmetros. Cada ONNX tem metadados com ordem dos canais, checkpoint,
-SHA256, normalização e geometria; o `.json` ao lado registra SHA256 do ONNX e a
-comparação PyTorch/ONNX Runtime. Não use os pesos da arquitetura original de
+SHA256 do checkpoint, normalização e geometria dentro do próprio ONNX. Não use os pesos da arquitetura original de
 atenção com um único canal para esta variante.
 
 Os arquivos usam **opset 16, IR 8**, nomes `input`/`logits` e saída de logits
-NCHW. A exportação foi conferida com `onnx.checker` e ONNX Runtime **1.14.1**
+NCHW. A exportação anterior foi conferida com `onnx.checker` e ONNX Runtime **1.14.1**
 CPU, contra PyTorch, em batch 1 e, nos modelos dinâmicos, batch 16
 (`rtol=1e-4`, `atol=1e-4`). Isso verifica a conversão no computador; desempenho,
 memória e sensores do Cortex-A53 precisam ser medidos na placa.
+As versões de batch fixo 1 foram reexportadas conforme a seção dos cinco modelos acima.
 
 ## Compilar e executar na placa
 
-Copie **toda a pasta `benchmark_arm`** para `/home/root/thiago/benchmark_arm/`,
-ou extraia o pacote `entrega_zcu104_attentiongates.tar.gz` nesse diretório pai.
-O pacote contém código, README e os quatro ONNX com seus manifestos; não inclui
-um executável x86 nem os pesos PyTorch. São necessárias as bibliotecas e
-headers OpenCV e ONNX Runtime da placa.
+Copie **toda a pasta `benchmark_arm` atualizada** para `/home/root/thiago/benchmark_arm/`.
+O pacote antigo `entrega_zcu104_attentiongates.tar.gz` não contém as novas
+versões 512×512. São necessárias as bibliotecas e headers OpenCV e ONNX Runtime da placa.
 
 ```bash
 cd /home/root/thiago/benchmark_arm/codigos_c
 ./build.sh
 
-# Executa os dois checkpoints, TEST completo, patch 128, batch 1:
+# Executa os dois checkpoints, TEST completo, imagem 512×512, batch 1:
 ./run_attentiongates.sh --dataset /home/root/thiago/STARCOP_test --threads 4
 
-# Agrupa os 16 patches em uma chamada (maior uso de memória):
-./run_attentiongates.sh --dataset /home/root/thiago/STARCOP_test --threads 4 --patch-batch-size 16
+# As versões 512 usam batch fixo 1.
 
 # FULL, mantendo a mesma geometria:
 ./run_attentiongates.sh --dataset /home/root/thiago/dataset_starcop --threads 4
@@ -56,7 +117,7 @@ Execução individual e teste curto:
 
 ```bash
 ./benchmark_arm \
-  --model ../exportar_to_onnx/modelos_convertidos_onnx/attentiongates_dpu_only_remaining.onnx \
+  --model ../exportar_to_onnx/modelos_convertidos_onnx/attentiongates_dpu_only_remaining_512.onnx \
   --dataset /home/root/thiago/STARCOP_test --threads 4 --limit 2 --warmup 1
 ```
 
@@ -183,9 +244,10 @@ python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates
 python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates_dpu_only_remaining --dynamic-batch --verify
 ```
 
-`--patch-size 512` exporta uma versão separada com sufixo `_512`. Outros modelos
+O padrão é 512×512; AttentionGates DPU recebem o sufixo `_512`.
+`--patch-size 128` mantém a opção de reproduzir o protocolo DPU em patches. Outros modelos
 continuam disponíveis: `baseline`, `depth_reduced`, `mobilenet_v2`,
-`mobilenet_v3`, `skip`, `resnet34`, `segformer`, `hyperstarcop`, `all`.
+`mobilenet_v3`, `mobilenet_v3_dpu`, `mobilenet_v3_attentiongates`, `skip`, `resnet34`, `segformer`, `hyperstarcop`, `all`.
 `attention_gates` e `psa` exigem checkpoint explícito. Arquitetura customizada:
 
 ```bash
@@ -210,4 +272,4 @@ PyTorch/Kornia/sklearn. Cobre recortes, ordem de bandas, patch 128/512,
 batch 1/3/16, grupos divergentes de `has_plume`, abertura, AP/PR, merge de
 35 imagens, hashes, schemas CSV, datasets sem positivos e proteção das saídas.
 Os ONNX e o pacote de entrega ficam localmente, ignorados pelo Git; os
-manifestos JSON acompanham a exportação.
+Os metadados acompanham o próprio ONNX, sem arquivos JSON auxiliares.

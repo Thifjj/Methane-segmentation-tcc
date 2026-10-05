@@ -51,11 +51,32 @@ def validate_calibration(directory, model, checkpoint, products, height, width, 
     artifacts = saved.get("artifacts", {})
     if "quant_info.json" not in artifacts:
         raise ValueError(f"Manifesto sem hash da quantizacao: {path}")
-    for filename in ("quant_info.json", "bias_corr.pth"):
+    for filename in ("quant_info.json", "bias_corr.pth", "adapted_parameters.pth"):
         artifact = directory / filename
         if artifact.is_file() != (filename in artifacts) or (artifact.is_file() and file_sha256(artifact) != artifacts[filename]):
             raise ValueError(f"Artefato ausente ou alterado: {artifact}")
     return saved
+
+
+def load_quantized_parameters(quantizer, directory):
+    """Carrega reconstrucao PTQ registrada separadamente do checkpoint FP32."""
+    path = Path(directory) / "adapted_parameters.pth"
+    if not path.exists():
+        return
+    parameters = torch.load(path, map_location="cpu", weights_only=True)
+    modules = {m.node.name: m for m in quantizer.quant_model.modules() if getattr(m, "node", None) is not None}
+    with torch.no_grad():
+        for name, values in parameters.items():
+            if name not in modules:
+                raise ValueError(f"Camada adaptada ausente no grafo: {name}")
+            module = modules[name]
+            for key, value in values.items():
+                original = getattr(module, key, None)
+                if key not in ("weight", "bias") or original is None or original.shape != value.shape or not torch.isfinite(value).all():
+                    raise ValueError(f"Parametro adaptado invalido: {name}/{key}")
+                original.copy_(value.to(original.device))
+            module.param_saved = True  # Bias ja reconstruido; nao aplicar a correcao antiga outra vez.
+            module.param_quantized = False
 
 
 DEFAULT_PRODUCTS = (

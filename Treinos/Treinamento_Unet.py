@@ -7,6 +7,7 @@ from tqdm import tqdm
 from kornia.morphology import erosion, dilation
 import kornia.augmentation as K
 from Utils.FocalDiceLoss import FocalDiceLoss
+from sklearn.model_selection import GroupShuffleSplit
 
 from Utils.DataLoader import carregar_dataframe_starcop, STARCOPDataset, DataNormalizer
 
@@ -38,8 +39,8 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
     #CAMINHO_CSV_TESTE ="/home/thiago/Documents/STARCOP_DATASET/train.csv"
     #DIRETORIO_DADOS_TESTE ="/home/thiago/Documents/STARCOP_DATASET/"
     
-    #CAMINHO_CSV_TESTE ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
-    #DIRETORIO_DADOS_TESTE = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
+    CAMINHO_CSV ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
+    DIRETORIO_DADOS = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
     
     #caminhos desktop
     #CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
@@ -51,20 +52,21 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
     #CAMINHO_CSV = "/media/jacques/games/Datasets/train_remaining_only/train.csv"
     #DIRETORIO_DADOS = "/media/jacques/games/Datasets/train_remaining_only/"
 
-    CAMINHO_CSV_VALIDACAO = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv"
-    DIRETORIO_DADOS_VALIDACAO = "/media/jacques/games/Datasets/test/STARCOP_test/"
+    #CAMINHO_CSV_VALIDACAO = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv"
+    #DIRETORIO_DADOS_VALIDACAO = "/media/jacques/games/Datasets/test/STARCOP_test/"
     
     df_train = carregar_dataframe_starcop(CAMINHO_CSV, DIRETORIO_DADOS)
     
-    df_treino_split = df_train.reset_index(drop=True)
-    df_val_split = carregar_dataframe_starcop(
-        CAMINHO_CSV_VALIDACAO, DIRETORIO_DADOS_VALIDACAO
-    )
+    gss = GroupShuffleSplit(n_splits=1, test_size=0.15, random_state=42)
+    train_idx, val_idx = next(gss.split(df_train, groups=df_train['folder']))
+    
+    df_treino_split = df_train.iloc[train_idx].reset_index(drop=True)
+    df_val_split = df_train.iloc[val_idx].reset_index(drop=True)
     
     print(f"Amostras Treino: {len(df_treino_split)} | Amostras Validação: {len(df_val_split)}")
 
-    dataset_treino = STARCOPDataset(df_treino_split, produtos_entrada, ["labelbinary"], weight_loss="weight_mag1c", patching=True)
-    dataset_val = STARCOPDataset(df_val_split, produtos_entrada, ["labelbinary"], weight_loss="weight_mag1c", patching=True)
+    dataset_treino = STARCOPDataset(df_treino_split, produtos_entrada, ["labelbinary"], weight_loss="weight_mag1c")
+    dataset_val = STARCOPDataset(df_val_split, produtos_entrada, ["labelbinary"], weight_loss="weight_mag1c")
     
     normalizador = DataNormalizer(produtos_entrada).to(device)
     
@@ -86,7 +88,8 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
         modelo.load_state_dict(torch.load(caminho_salvamento, map_location=device, weights_only=True))
     
     optimizer = optim.Adam(modelo.parameters(), lr=1e-4)
-    #criterion = nn.BCEWithLogitsLoss(reduction='none')
+    peso_pluma = torch.tensor([20.0]).to(device)
+    #criterion = nn.BCEWithLogitsLoss(reduction='none', pos_weight=peso_pluma)
     criterion = FocalDiceLoss(alpha=0.25, gamma=2.0, weight_focal=1.0, weight_dice=1.0)
     scaler = torch.amp.GradScaler('cuda') 
 

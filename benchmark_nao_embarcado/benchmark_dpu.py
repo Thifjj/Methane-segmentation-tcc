@@ -16,11 +16,13 @@ from sklearn.metrics import auc, average_precision_score, precision_recall_curve
 
 from .dataset import carregar_classificacao_por_pasta
 from .metricas import calcular_metricas
-from .model_loader import load_model
+from .model_loader import load_model, NOVOS_MODELOS
+from .energia import resumir_energia_cpu
 from Testes.Teste_Unet import binary_opening
 from Utils.DataLoader import DataNormalizer, STARCOPDataset, carregar_dataframe_starcop
 from VitisAI.common import DEFAULT_PRODUCTS, MODEL_REGISTRY, PROJECT_ROOT, file_sha256
 
+MODEL_REGISTRY = {**MODEL_REGISTRY, **NOVOS_MODELOS}
 MODELOS = tuple(MODEL_REGISTRY)
 ESTAGIOS = ("leitura", "preprocess", "sync_entrada", "inferencia", "sync_saida",
             "postprocess", "latencia_total")
@@ -173,8 +175,8 @@ def executar(args, medidor_class, medir_energia):
         df = df.iloc[:args.limit].reset_index(drop=True)
     if df.empty:
         raise ValueError("Nenhuma imagem valida encontrada.")
-    inputs_dataset = STARCOPDataset(df, list(DEFAULT_PRODUCTS), [])
-    targets_dataset = STARCOPDataset(df, [], ["labelbinary"])
+    inputs_dataset = STARCOPDataset(df, list(DEFAULT_PRODUCTS), [], patching=False)
+    targets_dataset = STARCOPDataset(df, [], ["labelbinary"], patching=False)
     records = []
     for _, row in df.iterrows():
         folder = Path(row.folder).name
@@ -278,6 +280,7 @@ def executar(args, medidor_class, medir_energia):
                 stats = {s: estatisticas([t[s] for t in timings]) for s in ESTAGIOS}
                 latency = stats["latencia_total"]
                 perf = dict(metadata, modo=mode, inferencias=len(df),
+                            **resumir_energia_cpu(measures, len(df)),
                             entradas_preparadas=len(prepared) if mode == "model_only" else 0,
                             duracao_s=duration, throughput_fps=len(df)/duration,
                             fps_latencia=1000/latency["media_ms"],
@@ -310,6 +313,9 @@ def executar(args, medidor_class, medir_energia):
                                             energia_por_inferencia_j="", media_w="", minima_w="", maxima_w="", duracao_s="",
                                             metodo="diferenca_contadores_intervalos_200ms", unidade="imagem_512x512"))
                 print(f"{mode}: {perf['throughput_fps']:.3f} imagens/s; {latency['media_ms']:.3f} ms/imagem", flush=True)
+                print(f"CPU {mode}: potencia media = {perf['cpu_potencia_media_w']:.3f} W; "
+                      f"energia/inferencia = {perf['cpu_energia_por_inferencia_j']:.6f} J; "
+                      f"status = {perf['cpu_energia_status']}", flush=True)
             escrever_csv(output / "benchmark_geral.csv", perf_rows)
             escrever_csv(output / "benchmark_estagios.csv", stage_rows)
             escrever_csv(output / "benchmark_samples.csv", sample_rows)

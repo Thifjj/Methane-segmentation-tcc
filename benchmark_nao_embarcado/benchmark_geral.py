@@ -5,8 +5,6 @@ import torch
 from tqdm import tqdm
 import argparse
 import csv
-import ctypes
-import re
 from datetime import datetime
 from pathlib import Path
 from sklearn.metrics import precision_recall_curve, auc
@@ -32,119 +30,7 @@ DATASETS = {
 WARMUP = 10
 
 
-class MedidorEnergia:
-    """Energia do pacote CPU (RAPL) e, em CUDA, da GPU (NVML)."""
-    def __init__(self, dispositivo):
-        self.fontes = {}
-        self.nvml = None
-        self.fds = []
-        for zona in Path("/sys/class/powercap").glob("*-rapl:*"):
-            if zona.name.count(":") != 1:
-                continue  # Subzonas de núcleos já estão incluídas no pacote.
-            try:
-                if not (zona / "name").read_text().strip().startswith("package-"):
-                    continue
-                limite = int((zona / "max_energy_range_uj").read_text())
-                int((zona / "energy_uj").read_text())
-                self.fontes[f"cpu_{zona.name}"] = (
-                    lambda z=zona: int((z / "energy_uj").read_text()), 1e-6, limite
-                )
-            except (OSError, ValueError):
-                pass
-
-        if not any(nome.startswith("cpu_") for nome in self.fontes):
-            self._abrir_rapl_perf()
-        if dispositivo.type == "cuda":
-            self._abrir_nvml()
-
-    def _abrir_rapl_perf(self):
-        """Alternativa quando o RAPL do sysfs não é legível."""
-        try:
-            evento = Path("/sys/bus/event_source/devices/power/events/energy-pkg")
-            codigo = re.search(r"event=(0x[0-9a-fA-F]+|[0-9]+)", evento.read_text())
-            if codigo is None:
-                return
-            tipo = int(Path("/sys/bus/event_source/devices/power/type").read_text())
-            escala = float(Path(f"{evento}.scale").read_text())
-            attr = (ctypes.c_ubyte * 128)()
-            ctypes.c_uint32.from_buffer(attr, 0).value = tipo
-            ctypes.c_uint32.from_buffer(attr, 4).value = 128
-            ctypes.c_uint64.from_buffer(attr, 8).value = int(codigo.group(1), 0)
-            libc = ctypes.CDLL(None, use_errno=True)
-            fd = libc.syscall(298, ctypes.byref(attr), -1, 0, -1, 0)  # x86_64
-            if fd < 0:
-                return
-            self.fds.append(fd)
-            self.fontes["cpu_rapl_pkg"] = (
-                lambda f=fd: self._ler_perf(f), escala, None
-            )
-        except (OSError, ValueError, AttributeError):
-            pass
-
-    @staticmethod
-    def _ler_perf(fd):
-        dados = os.read(fd, 8)
-        if len(dados) != 8:
-            raise OSError("Leitura incompleta do contador RAPL")
-        return int.from_bytes(dados, "little")
-
-    def _abrir_nvml(self):
-        try:
-            nvml = ctypes.CDLL("libnvidia-ml.so.1")
-            nvml.nvmlInit_v2.restype = ctypes.c_int
-            if nvml.nvmlInit_v2() != 0:
-                return
-            self.nvml = nvml
-            nvml.nvmlDeviceGetHandleByIndex_v2.argtypes = [
-                ctypes.c_uint, ctypes.POINTER(ctypes.c_void_p)
-            ]
-            nvml.nvmlDeviceGetTotalEnergyConsumption.argtypes = [
-                ctypes.c_void_p, ctypes.POINTER(ctypes.c_ulonglong)
-            ]
-            indice = torch.cuda._get_nvml_device_index(0)
-            gpu = ctypes.c_void_p()
-            if nvml.nvmlDeviceGetHandleByIndex_v2(indice, ctypes.byref(gpu)) != 0:
-                return
-
-            def ler_gpu():
-                energia = ctypes.c_ulonglong()
-                if nvml.nvmlDeviceGetTotalEnergyConsumption(gpu, ctypes.byref(energia)) != 0:
-                    raise OSError("Contador de energia NVML indisponível")
-                return energia.value
-
-            ler_gpu()
-            self.fontes["gpu_nvml"] = (ler_gpu, 1e-3, None)
-        except (OSError, AttributeError, RuntimeError):
-            pass
-
-    def ler(self):
-        valores = {}
-        for nome, (ler, _, _) in self.fontes.items():
-            try:
-                valores[nome] = ler()
-            except (OSError, ValueError):
-                pass
-        return time.perf_counter(), valores
-
-    def fechar(self):
-        for fd in self.fds:
-            os.close(fd)
-        if self.nvml is not None:
-            self.nvml.nvmlShutdown()
-
-
-def medir_energia(medidor, antes, depois):
-    medidas = {}
-    duracao = depois[0] - antes[0]
-    for nome in antes[1].keys() & depois[1].keys():
-        _, escala, limite = medidor.fontes[nome]
-        diferenca = depois[1][nome] - antes[1][nome]
-        if diferenca < 0 and limite is not None:
-            diferenca += limite  # RAPL volta a zero após max_energy_range_uj.
-        if diferenca >= 0 and duracao > 0:
-            joules = diferenca * escala
-            medidas[nome] = (joules, joules / duracao, duracao)
-    return medidas
+from .energia import MedidorEnergia, medir_energia, resumir_energia_cpu
 
 parser = argparse.ArgumentParser(description="Benchmark manual geral de inferência")
 
@@ -403,7 +289,19 @@ fpr = fp_total / (fp_total + tn_total)
 media_e2e = np.mean(tempos_e2e)
 
 medidor_energia.fechar()
+energia_cpu_por_modo = {}
 for modo, fontes in energia_por_modo.items():
+    resumo = {}
+    for fonte, medidas in fontes.items():
+        if medidas:
+            joules = sum(m[0] for m in medidas)
+            duracao = sum(m[2] for m in medidas)
+            resumo[fonte] = dict(energia_j=joules, duracao_s=duracao, media_w=joules/duracao,
+                                status="ok" if len(medidas) == len(tempos_model) else "parcial")
+    cpu = resumir_energia_cpu(resumo, len(tempos_model))
+    energia_cpu_por_modo[modo] = cpu
+    print(f"CPU {modo}: potencia media = {cpu['cpu_potencia_media_w']:.3f} W; "
+          f"status = {cpu['cpu_energia_status']}")
     for fonte, medidas in fontes.items():
         if medidas:
             energia_total = sum(medida[0] for medida in medidas)
@@ -540,6 +438,7 @@ resultado = {
 }
 resultado["energia_fontes"] = ",".join(medidor_energia.fontes) or "indisponivel"
 for modo, fontes in energia_por_modo.items():
+    resultado.update({f"{modo}_{nome}": valor for nome, valor in energia_cpu_por_modo[modo].items()})
     for fonte, medidas in fontes.items():
         if not medidas:
             continue

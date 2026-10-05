@@ -3,7 +3,6 @@
 import argparse
 import importlib
 import hashlib
-import json
 import sys
 from pathlib import Path
 
@@ -17,6 +16,8 @@ MODELOS = {
     "depth_reduced": ("Modelos.UNet_depth_reduced:UNetDepthReduced", "UNET_depth_reduced_mag1c_rgb.pth"),
     "mobilenet_v2": ("Modelos.UNet_MobileNet_v2:UNetMobileNetV2", "Mobile_Net_v2_mag1c_rgb.pth"),
     "mobilenet_v3": ("Modelos.UNet_MobileNet_v3:UNetMobileNetV3", "Mobile_Net_v3_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu": ("Modelos.UNet_MobileNet_v3_dpu:UNetMobileNetV3_dpu", "Mobile_Net_v3_dpu_mag1c_rgb.pth"),
+    "mobilenet_v3_attentiongates": ("Modelos.UNet_MobileNetV3_AttentionGates:UNetMobileNetV3AttentionGates", "UNetMobileNetV3AttentionGates_mag1c_rgb.pth"),
     "skip": ("Modelos.UNet_SkipConnections:UNetElementWise", "UNET_SkipConnections_mag1c_rgb.pth"),
     "resnet34": ("Modelos.UNet_ResNet34:UNetResNet34", "UNet_ResNet34_mag1c_rgb.pth"),
     "segformer": ("Modelos.UNet_SegFormer:SegFormerB0", "UNet_SegFormer_mag1c_rgb.pth"),
@@ -40,7 +41,7 @@ def _hash_stream(f):
     return digest.hexdigest()
 
 
-def exportar(nome, especificacao, checkpoint, destino, patch_size=512, dynamic_batch=False, verify=False):
+def exportar(nome, especificacao, checkpoint, destino, patch_size=512, dynamic_batch=False, verify=False, verify_atol=1e-4):
     import onnx
 
     modulo, classe = especificacao.split(":", 1)
@@ -63,10 +64,10 @@ def exportar(nome, especificacao, checkpoint, destino, patch_size=512, dynamic_b
         )
     graph = onnx.load(str(destino))
     onnx.checker.check_model(graph, full_check=True)
-    dpu = "AttentionGatesDPU" in especificacao
+    rgb = classe in {"UNetMobileNetV3", "UNetMobileNetV3_dpu", "UNetMobileNetV3AttentionGates", "UNetMobileNetV3AttentionGatesDPU"}
     metadata = dict(modelo=nome, arquitetura=especificacao, checkpoint=str(checkpoint.resolve()),
                     checkpoint_sha256=sha256(checkpoint), parametros=sum(p.numel() for p in modelo.parameters()),
-                    ordem_canais="mag1c,460,550,640" if dpu else "mag1c,640,550,460",
+                    ordem_canais="mag1c,460,550,640" if rgb else "mag1c,640,550,460",
                     tamanho_patch=patch_size, batch_dinamico=dynamic_batch, precisao="FP32",
                     normalizacao="mag1c/1750;bandas/60;clip[0,2]", saida="logits", opset=16,
                     ir_version=graph.ir_version, pytorch_versao=str(torch.__version__))
@@ -74,13 +75,15 @@ def exportar(nome, especificacao, checkpoint, destino, patch_size=512, dynamic_b
         raise ValueError("IR acima de 8: incompatível com ONNX Runtime 1.14 da placa")
     onnx.helper.set_model_props(graph, {k: str(v) for k, v in metadata.items()})
     onnx.save(graph, str(destino))
-    metadata["onnx_sha256"] = sha256(destino)
     if verify:
         import numpy as np
         import onnxruntime as ort
         options = ort.SessionOptions()
         options.intra_op_num_threads = 4
         options.inter_op_num_threads = 1
+        options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
+        options.enable_cpu_mem_arena = False
+        options.enable_mem_pattern = False
         session = ort.InferenceSession(str(destino), options, providers=["CPUExecutionProvider"])
         checks = []
         generator = torch.Generator().manual_seed(12345)
@@ -89,12 +92,11 @@ def exportar(nome, especificacao, checkpoint, destino, patch_size=512, dynamic_b
             with torch.inference_mode():
                 expected = modelo(inputs).numpy()
             actual = session.run(["logits"], {"input": inputs.numpy()})[0]
-            np.testing.assert_allclose(actual, expected, rtol=1e-4, atol=1e-4)
+            np.testing.assert_allclose(actual, expected, rtol=1e-4, atol=verify_atol)
             checks.append(dict(batch=batch, max_abs_error=float(np.abs(actual-expected).max()),
-                               mean_abs_error=float(np.abs(actual-expected).mean())))
-        metadata["validacao"] = dict(onnxruntime_versao=ort.__version__, provider="CPUExecutionProvider",
-                                     rtol=1e-4, atol=1e-4, resultados=checks)
-    destino.with_suffix(".json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n")
+                               mean_abs_error=float(np.abs(actual-expected).mean()),
+                               pixels_mascara_divergentes=int(np.count_nonzero((actual > 0) != (expected > 0)))))
+        print("Verificacao PyTorch/ONNX:", checks)
     print(destino)
 
 
@@ -103,10 +105,13 @@ def main():
     parser.add_argument("--model", required=True, help="Nome conhecido, all, ou modulo:Classe")
     parser.add_argument("--checkpoint", type=Path, help="Checkpoint .pth/.ckpt (obrigatorio para modelo novo)")
     parser.add_argument("--output", type=Path, help="Arquivo ONNX; somente com um modelo")
-    parser.add_argument("--patch-size", type=int, choices=(128, 512), help="Padrão: 128 para AttentionGates DPU; 512 para os demais")
+    parser.add_argument("--patch-size", type=int, choices=(128, 512), help="Padrão: 512 para todos os modelos")
     parser.add_argument("--dynamic-batch", action="store_true", help="Permite batch de patches 1–16; nome recebe _batch_dynamic")
     parser.add_argument("--verify", action="store_true", help="Confere ONNX Runtime contra PyTorch (requer onnxruntime)")
+    parser.add_argument("--verify-atol", type=float, default=1e-4, help="Tolerancia absoluta da verificacao (padrao: 1e-4)")
     args = parser.parse_args()
+    if not 0 < args.verify_atol < float("inf"):
+        parser.error("--verify-atol deve ser finito e positivo")
     if args.model == "all" and (args.checkpoint or args.output):
         parser.error("--checkpoint/--output nao se aplicam a --model all")
     nomes = [nome for nome, (_, pesos) in MODELOS.items() if pesos] if args.model == "all" else [args.model]
@@ -119,12 +124,12 @@ def main():
         checkpoint = args.checkpoint or ROOT / "Modelos_treinados" / padrao
         if not checkpoint.is_file():
             raise FileNotFoundError(checkpoint)
-        patch_size = args.patch_size or (128 if "AttentionGatesDPU" in especificacao else 512)
+        patch_size = args.patch_size or 512
         suffix = ("_patches128" if patch_size == 128 and "AttentionGatesDPU" not in especificacao else
                   "_512" if patch_size == 512 and "AttentionGatesDPU" in especificacao else "")
         suffix += "_batch_dynamic" if args.dynamic_batch else ""
         destino = args.output or ROOT / "benchmark_arm/exportar_to_onnx/modelos_convertidos_onnx" / f"{nome}{suffix}.onnx"
-        exportar(nome, especificacao, checkpoint, destino, patch_size, args.dynamic_batch, args.verify)
+        exportar(nome, especificacao, checkpoint, destino, patch_size, args.dynamic_batch, args.verify, args.verify_atol)
 
 
 if __name__ == "__main__":

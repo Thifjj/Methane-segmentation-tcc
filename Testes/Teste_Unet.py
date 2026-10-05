@@ -68,12 +68,12 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     #CAMINHO_CSV_TESTE ="/home/thiago/Documents/STARCOP_DATASET/train.csv"
     #DIRETORIO_DADOS_TESTE ="/home/thiago/Documents/STARCOP_DATASET/"
     
-    #CAMINHO_CSV_TESTE ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
-    #DIRETORIO_DADOS_TESTE = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
+    CAMINHO_CSV_TESTE ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
+    DIRETORIO_DADOS_TESTE = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
     
     #caminhos desktop
-    CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
-    DIRETORIO_DADOS_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/"
+    #CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
+    #DIRETORIO_DADOS_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/"
 
     #CAMINHO_CSV_TESTE ="/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
     #DIRETORIO_DADOS_TESTE="/media/jacques/games/Datasets/STARCOP_train_remaining_all/"
@@ -114,9 +114,12 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
 
     with torch.no_grad():
         for i, batch in enumerate(tqdm(dataloader, desc="Calculando Métricas e Latência")):
-            inputs = normalizador(batch["input"].to(device_obj))
-            targets = batch["output"].to(device_obj)
+            b, p, c, h_dim, w_dim = batch["input"].shape
+            inputs = batch["input"].view(b * p, c, h_dim, w_dim).to(device_obj)
+            targets = batch["output"].view(b * p, 1, h_dim, w_dim).to(device_obj)
 
+            inputs = normalizador(inputs)
+            
             if device_name == "CUDA": 
                 torch.cuda.synchronize()
             inicio = time.perf_counter()
@@ -155,11 +158,12 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
                 # É uma imagem sem pluma (Background tile)
                 FP_no_plume += fp
                 TN_no_plume += tn
+                
+            probs_np = probs.view(-1).cpu().numpy()
+            g_flat_np = g_flat.cpu().numpy()
 
             if g_sum > 0:
-                auprc_img = average_precision_score(
-                    g_flat.cpu().numpy(), probs.view(-1).cpu().numpy()
-                )
+                auprc_img = average_precision_score(g_flat_np, probs_np)
                 auprc_por_imagem.append(auprc_img)
 
             if g_sum > 0 and i == 0: 
@@ -200,7 +204,7 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     # FPR restrito aos tiles sem pluma
     fpr_no_plume = FP_no_plume / (FP_no_plume + TN_no_plume + 1e-6)
 
-    auprc = np.mean(auprc_por_imagem) if auprc_por_imagem else 0.0
+    auprc = np.mean(auprc_por_imagem) if len(auprc_por_imagem) > 0 else 0.0
 
 
     latencia_media_ms = (tempo_total_inferencia / len(dataloader)) * 1000

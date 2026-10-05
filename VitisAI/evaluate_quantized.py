@@ -10,7 +10,7 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.metrics import average_precision_score
 
-from common import PROJECT_ROOT, DEFAULT_PRODUCTS, build_model, validate_calibration, add_model_arguments, resolve_model
+from common import PROJECT_ROOT, DEFAULT_PRODUCTS, build_model, validate_calibration, add_model_arguments, resolve_model, load_quantized_parameters
 from Utils.DataLoader import carregar_dataframe_starcop, STARCOPDataset, DataNormalizer
 from Testes.Teste_Unet import binary_opening
 
@@ -94,11 +94,13 @@ def main():
         model_output.mkdir(exist_ok=True)
         quant_dir = model_output / "quantize"
         quant_dir.mkdir(exist_ok=True)
-        for filename in ["quant_info.json", "bias_corr.pth", "calibration_manifest.json"]:
-            shutil.copyfile(Path(args.quant_dir) / name / filename, quant_dir / filename)
+        for filename in ["quant_info.json", "bias_corr.pth", "calibration_manifest.json", "adapted_parameters.pth"]:
+            if (source_dir / filename).is_file():
+                shutil.copyfile(source_dir / filename, quant_dir / filename)
         quant_source, _ = build_model(name, args.checkpoint, 4, architecture)
         quantizer = torch_quantizer("test", quant_source, (torch.zeros(1, 4, height, width),),
                                    output_dir=str(quant_dir), device=torch.device("cpu"), target=target_name)
+        load_quantized_parameters(quantizer, quant_dir)
         quant_model = quantizer.quant_model.eval()
         for dataset_name, csv, root in [
             ("test", PROJECT_ROOT / "STARCOP_test/test.csv", PROJECT_ROOT / "STARCOP_test"),
@@ -112,7 +114,7 @@ def main():
             if args.limit:
                 df = df.iloc[:args.limit].reset_index(drop=True)
             df = df.iloc[args.shard_index::args.shard_count].reset_index(drop=True)
-            loader = DataLoader(STARCOPDataset(df, PRODUCTS, ["labelbinary"]), batch_size=1, num_workers=0)
+            loader = DataLoader(STARCOPDataset(df, PRODUCTS, ["labelbinary"], patching=False), batch_size=1, num_workers=0)
             modes = ["FP32_512", "FP32_patches128", "INT8_patches128"] if patching else ["FP32_512", "INT8_512"]
             rows = {mode: [] for mode in modes}
             started = time.perf_counter()

@@ -245,3 +245,53 @@ na saida. O runner deve usar a entrada 512x512 deste artefato.
 [Relatorio e protocolo](build/vitis_ai/evaluation/mobilenet_v3_dpu_512/comparacao_fp32_int8.md).
 Os resultados INT8 sao de simulacao Vitis AI 3.5 na CPU; a execucao fisica
 na placa ainda nao foi validada.
+
+## MobileNet V3 Focal Dice para a DPU, 512x512
+
+Usa `MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth` com `UNetMobileNetV3_dpu`
+(`align_corners=False`). Reutiliza o perfil BCE acima, mudando somente o
+checkpoint e o nome da saida. Os 300 IDs de calibracao e sua ordem foram
+conferidos com o manifesto BCE. A avaliacao usa as mesmas 342 imagens TEST,
+normalizacao RGB, limiar e abertura morfologica do avaliador existente.
+
+No container Vitis AI, em `/workspace/VitisAI`:
+
+```bash
+python quantize_model.py --config configs/mobilenet_v3_dpu_512.json \
+  --model mobilenet_v3_focaldice_dpu_512 \
+  --checkpoint ../Modelos_treinados/MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth \
+  --quant-mode calib --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP
+
+python evaluate_quantized.py --model mobilenet_v3_focaldice_dpu_512 \
+  --architecture UNetMobileNetV3_dpu \
+  --checkpoint ../Modelos_treinados/MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth \
+  --dataset test --csv /workspace/STARCOP_test/test.csv --data-root /workspace/STARCOP_test
+
+python quantize_model.py --config configs/mobilenet_v3_dpu_512.json \
+  --model mobilenet_v3_focaldice_dpu_512 \
+  --checkpoint ../Modelos_treinados/MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth \
+  --quant-mode test --deploy --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP
+
+python compile_xmodel.py \
+  --xmodel build/vitis_ai/quantize/mobilenet_v3_focaldice_dpu_512/UNetMobileNetV3_dpu_int.xmodel \
+  --arch /opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json \
+  --output-dir build/vitis_ai/compiled_zcu104/mobilenet_v3_focaldice_dpu_512 \
+  --name mobilenet_v3_focaldice_dpu_512
+```
+
+O calibrador preserva diretorios ja calibrados. Os artefatos Focal Dice ficam
+em suas proprias pastas, sem sobrescrever a quantizacao BCE.
+
+### Resultado Focal Dice
+
+Nas mesmas 342 imagens TEST, F1 global **0,495363 FP32 / 0,348538 INT8**;
+AUPRC **0,413686 / 0,352076**. A perda de F1 e **14,6824 pontos percentuais**:
+**reprovado no limite BCE de 1 ponto**, mesmo reproduzindo seu perfil e imagens.
+Nao houve ajuste do limiar ou troca de imagens de teste.
+
+O `.xmodel` foi compilado com um unico subgrafo DPU (276 operacoes), entrada
+512x512 INT8 e apenas `fix2float` na CPU. A compatibilidade do grafo foi
+conferida; a qualidade precisa melhorar antes de aprovar o modelo. A avaliacao
+INT8 foi em simulacao CPU, sem execucao fisica na placa.
+
+[Relatorio e metricas Focal Dice](build/vitis_ai/evaluation/mobilenet_v3_focaldice_dpu_512/comparacao_fp32_int8.md).

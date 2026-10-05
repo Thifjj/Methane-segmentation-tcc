@@ -4,12 +4,13 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from common import (DEFAULT_PRODUCTS, build_model, calibration_contract,
-                    file_sha256, resolve_model, validate_calibration)
+                    file_sha256, resolve_model, validate_calibration, load_quantized_parameters)
 from Modelos import UNetMobileNetV3
 
 
@@ -64,6 +65,24 @@ class ModelLoadingTests(unittest.TestCase):
             manifest.pop('architecture')
             path.write_text(json.dumps(manifest))
             validate_calibration(root, *arguments)
+
+    def test_adapted_parameters_and_cache_flags(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            model = torch.nn.Conv2d(1, 1, 1)
+            model.node = SimpleNamespace(name='head')
+            quantizer = SimpleNamespace(quant_model=model)
+            load_quantized_parameters(quantizer, root)  # Modelos antigos nao precisam do arquivo.
+            torch.save({'head': {'weight': torch.full_like(model.weight, 2.),
+                                 'bias': torch.ones_like(model.bias)}}, root/'adapted_parameters.pth')
+            load_quantized_parameters(quantizer, root)
+            torch.testing.assert_close(model(torch.ones(1,1,1,1)), torch.full((1,1,1,1), 3.))
+            self.assertTrue(model.param_saved)
+            self.assertFalse(model.param_quantized)
+            torch.save({'head': {'weight': torch.full_like(model.weight, float('nan'))}},
+                       root/'adapted_parameters.pth')
+            with self.assertRaisesRegex(ValueError, 'invalido'):
+                load_quantized_parameters(quantizer, root)
 
 
 if __name__ == '__main__':

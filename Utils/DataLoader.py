@@ -63,7 +63,7 @@ def carregar_dataframe_starcop(
     return df
 
 class STARCOPDataset(Dataset):
-    def __init__(self, dataframe, input_products, output_products, weight_loss=None, patching=False):
+    def __init__(self, dataframe, input_products, output_products, weight_loss=None, patching=True):
         self.dataframe = dataframe
         self.input_products = input_products
         self.output_products = output_products
