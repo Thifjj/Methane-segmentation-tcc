@@ -65,4 +65,4 @@ Troque o dataset por `/home/root/thiago/dataset_starcop` para full remaining+eas
 Para comparar com a validação recente/histórico, use as métricas da subpasta
 `validacao_oficial/` de cada execução. Os relatórios existentes continuam
 seguindo o protocolo de `benchmark_nao_embarcado`. FPS e energia são por
-imagem 512×512, formada por 16 patches nos AttentionGates.
+imagem 512×512, processada em uma inferência nos AttentionGates.

@@ -226,11 +226,14 @@
           const auto* tensor_saida = saidas[0];
 
           const auto shape = tensor_entrada->get_shape();
+          const bool attention_gates = graph->get_name() == "UNetMobileNetV3AttentionGatesDPU";
           if (shape.size() != 4 || shape[0] != 1 || shape[3] != 4 ||
-              shape[1] != shape[2] || (shape[1] != 128 && shape[1] != 512) ||
+              (attention_gates
+                   ? (shape[1] != 512 || shape[2] != 512)
+                   : (shape[1] != shape[2] || (shape[1] != 128 && shape[1] != 512))) ||
               (tensor_entrada->get_data_type() != xir::DataType("XINT8") &&
                tensor_entrada->get_data_type() != xir::DataType("INT8")))
-              throw std::runtime_error("Entrada deve ser INT8 NHWC [1,128/512,128/512,4]");
+              throw std::runtime_error("Entrada invalida: AttentionGates requer [1,512,512,4]; demais modelos aceitam 128 ou 512");
           contexto.tamanho_patch = shape[1];
           contexto.patches_por_imagem = (512 / shape[1]) * (512 / shape[1]);
           contexto.ordem_rgb = graph->get_name() == "UNetMobileNetV3AttentionGatesDPU" ||

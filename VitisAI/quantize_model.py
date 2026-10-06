@@ -72,7 +72,15 @@ def parse_args(argv=None):
         if not isinstance(config, dict) or set(config) - allowed:
             parser.error("JSON deve conter apenas parametros conhecidos de calibracao.")
         parser.set_defaults(**config)
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    for key, expected in calibration_defaults(args.model).items():
+        value = getattr(args, key)
+        deploy_subset = key == "subset_len" and args.deploy and value == 1
+        if value is not None and value != expected and not deploy_subset:
+            parser.error(f"O perfil unico de calibracao requer --{key.replace('_', '-')} {expected}.")
+        if not deploy_subset:
+            setattr(args, key, expected)
+    return args
 
 
 class WidestRangeHistory(list):
@@ -109,7 +117,11 @@ def quantize(args):
     if args.range_samples < 1 or args.refine_layers < 0:
         raise SystemExit("--range-samples deve ser positivo e --refine-layers nao negativo.")
     if args.patching is None:
-        args.patching = args.model != "mobilenet_v3_dpu_512"
+        args.patching = args.model not in {
+            "mobilenet_v3_dpu_512",
+            "attentiongates_dpu_easy_remaining",
+            "attentiongates_dpu_only_remaining",
+        }
     if args.balanced is None:
         args.balanced = args.patching and args.quant_mode == "calib"
     if args.target is None:

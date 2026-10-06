@@ -390,9 +390,9 @@ execução, não a versão do compilador usada para gerar o XModel. Um campo fic
 
 ## AttentionGates oficiais e conferência de qualidade
 
-O benchmark aceita entrada NHWC INT8 de 512×512 ou 128×128. Para 128×128,
-cada imagem 512×512 gera 16 patches, sem sobreposição, na mesma ordem de
-`VitisAI/evaluate_quantized.py`. A saída é recomposta antes do pós-processamento.
+Os AttentionGates usam entrada INT8 NHWC `[1,512,512,4]`, uma inferência por
+imagem, na mesma ordem de canais de `VitisAI/evaluate_quantized.py`. O runner
+rejeita XModels AttentionGates com outra resolução.
 O nome do grafo `UNetMobileNetV3AttentionGatesDPU` seleciona a ordem
 `mag1c,460nm,550nm,640nm` do treinamento e da calibração, mesmo se o arquivo
 for renomeado. Os modelos anteriores continuam usando `mag1c,640nm,550nm,460nm`.
@@ -413,19 +413,15 @@ grupos por `has_plume/qplume` e AUPRC global trapezoidal, para comparação com
 - FPR No-Plume usa FP/TN das imagens sem pixels positivos no label.
 - Sem imagens positivas, a AUPRC oficial fica indefinida (NaN), como no Python.
 
-Para comparar com o histórico, use os CSVs de `validacao_oficial/` no
-dataset correspondente: `STARCOP_test` para as duas primeiras entradas
-mencionadas e `dataset_starcop` para full remaining+easy. Compare o XModel
-com `INT8_patches128` da validação oficial; `FP32_512` também inclui a
-diferença entre inferência inteira e inferência por patches.
+Para comparar com a avaliacao FP32/INT8, use os CSVs 512x512 de
+`VitisAI/build/vitis_ai/evaluation/attentiongates_dpu_<variante>/`.
+Os XModels e a avaliacao usam entrada 512x512 e uma inferencia por imagem.
 
 `config.txt` registra geometria, ordem de canais, escalas, seleção de amostras
 e protocolos. Os CSVs acrescentam identificação da amostra e o método de
 cada métrica. Throughput, latência e energia por inferência representam
-**uma imagem 512×512**; `execucoes_runner` registra os 16 patches por imagem
-nos AttentionGates. A recomposição entra em `sync_saida_ms`.
-`model_only` continua medindo apenas `execute_async + wait` (16 vezes por
-imagem quando necessário), sem recomposição ou abertura.
+**uma imagem 512×512**; cada AttentionGate executa uma inferência por imagem.
+`model_only` mede apenas `execute_async + wait`, sem abertura.
 `end_to_end` mantém o pós-processamento original; a abertura do protocolo
 oficial é calculada somente na validação fora da região cronometrada.
 A concorrência continua diferente da execução sequencial em CPU/GPU.

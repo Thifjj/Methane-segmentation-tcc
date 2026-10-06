@@ -109,10 +109,7 @@ CHECKPOINT_ALIASES = {
     "Mobile_Net_v3_mag1c_rgb_dpu.pth": "mobilenet_v3_dpu",
 }
 
-OFFICIAL_CALIBRATION = {
-    "attentiongates_dpu_easy_remaining": dict(subset_len=300, patches_per_group=900, range_samples=2048, refine_layers=12),
-    "attentiongates_dpu_only_remaining": dict(subset_len=100, patches_per_group=300, range_samples=512, refine_layers=0),
-}
+CALIBRATION_PROFILE = dict(subset_len=100, range_samples=512, refine_layers=0)
 
 
 def parse_products(value: str | Iterable[str]) -> list[str]:
@@ -156,7 +153,7 @@ def resolve_model(model_name=None, checkpoint=None, architecture=None):
 
 
 def calibration_defaults(model_name):
-    return OFFICIAL_CALIBRATION.get(model_name, OFFICIAL_CALIBRATION["attentiongates_dpu_easy_remaining"])
+    return CALIBRATION_PROFILE.copy()
 
 
 def build_model(model_name: str, checkpoint: str | Path | None, in_channels: int, architecture=None):

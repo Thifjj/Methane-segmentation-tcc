@@ -1,4 +1,4 @@
-"""Configuracao de resolucao completa e prioridade dos argumentos CLI."""
+"""Every model uses the same reproducible PTQ calibration profile."""
 import sys
 import unittest
 from pathlib import Path
@@ -8,26 +8,34 @@ from quantize_model import parse_args
 
 
 class CalibrationConfigTests(unittest.TestCase):
-    def arguments(self):
-        config = Path(__file__).resolve().parents[1] / 'configs/mobilenet_v3_dpu_512.json'
-        return ['--config', str(config), '--quant-mode', 'calib',
-                '--csv', '/dataset/train.csv', '--data-root', '/dataset']
+    def arguments(self, model, *extra):
+        return parse_args([
+            "--model", model,
+            "--quant-mode", "calib",
+            "--csv", "/dataset/train.csv",
+            "--data-root", "/dataset",
+            *extra,
+        ])
 
-    def test_full_image_profile(self):
-        args = parse_args(self.arguments())
-        self.assertEqual((args.height, args.width), (512, 512))
-        self.assertFalse(args.patching)
-        self.assertFalse(args.balanced)
-        self.assertEqual(args.architecture, 'UNetMobileNetV3_dpu')
-        self.assertEqual(args.subset_len, 300)
-        self.assertEqual(args.model, 'mobilenet_v3_dpu_512')
-        self.assertEqual(args.output_dir, 'build/vitis_ai/quantize')
+    def test_every_model_uses_shared_profile(self):
+        for model in ("attentiongates_dpu_only_remaining", "mobilenet_v3_dpu_512", "hyperstarcop"):
+            args = self.arguments(model)
+            self.assertEqual((args.subset_len, args.range_samples, args.refine_layers), (100, 512, 0))
 
-    def test_cli_overrides_profile(self):
-        args = parse_args(self.arguments() + ['--subset-len', '600', '--refine-layers', '24'])
-        self.assertEqual(args.subset_len, 600)
-        self.assertEqual(args.refine_layers, 24)
+    def test_different_calibration_profile_is_rejected(self):
+        with self.assertRaises(SystemExit):
+            self.arguments("mobilenet_v3_dpu_512", "--subset-len", "300")
+
+    def test_deploy_allows_single_export_sample(self):
+        args = parse_args([
+            "--model", "mobilenet_v3_dpu_512",
+            "--quant-mode", "test", "--deploy",
+            "--csv", "/dataset/train.csv",
+            "--data-root", "/dataset",
+            "--subset-len", "1",
+        ])
+        self.assertEqual((args.subset_len, args.range_samples, args.refine_layers), (1, 512, 0))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

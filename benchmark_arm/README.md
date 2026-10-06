@@ -6,7 +6,7 @@ protocolos de qualidade dos benchmarks CPU/GPU e DPU: `model_only`,
 FP32 no ARM; exportar a arquitetura compatível com DPU para ONNX não a torna
 uma execução INT8 nem usa a DPU.
 
-## MobileNetV3: cinco modelos selecionados
+## Modelos MobileNetV3
 
 Exportados com o script existente para `exportar_to_onnx/modelos_convertidos_onnx/`,
 em FP32, batch fixo 1, opset 16 / IR 8:
@@ -18,6 +18,9 @@ em FP32, batch fixo 1, opset 16 / IR 8:
 | `attentiongates_dpu_only_remaining_512.onnx` | `UnetMobilenetV3AttentionGates_dpu_only_remaining_mag1c_rgb.pth` | `[1,4,512,512]` |
 | `mobilenet_v3_dpu.onnx` | `Mobile_Net_v3_dpu_mag1c_rgb.pth` | `[1,4,512,512]` |
 | `mobilenet_v3.onnx` | `Mobile_Net_v3_mag1c_rgb.pth` | `[1,4,512,512]` |
+| `mobilenet_v3_bce.onnx` | `Mobile_Net_v3_mag1c_rgb.pth` | `[1,4,512,512]` |
+| `attentiongates_bce.onnx` | `MobileNetV3_AttentionGates_BCE_mag1c_rgb.pth` | `[1,4,512,512]` |
+| `mobilenet_v3_focaldice.onnx` | `MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth` | `[1,4,512,512]` |
 
 Todos gravam `mag1c,460,550,640`, conforme a ordem de treinamento em
 `main.ipynb`; o ARM lê essa ordem automaticamente dos metadados.
@@ -35,7 +38,7 @@ A verificação imprime os erros e as divergências da máscara `logit > 0` no t
 Isso não mede qualidade no dataset nem confirma execução física no Cortex-A53
 ou no ORT 1.14.1 da placa. As variantes de batch dinâmico anteriores não foram reexportadas.
 
-### Reexportar os cinco modelos no computador
+### Exportar e reexportar no computador
 
 Na raiz do repositório:
 
@@ -45,6 +48,9 @@ venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model atten
 venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates_dpu_only_remaining --verify
 venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3_dpu --verify --verify-atol 0.0002
 venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3 --verify --verify-atol 0.0002
+venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates_bce --verify
+venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3_bce --verify --verify-atol 0.0002
+venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3_focaldice --verify --verify-atol 0.0002
 venv/bin/python benchmark_arm/tests/test_exportados.py
 ```
 
@@ -61,6 +67,9 @@ cd /home/root/thiago/benchmark_arm/codigos_c
 ./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/attentiongates_dpu_only_remaining_512.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
 ./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/mobilenet_v3_dpu.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
 ./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/mobilenet_v3.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
+./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/attentiongates_bce.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
+./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/mobilenet_v3_bce.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
+./benchmark_arm --model ../exportar_to_onnx/modelos_convertidos_onnx/mobilenet_v3_focaldice.onnx --dataset /home/root/thiago/STARCOP_test --threads 4
 ```
 
 Para uma conferência curta, acrescente `--limit 2 --warmup 1`.
