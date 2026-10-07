@@ -1,0 +1,1242 @@
+
+[0;32m[VAIQ_NOTE]: Loading NNDCT kernels...[0m
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.8/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/opt/vitis_ai/conda/envs/vitis-ai-pytorch/lib/python3.8/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=None`.
+  warnings.warn(msg)
+
+[0;32m[VAIQ_NOTE]: OS and CPU information:
+               system --- Linux
+                 node --- d4c7282a4661
+              release --- 7.0.0-34-generic
+              version --- #34~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri Sep  4 15:38:29 UTC 2
+              machine --- x86_64
+            processor --- x86_64[0m
+Verificação concluída! 1 amostras válidas selecionadas após verificar 1 de 3425 linhas.
+
+[0;32m[VAIQ_NOTE]: Tools version information:
+                  GCC --- GCC 7.5.0
+               python --- 3.8.6
+              pytorch --- 1.13.1
+        vai_q_pytorch --- 3.5.0+60df3f1+torch1.13.1[0m
+
+[0;32m[VAIQ_NOTE]: Quant config file is empty, use default quant configuration[0m
+
+[0;32m[VAIQ_NOTE]: Quantization test process start up...[0m
+
+[0;32m[VAIQ_NOTE]: =>Quant Module is in 'cpu'.[0m
+
+[0;32m[VAIQ_NOTE]: =>Parsing UNetMobileNetV3_dpu...[0m
+
+[0;32m[VAIQ_NOTE]: Start to trace and freeze model...[0m
+
+[0;32m[VAIQ_NOTE]: The input model nndct_st_UNetMobileNetV3_dpu_ed is torch.nn.Module.[0m
+
+[0;32m[VAIQ_NOTE]: Finish tracing.[0m
+
+[0;32m[VAIQ_NOTE]: Processing ops...[0m
+                                                  | 0/189 [00:00<?, ?it/s]                                                  | 0/189 [00:00<?, ?it/s, OpInfo: name = input_0, type = Param]▎                                                 | 1/189 [00:00<00:00, 13934.56it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage0]/Conv2dNormActivation[0]/Conv2d[0]/ret.3, type = _convolution]▌                                                 | 2/189 [00:00<00:00, 4019.46it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage0]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.5, type = batch_norm]▊                                                 | 3/189 [00:00<00:00, 3965.62it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage0]/Conv2dNormActivation[0]/Hardswish[2]/15130, type = hardswish_]  █                                                 | 4/189 [00:00<00:00, 4046.60it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.7, type = _convolution]█▎                                                | 5/189 [00:00<00:00, 4100.00it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.9, type = batch_norm]█▌                                                | 6/189 [00:00<00:00, 4200.60it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/ReLU[2]/15158, type = relu_]            █▊                                                | 7/189 [00:00<00:00, 4269.32it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/AdaptiveAvgPool2d[avgpool]/15207, type = adaptive_avg_pool2d]██                                                | 8/189 [00:00<00:00, 4153.29it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/Conv2d[fc1]/ret.11, type = _convolution]                     ██▍                                               | 9/189 [00:00<00:00, 4163.77it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/ReLU[activation]/ret.13, type = relu]   ██▋                                               | 10/189 [00:00<00:00, 4378.19it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/Conv2d[fc2]/ret.15, type = _convolution]██▉                                               | 11/189 [00:00<00:00, 4381.93it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/Hardsigmoid[scale_activation]/ret.17, type = hardsigmoid]███▏                                              | 12/189 [00:00<00:00, 4350.19it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/ret.19, type = mul]                                      ███▍                                              | 13/189 [00:00<00:00, 4177.27it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[2]/Conv2d[0]/ret.21, type = _convolution]███▋                                              | 14/189 [00:00<00:00, 4193.41it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[2]/BatchNorm2d[1]/ret.23, type = batch_norm]███▉                                              | 15/189 [00:00<00:00, 4232.97it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.25, type = _convolution]   ████▏                                             | 16/189 [00:00<00:00, 4252.24it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.27, type = batch_norm]████▍                                             | 17/189 [00:00<00:00, 4279.39it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/ReLU[2]/15309, type = relu_]             ████▊                                             | 18/189 [00:00<00:00, 4402.96it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.29, type = _convolution]█████                                             | 19/189 [00:00<00:00, 4386.86it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.31, type = batch_norm]█████▎                                            | 20/189 [00:00<00:00, 4407.40it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/ReLU[2]/15337, type = relu_]             █████▌                                            | 21/189 [00:00<00:00, 4513.24it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[2]/Conv2d[0]/ret.33, type = _convolution]█████▊                                            | 22/189 [00:00<00:00, 4513.75it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[2]/BatchNorm2d[1]/ret.35, type = batch_norm]██████                                            | 23/189 [00:00<00:00, 4532.47it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.37, type = _convolution]   ██████▎                                           | 24/189 [00:00<00:00, 4542.16it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.39, type = batch_norm]██████▌                                           | 25/189 [00:00<00:00, 4564.98it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/ReLU[2]/15392, type = relu_]             ██████▉                                           | 26/189 [00:00<00:00, 4641.89it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.41, type = _convolution]███████▏                                          | 27/189 [00:00<00:00, 4645.24it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.43, type = batch_norm]███████▍                                          | 28/189 [00:00<00:00, 4652.58it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/ReLU[2]/15420, type = relu_]             ███████▋                                          | 29/189 [00:00<00:00, 4730.48it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[2]/Conv2d[0]/ret.45, type = _convolution]███████▉                                          | 30/189 [00:00<00:00, 4733.27it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[2]/BatchNorm2d[1]/ret.47, type = batch_norm]████████▏                                         | 31/189 [00:00<00:00, 4523.03it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/15449, type = add_]                                                                ████████▍                                         | 32/189 [00:00<00:00, 4465.59it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.49, type = _convolution]████████▋                                         | 33/189 [00:00<00:00, 4467.64it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.51, type = batch_norm]████████▉                                         | 34/189 [00:00<00:00, 4480.95it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/15477, type = hardswish_]   █████████▎                                        | 35/189 [00:00<00:00, 4533.26it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.53, type = _convolution]█████████▌                                        | 36/189 [00:00<00:00, 4530.71it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.55, type = batch_norm]█████████▊                                        | 37/189 [00:00<00:00, 4542.74it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/15505, type = hardswish_]   ██████████                                        | 38/189 [00:00<00:00, 4582.09it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/15554, type = adaptive_avg_pool2d]██████████▎                                       | 39/189 [00:00<00:00, 4625.42it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.57, type = _convolution]                     ██████████▌                                       | 40/189 [00:00<00:00, 4622.20it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.59, type = relu]   ██████████▊                                       | 41/189 [00:00<00:00, 4676.43it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.61, type = _convolution]███████████                                       | 42/189 [00:00<00:00, 4667.38it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.63, type = hardsigmoid]███████████▍                                      | 43/189 [00:00<00:00, 4695.77it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/ret.65, type = mul]                                      ███████████▋                                      | 44/189 [00:00<00:00, 4716.56it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.67, type = _convolution]███████████▉                                      | 45/189 [00:00<00:00, 4708.70it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[3]/BatchNorm2d[1]/ret.69, type = batch_norm]████████████▏                                     | 46/189 [00:00<00:00, 4714.54it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.71, type = _convolution]   ████████████▍                                     | 47/189 [00:00<00:00, 4711.46it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.73, type = batch_norm]████████████▋                                     | 48/189 [00:00<00:00, 4699.28it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/15656, type = hardswish_]   ████████████▉                                     | 49/189 [00:00<00:00, 4735.94it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.75, type = _convolution]█████████████▏                                    | 50/189 [00:00<00:00, 4734.73it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.77, type = batch_norm]█████████████▍                                    | 51/189 [00:00<00:00, 4739.75it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/15684, type = hardswish_]   █████████████▊                                    | 52/189 [00:00<00:00, 4763.76it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/15733, type = adaptive_avg_pool2d]██████████████                                    | 53/189 [00:00<00:00, 4791.42it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.79, type = _convolution]                     ██████████████▎                                   | 54/189 [00:00<00:00, 4770.27it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.81, type = relu]   ██████████████▌                                   | 55/189 [00:00<00:00, 4807.88it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.83, type = _convolution]██████████████▊                                   | 56/189 [00:00<00:00, 4801.43it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.85, type = hardsigmoid]███████████████                                   | 57/189 [00:00<00:00, 4833.61it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/ret.87, type = mul]                                      ███████████████▎                                  | 58/189 [00:00<00:00, 4850.07it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.89, type = _convolution]███████████████▌                                  | 59/189 [00:00<00:00, 4846.15it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[3]/BatchNorm2d[1]/ret.91, type = batch_norm]███████████████▊                                  | 60/189 [00:00<00:00, 4850.12it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/15809, type = add_]                                                                ████████████████▏                                 | 61/189 [00:00<00:00, 4866.71it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.93, type = _convolution]████████████████▍                                 | 62/189 [00:00<00:00, 4864.78it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.95, type = batch_norm]████████████████▋                                 | 63/189 [00:00<00:00, 4865.33it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/15837, type = hardswish_]   ████████████████▉                                 | 64/189 [00:00<00:00, 4893.99it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.97, type = _convolution]█████████████████▏                                | 65/189 [00:00<00:00, 4890.22it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.99, type = batch_norm]█████████████████▍                                | 66/189 [00:00<00:00, 4883.38it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/15865, type = hardswish_]   █████████████████▋                                | 67/189 [00:00<00:00, 4910.93it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/15914, type = adaptive_avg_pool2d]█████████████████▉                                | 68/189 [00:00<00:00, 4939.77it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.101, type = _convolution]                    ██████████████████▎                               | 69/189 [00:00<00:00, 4929.26it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.103, type = relu]   ██████████████████▌                               | 70/189 [00:00<00:00, 4956.80it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.105, type = _convolution]██████████████████▊                               | 71/189 [00:00<00:00, 4948.66it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.107, type = hardsigmoid]███████████████████                               | 72/189 [00:00<00:00, 4974.22it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/ret.109, type = mul]                                      ███████████████████▎                              | 73/189 [00:00<00:00, 4988.74it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.111, type = _convolution]███████████████████▌                              | 74/189 [00:00<00:00, 4981.92it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[3]/BatchNorm2d[1]/ret.113, type = batch_norm]███████████████████▊                              | 75/189 [00:00<00:00, 4981.91it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/15990, type = add_]                                                                 ████████████████████                              | 76/189 [00:00<00:00, 4995.41it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.115, type = _convolution]████████████████████▎                             | 77/189 [00:00<00:00, 4991.91it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.117, type = batch_norm]████████████████████▋                             | 78/189 [00:00<00:00, 4981.51it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16018, type = hardswish_]    ████████████████████▉                             | 79/189 [00:00<00:00, 5005.06it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.119, type = _convolution]█████████████████████▏                            | 80/189 [00:00<00:00, 4997.46it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.121, type = batch_norm]█████████████████████▍                            | 81/189 [00:00<00:00, 4996.67it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16046, type = hardswish_]    █████████████████████▋                            | 82/189 [00:00<00:00, 5019.01it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16095, type = adaptive_avg_pool2d]█████████████████████▉                            | 83/189 [00:00<00:00, 5041.74it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.123, type = _convolution]                    ██████████████████████▏                           | 84/189 [00:00<00:00, 5029.93it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.125, type = relu]   ██████████████████████▍                           | 85/189 [00:00<00:00, 5049.23it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.127, type = _convolution]██████████████████████▊                           | 86/189 [00:00<00:00, 5040.46it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.129, type = hardsigmoid]███████████████████████                           | 87/189 [00:00<00:00, 5061.72it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/ret.131, type = mul]                                      ███████████████████████▎                          | 88/189 [00:00<00:00, 5071.85it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.133, type = _convolution]███████████████████████▌                          | 89/189 [00:00<00:00, 5066.41it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[3]/BatchNorm2d[1]/ret.135, type = batch_norm]███████████████████████▊                          | 90/189 [00:00<00:00, 5064.77it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.137, type = _convolution]   ████████████████████████                          | 91/189 [00:00<00:00, 5041.43it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.139, type = batch_norm]████████████████████████▎                         | 92/189 [00:00<00:00, 5039.98it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16197, type = hardswish_]    ████████████████████████▌                         | 93/189 [00:00<00:00, 5059.34it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.141, type = _convolution]████████████████████████▊                         | 94/189 [00:00<00:00, 5056.23it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.143, type = batch_norm]█████████████████████████▏                        | 95/189 [00:00<00:00, 5055.94it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16225, type = hardswish_]    █████████████████████████▍                        | 96/189 [00:00<00:00, 5071.33it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16274, type = adaptive_avg_pool2d]█████████████████████████▋                        | 97/189 [00:00<00:00, 5089.60it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.145, type = _convolution]                    █████████████████████████▉                        | 98/189 [00:00<00:00, 5083.50it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.147, type = relu]   ██████████████████████████▏                       | 99/189 [00:00<00:00, 5104.82it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.149, type = _convolution]██████████████████████████▍                       | 100/189 [00:00<00:00, 5098.78it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.151, type = hardsigmoid]██████████████████████████▋                       | 101/189 [00:00<00:00, 5116.06it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/ret.153, type = mul]                                      ██████████████████████████▉                       | 102/189 [00:00<00:00, 5124.69it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.155, type = _convolution]███████████████████████████▏                      | 103/189 [00:00<00:00, 5112.04it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[3]/BatchNorm2d[1]/ret.157, type = batch_norm]███████████████████████████▌                      | 104/189 [00:00<00:00, 5110.03it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/16350, type = add_]                                                                 ███████████████████████████▊                      | 105/189 [00:00<00:00, 5118.33it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.159, type = _convolution]████████████████████████████                      | 106/189 [00:00<00:00, 5113.77it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.161, type = batch_norm]████████████████████████████▎                     | 107/189 [00:00<00:00, 5111.10it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16378, type = hardswish_]    ████████████████████████████▌                     | 108/189 [00:00<00:00, 5126.99it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.163, type = _convolution]████████████████████████████▊                     | 109/189 [00:00<00:00, 5123.03it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.165, type = batch_norm]█████████████████████████████                     | 110/189 [00:00<00:00, 5121.76it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16406, type = hardswish_]    █████████████████████████████▎                    | 111/189 [00:00<00:00, 5137.87it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16455, type = adaptive_avg_pool2d]█████████████████████████████▋                    | 112/189 [00:00<00:00, 5151.41it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.167, type = _convolution]                    █████████████████████████████▉                    | 113/189 [00:00<00:00, 5144.04it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.169, type = relu]   ██████████████████████████████▏                   | 114/189 [00:00<00:00, 5162.44it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.171, type = _convolution]██████████████████████████████▍                   | 115/189 [00:00<00:00, 5149.63it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.173, type = hardsigmoid]██████████████████████████████▋                   | 116/189 [00:00<00:00, 5162.99it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/ret.175, type = mul]                                      ██████████████████████████████▉                   | 117/189 [00:00<00:00, 5172.31it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.177, type = _convolution]███████████████████████████████▏                  | 118/189 [00:00<00:00, 5165.51it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[3]/BatchNorm2d[1]/ret.179, type = batch_norm]███████████████████████████████▍                  | 119/189 [00:00<00:00, 5163.37it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.181, type = _convolution]   ███████████████████████████████▋                  | 120/189 [00:00<00:00, 5140.13it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.183, type = batch_norm]████████████████████████████████                  | 121/189 [00:00<00:00, 5137.16it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16557, type = hardswish_]    ████████████████████████████████▎                 | 122/189 [00:00<00:00, 5151.88it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.185, type = _convolution]████████████████████████████████▌                 | 123/189 [00:00<00:00, 5146.39it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.187, type = batch_norm]████████████████████████████████▊                 | 124/189 [00:00<00:00, 5144.30it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16585, type = hardswish_]    █████████████████████████████████                 | 125/189 [00:00<00:00, 5157.68it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16634, type = adaptive_avg_pool2d]█████████████████████████████████▎                | 126/189 [00:00<00:00, 5166.26it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.189, type = _convolution]                    █████████████████████████████████▌                | 127/189 [00:00<00:00, 5159.75it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.191, type = relu]   █████████████████████████████████▊                | 128/189 [00:00<00:00, 5175.51it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.193, type = _convolution]██████████████████████████████████▏               | 129/189 [00:00<00:00, 5168.75it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.195, type = hardsigmoid]██████████████████████████████████▍               | 130/189 [00:00<00:00, 5181.75it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/ret.197, type = mul]                                      ██████████████████████████████████▋               | 131/189 [00:00<00:00, 5190.68it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.199, type = _convolution]██████████████████████████████████▉               | 132/189 [00:00<00:00, 5184.55it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[3]/BatchNorm2d[1]/ret.201, type = batch_norm]███████████████████████████████████▏              | 133/189 [00:00<00:00, 5182.96it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/16710, type = add_]                                                                 ███████████████████████████████████▍              | 134/189 [00:00<00:00, 5190.01it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.203, type = _convolution]███████████████████████████████████▋              | 135/189 [00:00<00:00, 5182.13it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/BatchNorm2d[1]/ret.205, type = batch_norm]███████████████████████████████████▉              | 136/189 [00:00<00:00, 5180.22it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16738, type = hardswish_]    ████████████████████████████████████▏             | 137/189 [00:00<00:00, 5191.25it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.207, type = _convolution]████████████████████████████████████▌             | 138/189 [00:00<00:00, 5181.82it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/BatchNorm2d[1]/ret.209, type = batch_norm]████████████████████████████████████▊             | 139/189 [00:00<00:00, 5179.40it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16766, type = hardswish_]    █████████████████████████████████████             | 140/189 [00:00<00:00, 5191.20it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16815, type = adaptive_avg_pool2d]█████████████████████████████████████▎            | 141/189 [00:00<00:00, 5202.43it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.211, type = _convolution]                    █████████████████████████████████████▌            | 142/189 [00:00<00:00, 5198.67it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.213, type = relu]   █████████████████████████████████████▊            | 143/189 [00:00<00:00, 5213.35it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.215, type = _convolution]██████████████████████████████████████            | 144/189 [00:00<00:00, 5207.71it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.217, type = hardsigmoid]██████████████████████████████████████▎           | 145/189 [00:00<00:00, 5219.48it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/ret.219, type = mul]                                      ██████████████████████████████████████▌           | 146/189 [00:00<00:00, 5225.74it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.221, type = _convolution]██████████████████████████████████████▉           | 147/189 [00:00<00:00, 5220.99it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[3]/BatchNorm2d[1]/ret.223, type = batch_norm]███████████████████████████████████████▏          | 148/189 [00:00<00:00, 5218.20it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/16891, type = add_]                                                                 ███████████████████████████████████████▍          | 149/189 [00:00<00:00, 5223.90it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/Conv2dNormActivation[3]/Conv2d[0]/ret.225, type = _convolution]███████████████████████████████████████▋          | 150/189 [00:00<00:00, 5213.90it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/Conv2dNormActivation[3]/BatchNorm2d[1]/ret.227, type = batch_norm]███████████████████████████████████████▉          | 151/189 [00:00<00:00, 5212.59it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[enc_stage4]/Conv2dNormActivation[3]/Hardswish[2]/16919, type = hardswish_]    ████████████████████████████████████████▏         | 152/189 [00:00<00:00, 5225.26it/s, OpInfo: name = UNetMobileNetV3_dpu/Upsample[up1]/ret.229, type = upsample_bilinear2d]                                   ████████████████████████████████████████▍         | 153/189 [00:00<00:00, 5206.26it/s, OpInfo: name = UNetMobileNetV3_dpu/ret.231, type = cat]                              ████████████████████████████████████████▋         | 154/189 [00:00<00:00, 5188.05it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/Conv2d[0]/ret.233, type = _convolution]█████████████████████████████████████████         | 155/189 [00:00<00:00, 5182.65it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/BatchNorm2d[1]/ret.235, type = batch_norm]█████████████████████████████████████████▎        | 156/189 [00:00<00:00, 5180.82it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/ReLU[2]/16958, type = relu_]              █████████████████████████████████████████▌        | 157/189 [00:00<00:00, 5194.29it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/Conv2d[3]/ret.237, type = _convolution]█████████████████████████████████████████▊        | 158/189 [00:00<00:00, 5192.48it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/BatchNorm2d[4]/ret.239, type = batch_norm]██████████████████████████████████████████        | 159/189 [00:00<00:00, 5190.45it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/ReLU[5]/16986, type = relu_]              ██████████████████████████████████████████▎       | 160/189 [00:00<00:00, 5204.42it/s, OpInfo: name = UNetMobileNetV3_dpu/Upsample[up2]/ret.241, type = upsample_bilinear2d]                    ██████████████████████████████████████████▌       | 161/189 [00:00<00:00, 5211.68it/s, OpInfo: name = UNetMobileNetV3_dpu/ret.243, type = cat]                              ██████████████████████████████████████████▊       | 162/189 [00:00<00:00, 5222.81it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/Conv2d[0]/ret.245, type = _convolution]███████████████████████████████████████████       | 163/189 [00:00<00:00, 5214.61it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/BatchNorm2d[1]/ret.247, type = batch_norm]███████████████████████████████████████████▍      | 164/189 [00:00<00:00, 5212.45it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/ReLU[2]/17025, type = relu_]              ███████████████████████████████████████████▋      | 165/189 [00:00<00:00, 5225.86it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/Conv2d[3]/ret.249, type = _convolution]███████████████████████████████████████████▉      | 166/189 [00:00<00:00, 5223.76it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/BatchNorm2d[4]/ret.251, type = batch_norm]████████████████████████████████████████████▏     | 167/189 [00:00<00:00, 5222.59it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/ReLU[5]/17053, type = relu_]              ████████████████████████████████████████████▍     | 168/189 [00:00<00:00, 5235.63it/s, OpInfo: name = UNetMobileNetV3_dpu/Upsample[up3]/ret.253, type = upsample_bilinear2d]                    ████████████████████████████████████████████▋     | 169/189 [00:00<00:00, 5242.03it/s, OpInfo: name = UNetMobileNetV3_dpu/ret.255, type = cat]                              ████████████████████████████████████████████▉     | 170/189 [00:00<00:00, 5252.23it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/Conv2d[0]/ret.257, type = _convolution]█████████████████████████████████████████████▏    | 171/189 [00:00<00:00, 5249.86it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/BatchNorm2d[1]/ret.259, type = batch_norm]█████████████████████████████████████████████▌    | 172/189 [00:00<00:00, 5248.45it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/ReLU[2]/17092, type = relu_]              █████████████████████████████████████████████▊    | 173/189 [00:00<00:00, 5260.67it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/Conv2d[3]/ret.261, type = _convolution]██████████████████████████████████████████████    | 174/189 [00:00<00:00, 5258.82it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/BatchNorm2d[4]/ret.263, type = batch_norm]██████████████████████████████████████████████▎   | 175/189 [00:00<00:00, 5213.50it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/ReLU[5]/17120, type = relu_]              ██████████████████████████████████████████████▌   | 176/189 [00:00<00:00, 5226.58it/s, OpInfo: name = UNetMobileNetV3_dpu/Upsample[up4]/ret.265, type = upsample_bilinear2d]                    ██████████████████████████████████████████████▊   | 177/189 [00:00<00:00, 5233.01it/s, OpInfo: name = UNetMobileNetV3_dpu/ret.267, type = cat]                              ███████████████████████████████████████████████   | 178/189 [00:00<00:00, 5240.16it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/Conv2d[0]/ret.269, type = _convolution]███████████████████████████████████████████████▎  | 179/189 [00:00<00:00, 5237.54it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/BatchNorm2d[1]/ret.271, type = batch_norm]███████████████████████████████████████████████▌  | 180/189 [00:00<00:00, 5237.32it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/ReLU[2]/17159, type = relu_]              ███████████████████████████████████████████████▉  | 181/189 [00:00<00:00, 5250.49it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/Conv2d[3]/ret.273, type = _convolution]████████████████████████████████████████████████▏ | 182/189 [00:00<00:00, 5247.46it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/BatchNorm2d[4]/ret.275, type = batch_norm]████████████████████████████████████████████████▍ | 183/189 [00:00<00:00, 5246.14it/s, OpInfo: name = UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/ReLU[5]/17187, type = relu_]              ████████████████████████████████████████████████▋ | 184/189 [00:00<00:00, 5258.17it/s, OpInfo: name = UNetMobileNetV3_dpu/Upsample[up_final]/ret.277, type = upsample_bilinear2d]               ████████████████████████████████████████████████▉ | 185/189 [00:00<00:00, 5264.26it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[out_conv]/Conv2d[0]/ret.279, type = _convolution]█████████████████████████████████████████████████▏| 186/189 [00:00<00:00, 5261.23it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[out_conv]/ReLU[1]/17215, type = relu_]           █████████████████████████████████████████████████▍| 187/189 [00:00<00:00, 5273.90it/s, OpInfo: name = UNetMobileNetV3_dpu/Sequential[out_conv]/Conv2d[2]/ret, type = _convolution]█████████████████████████████████████████████████▋| 188/189 [00:00<00:00, 5268.31it/s, OpInfo: name = return_0, type = Return]                                                    ██████████████████████████████████████████████████| 189/189 [00:00<00:00, 5284.96it/s, OpInfo: name = return_0, type = Return]
+
+[0;32m[VAIQ_NOTE]: =>Doing weights equalization...[0m
+
+[0;32m[VAIQ_NOTE]: =>Quantizable module is generated.(build/vitis_ai/quantize_artigo/mobilenet_v3_dpu_focaldice_artigo/UNetMobileNetV3_dpu.py)[0m
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.159, op type:nndct_conv2d, output shape: [1, 32, 32, 288]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16378, op type:nndct_hswish, output shape: [1, 32, 32, 288]
+
+[0m
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I20261007 03:52:08.619715   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.619740   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.619745   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.619781   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_eNIfdECUTmJ1FcDr, with op num: 14
+I20261007 03:52:08.619786   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.623364   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.623385   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.49, op type:nndct_conv2d, output shape: [1, 64, 64, 96]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/15477, op type:nndct_hswish, output shape: [1, 64, 64, 96]
+
+[0m
+I20261007 03:52:08.624625   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.624637   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.624642   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.624666   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_CFZ26UEOyhgG9bKu, with op num: 14
+I20261007 03:52:08.624673   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.627899   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.627921   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.71, op type:nndct_conv2d, output shape: [1, 32, 32, 240]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/15656, op type:nndct_hswish, output shape: [1, 32, 32, 240]
+
+[0m
+I20261007 03:52:08.629096   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.629109   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.629114   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.629138   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_HUO3GuBzMw1ndAvT, with op num: 14
+I20261007 03:52:08.629144   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.632462   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.632483   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/Conv2dNormActivation[3]/Conv2d[0]/ret.225, op type:nndct_conv2d, output shape: [1, 16, 16, 576]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/Conv2dNormActivation[3]/Hardswish[2]/16919, op type:nndct_hswish, output shape: [1, 16, 16, 576]
+
+[0m
+I20261007 03:52:08.633728   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.633740   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.633745   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.633775   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_0CarcxjhXUdk1QbF, with op num: 14
+I20261007 03:52:08.633782   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.638175   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.638195   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.181, op type:nndct_conv2d, output shape: [1, 16, 16, 576]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16557, op type:nndct_hswish, output shape: [1, 16, 16, 576]
+
+[0m
+I20261007 03:52:08.639389   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.639402   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.639407   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.639431   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_TpjW02qXYbegNyQS, with op num: 14
+I20261007 03:52:08.639437   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.643769   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.643790   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage0]/Conv2dNormActivation[0]/Conv2d[0]/ret.3, op type:nndct_conv2d, output shape: [1, 256, 256, 16]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage0]/Conv2dNormActivation[0]/Hardswish[2]/15130, op type:nndct_hswish, output shape: [1, 256, 256, 16]
+
+[0m
+I20261007 03:52:08.645176   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.645190   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.645195   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.645218   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_JUdfD73AYEBwKWx4, with op num: 14
+I20261007 03:52:08.645224   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.648425   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.648447   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.137, op type:nndct_conv2d, output shape: [1, 32, 32, 144]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16197, op type:nndct_hswish, output shape: [1, 32, 32, 144]
+
+[0m
+I20261007 03:52:08.649622   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.649634   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.649641   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.649664   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_YRPJ4aoItNbjvuWe, with op num: 14
+I20261007 03:52:08.649669   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.653053   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.653081   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.203, op type:nndct_conv2d, output shape: [1, 16, 16, 576]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16738, op type:nndct_hswish, output shape: [1, 16, 16, 576]
+
+[0m
+I20261007 03:52:08.654366   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.654381   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.654386   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.654410   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_874yjoCVd1czLmqp, with op num: 14
+I20261007 03:52:08.654417   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.658768   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.658789   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.93, op type:nndct_conv2d, output shape: [1, 32, 32, 240]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/15837, op type:nndct_hswish, output shape: [1, 32, 32, 240]
+
+[0m
+I20261007 03:52:08.659991   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.660003   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.660008   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.660032   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_jGyFnSZMcAHqWhtQ, with op num: 14
+I20261007 03:52:08.660038   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.663381   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.663403   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_14:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.115, op type:nndct_conv2d, output shape: [1, 32, 32, 120]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[0]/Hardswish[2]/16018, op type:nndct_hswish, output shape: [1, 32, 32, 120]
+
+[0m
+I20261007 03:52:08.664546   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.664559   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.664565   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.664588   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hswish_r63o7msuQBwDZM4q, with op num: 14
+I20261007 03:52:08.664597   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.667830   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.667851   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_15:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.207, op type:nndct_depthwise_conv2d, output shape: [1, 16, 16, 576]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16766, op type:nndct_hswish, output shape: [1, 16, 16, 576]
+
+[0m
+I20261007 03:52:08.670972   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.670985   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.670990   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.671015   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_hswish_3psnEUSMhAc6rH0j, with op num: 14
+I20261007 03:52:08.671021   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.674659   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.674679   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_15:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.53, op type:nndct_depthwise_conv2d, output shape: [1, 32, 32, 96]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/15505, op type:nndct_hswish, output shape: [1, 32, 32, 96]
+
+[0m
+I20261007 03:52:08.675933   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.675946   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.675951   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.675976   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_hswish_fAtn2CmkiKu9eUrO, with op num: 14
+I20261007 03:52:08.675982   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.679373   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.679395   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_15:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.119, op type:nndct_depthwise_conv2d, output shape: [1, 32, 32, 120]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16046, op type:nndct_hswish, output shape: [1, 32, 32, 120]
+
+[0m
+I20261007 03:52:08.680606   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.680619   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.680624   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.680649   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_hswish_MftObRe17PTiJLpF, with op num: 14
+I20261007 03:52:08.680655   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.684051   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.684072   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_15:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.163, op type:nndct_depthwise_conv2d, output shape: [1, 16, 16, 288]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16406, op type:nndct_hswish, output shape: [1, 16, 16, 288]
+
+[0m
+I20261007 03:52:08.685387   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.685410   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.685418   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.685446   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_hswish_9HTVueiZtO4pJv7w, with op num: 14
+I20261007 03:52:08.685454   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.688983   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.689004   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_15:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.185, op type:nndct_depthwise_conv2d, output shape: [1, 16, 16, 576]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16585, op type:nndct_hswish, output shape: [1, 16, 16, 576]
+
+[0m
+I20261007 03:52:08.690189   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.690203   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.690208   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.690232   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_hswish_H9Nj4aICydwKsm1T, with op num: 14
+I20261007 03:52:08.690238   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.693925   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.693946   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_15:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.141, op type:nndct_depthwise_conv2d, output shape: [1, 32, 32, 144]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/16225, op type:nndct_hswish, output shape: [1, 32, 32, 144]
+
+[0m
+I20261007 03:52:08.695160   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.695173   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.695178   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.695202   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_hswish_FwCqnvRjfEOQsWUX, with op num: 14
+I20261007 03:52:08.695209   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.698637   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.698658   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_15:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.97, op type:nndct_depthwise_conv2d, output shape: [1, 32, 32, 240]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/15865, op type:nndct_hswish, output shape: [1, 32, 32, 240]
+
+[0m
+I20261007 03:52:08.699926   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.699939   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.699944   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.699983   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_hswish_pGQ4qkjKd7EFRAa2, with op num: 14
+I20261007 03:52:08.699991   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.703464   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.703485   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_15:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.75, op type:nndct_depthwise_conv2d, output shape: [1, 32, 32, 240]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Hardswish[2]/15684, op type:nndct_hswish, output shape: [1, 32, 32, 240]
+
+[0m
+I20261007 03:52:08.704759   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.704772   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.704777   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.704802   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_hswish_4IuFVAqofMyENh8H, with op num: 14
+I20261007 03:52:08.704807   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.708796   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.708818   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_16:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.193, op type:nndct_conv2d, output shape: [1, 1, 1, 576]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.195, op type:nndct_hsigmoid, output shape: [1, 1, 1, 576]
+
+[0m
+I20261007 03:52:08.712714   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.712730   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.712738   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.712771   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hsigmoid_QrtuXdyxjemkOSc0, with op num: 12
+I20261007 03:52:08.712781   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.717535   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.717562   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_16:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.215, op type:nndct_conv2d, output shape: [1, 1, 1, 576]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.217, op type:nndct_hsigmoid, output shape: [1, 1, 1, 576]
+
+[0m
+I20261007 03:52:08.719051   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.719064   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.719069   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.719105   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hsigmoid_AVOXhZa0LturyFBG, with op num: 12
+I20261007 03:52:08.719110   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.723549   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.723579   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_16:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.105, op type:nndct_conv2d, output shape: [1, 1, 1, 240]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.107, op type:nndct_hsigmoid, output shape: [1, 1, 1, 240]
+
+[0m
+I20261007 03:52:08.724764   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.724778   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.724783   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.724809   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hsigmoid_5kMZGgJOvWd31qbw, with op num: 12
+I20261007 03:52:08.724817   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.727736   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.727757   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_16:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.83, op type:nndct_conv2d, output shape: [1, 1, 1, 240]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.85, op type:nndct_hsigmoid, output shape: [1, 1, 1, 240]
+
+[0m
+I20261007 03:52:08.728868   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.728880   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.728885   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.728911   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hsigmoid_W5siCUv63mfIHLEA, with op num: 12
+I20261007 03:52:08.728917   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.731809   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.731834   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_16:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.61, op type:nndct_conv2d, output shape: [1, 1, 1, 96]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.63, op type:nndct_hsigmoid, output shape: [1, 1, 1, 96]
+
+[0m
+I20261007 03:52:08.732918   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.732930   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.732935   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.732959   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hsigmoid_n8BwVcamiGKp5O4J, with op num: 12
+I20261007 03:52:08.732966   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.735545   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.735566   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_16:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.127, op type:nndct_conv2d, output shape: [1, 1, 1, 120]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.129, op type:nndct_hsigmoid, output shape: [1, 1, 1, 120]
+
+[0m
+I20261007 03:52:08.736655   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.736668   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.736672   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.736696   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hsigmoid_uLz7D2pZaOlAvfte, with op num: 12
+I20261007 03:52:08.736703   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.739301   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.739322   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_16:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.171, op type:nndct_conv2d, output shape: [1, 1, 1, 288]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.173, op type:nndct_hsigmoid, output shape: [1, 1, 1, 288]
+
+[0m
+I20261007 03:52:08.740432   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.740445   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.740450   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.740474   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hsigmoid_Zoaq6SrKd5bIklGm, with op num: 12
+I20261007 03:52:08.740481   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.743450   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.743471   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_16:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/Conv2d[fc2]/ret.15, op type:nndct_conv2d, output shape: [1, 1, 1, 16]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/Hardsigmoid[scale_activation]/ret.17, op type:nndct_hsigmoid, output shape: [1, 1, 1, 16]
+
+[0m
+I20261007 03:52:08.744557   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.744571   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.744576   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.744601   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hsigmoid_gsdtpTlh25jP0LDi, with op num: 12
+I20261007 03:52:08.744607   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.747128   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.747148   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_16:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc2]/ret.149, op type:nndct_conv2d, output shape: [1, 1, 1, 144]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/Hardsigmoid[scale_activation]/ret.151, op type:nndct_hsigmoid, output shape: [1, 1, 1, 144]
+
+[0m
+I20261007 03:52:08.748247   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.748260   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.748265   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.748289   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_hsigmoid_5OPjeZsrY3HyMbf8, with op num: 12
+I20261007 03:52:08.748296   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.750962   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.750981   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[out_conv]/Conv2d[0]/ret.279, op type:nndct_conv2d, output shape: [1, 512, 512, 16]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[out_conv]/ReLU[1]/17215, op type:nndct_relu, output shape: [1, 512, 512, 16]
+
+[0m
+I20261007 03:52:08.757011   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.757025   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.757030   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.757053   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_YjXAP6EFuef7RIZl, with op num: 9
+I20261007 03:52:08.757061   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.759078   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.759099   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.145, op type:nndct_conv2d, output shape: [1, 1, 1, 40]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.147, op type:nndct_relu, output shape: [1, 1, 1, 40]
+
+[0m
+I20261007 03:52:08.759994   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.760005   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.760010   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.760035   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_J91GHRxgdMykWTfj, with op num: 9
+I20261007 03:52:08.760041   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.762148   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.762168   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.57, op type:nndct_conv2d, output shape: [1, 1, 1, 24]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.59, op type:nndct_relu, output shape: [1, 1, 1, 24]
+
+[0m
+I20261007 03:52:08.763054   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.763067   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.763072   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.763096   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_ComItEWKOMRG7c8Q, with op num: 9
+I20261007 03:52:08.763108   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.765130   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.765151   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/Conv2d[0]/ret.269, op type:nndct_conv2d, output shape: [1, 256, 256, 16]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/ReLU[2]/17159, op type:nndct_relu, output shape: [1, 256, 256, 16]
+
+[0m
+I20261007 03:52:08.766588   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.766600   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.766605   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.766629   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_5ID4T0oCiJMpxrAj, with op num: 9
+I20261007 03:52:08.766636   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.768729   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.768749   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/Conv2d[3]/ret.249, op type:nndct_conv2d, output shape: [1, 64, 64, 48]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/ReLU[5]/17053, op type:nndct_relu, output shape: [1, 64, 64, 48]
+
+[0m
+I20261007 03:52:08.769716   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.769729   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.769734   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.769758   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_kJZN6KMtLjnDqPXs, with op num: 9
+I20261007 03:52:08.769765   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.772174   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.772195   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/Conv2d[fc1]/ret.11, op type:nndct_conv2d, output shape: [1, 1, 1, 8]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/ReLU[activation]/ret.13, op type:nndct_relu, output shape: [1, 1, 1, 8]
+
+[0m
+I20261007 03:52:08.773087   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.773098   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.773104   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.773129   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_HrjykKfvOFxSUC9z, with op num: 9
+I20261007 03:52:08.773136   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.775110   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.775130   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/Conv2d[3]/ret.261, op type:nndct_conv2d, output shape: [1, 128, 128, 24]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/ReLU[5]/17120, op type:nndct_relu, output shape: [1, 128, 128, 24]
+
+[0m
+I20261007 03:52:08.776105   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.776118   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.776124   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.776147   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_kwKxn7qu6S08PYXZ, with op num: 9
+I20261007 03:52:08.776153   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.778240   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.778261   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/Conv2d[0]/ret.257, op type:nndct_conv2d, output shape: [1, 128, 128, 24]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv3]/Sequential[double_conv]/ReLU[2]/17092, op type:nndct_relu, output shape: [1, 128, 128, 24]
+
+[0m
+I20261007 03:52:08.779397   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.779409   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.779414   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.779438   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_8CEH5aMFstUzuk7b, with op num: 9
+I20261007 03:52:08.779445   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.781750   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.781771   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.167, op type:nndct_conv2d, output shape: [1, 1, 1, 72]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.169, op type:nndct_relu, output shape: [1, 1, 1, 72]
+
+[0m
+I20261007 03:52:08.782720   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.782733   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.782738   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.782763   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_8sEvKHB0MlP9qztk, with op num: 9
+I20261007 03:52:08.782769   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.785204   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.785225   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/Conv2d[3]/ret.273, op type:nndct_conv2d, output shape: [1, 256, 256, 16]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv4]/Sequential[double_conv]/ReLU[5]/17187, op type:nndct_relu, output shape: [1, 256, 256, 16]
+
+[0m
+I20261007 03:52:08.786338   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.786351   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.786356   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.786386   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_wNgfTo9CQmJy5xjd, with op num: 9
+I20261007 03:52:08.786393   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.788424   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.788443   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.189, op type:nndct_conv2d, output shape: [1, 1, 1, 144]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.191, op type:nndct_relu, output shape: [1, 1, 1, 144]
+
+[0m
+I20261007 03:52:08.789486   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.789505   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.789510   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.789534   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_opqZOFjQcA6MfsIi, with op num: 9
+I20261007 03:52:08.789541   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.793303   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.793324   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.37, op type:nndct_conv2d, output shape: [1, 64, 64, 88]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[0]/ReLU[2]/15392, op type:nndct_relu, output shape: [1, 64, 64, 88]
+
+[0m
+I20261007 03:52:08.794296   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.794308   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.794313   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.794337   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_kSPr40FRBfe2TXom, with op num: 9
+I20261007 03:52:08.794343   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.796377   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.796397   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.101, op type:nndct_conv2d, output shape: [1, 1, 1, 64]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.103, op type:nndct_relu, output shape: [1, 1, 1, 64]
+
+[0m
+I20261007 03:52:08.797294   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.797307   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.797312   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.797336   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_wXQMNWT7eDdjhHIv, with op num: 9
+I20261007 03:52:08.797343   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.799649   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.799676   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/Conv2d[3]/ret.237, op type:nndct_conv2d, output shape: [1, 32, 32, 96]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/ReLU[5]/16986, op type:nndct_relu, output shape: [1, 32, 32, 96]
+
+[0m
+I20261007 03:52:08.800702   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.800714   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.800719   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.800743   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_8TPGIeyM4az2nQw1, with op num: 9
+I20261007 03:52:08.800750   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.804836   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.804857   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.25, op type:nndct_conv2d, output shape: [1, 128, 128, 72]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/ReLU[2]/15309, op type:nndct_relu, output shape: [1, 128, 128, 72]
+
+[0m
+I20261007 03:52:08.805816   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.805830   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.805833   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.805858   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_81XFGw6EI72tmziZ, with op num: 9
+I20261007 03:52:08.805864   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.807878   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.807899   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.211, op type:nndct_conv2d, output shape: [1, 1, 1, 144]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.213, op type:nndct_relu, output shape: [1, 1, 1, 144]
+
+[0m
+I20261007 03:52:08.808907   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.808920   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.808925   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.808950   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_U4gNDCvczp2ModJx, with op num: 9
+I20261007 03:52:08.808957   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.812726   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.812747   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.123, op type:nndct_conv2d, output shape: [1, 1, 1, 32]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.125, op type:nndct_relu, output shape: [1, 1, 1, 32]
+
+[0m
+I20261007 03:52:08.813670   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.813683   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.813687   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.813711   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_rfW16DanscAP5Ngv, with op num: 9
+I20261007 03:52:08.813719   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.815776   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.815797   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/Conv2d[0]/ret.233, op type:nndct_conv2d, output shape: [1, 32, 32, 96]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv1]/Sequential[double_conv]/ReLU[2]/16958, op type:nndct_relu, output shape: [1, 32, 32, 96]
+
+[0m
+I20261007 03:52:08.818392   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.818408   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.818413   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.818442   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_96onBPmbYkMzXUxW, with op num: 9
+I20261007 03:52:08.818449   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.831550   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.831573   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/Conv2d[fc1]/ret.79, op type:nndct_conv2d, output shape: [1, 1, 1, 64]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/ReLU[activation]/ret.81, op type:nndct_relu, output shape: [1, 1, 1, 64]
+
+[0m
+I20261007 03:52:08.832645   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.832657   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.832664   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.832690   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_E5fDTgPaeMwXbR2n, with op num: 9
+I20261007 03:52:08.832696   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.835003   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.835024   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_18:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/Conv2d[0]/ret.245, op type:nndct_conv2d, output shape: [1, 64, 64, 48]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/DoubleConv[conv2]/Sequential[double_conv]/ReLU[2]/17025, op type:nndct_relu, output shape: [1, 64, 64, 48]
+
+[0m
+I20261007 03:52:08.836112   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.836125   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.836130   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.836154   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_nndct_relu_2Z3VDYotFNlkKj9d, with op num: 9
+I20261007 03:52:08.836167   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.839440   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.839461   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_19:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/Conv2d[0]/ret.7, op type:nndct_depthwise_conv2d, output shape: [1, 128, 128, 16]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[0]/ReLU[2]/15158, op type:nndct_relu, output shape: [1, 128, 128, 16]
+
+[0m
+I20261007 03:52:08.842555   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.842568   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.842573   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.842597   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_relu_HTFtmqEQZ6gR5pox, with op num: 9
+I20261007 03:52:08.842603   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.844795   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.844815   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_19:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.29, op type:nndct_depthwise_conv2d, output shape: [1, 64, 64, 72]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[1]/ReLU[2]/15337, op type:nndct_relu, output shape: [1, 64, 64, 72]
+
+[0m
+I20261007 03:52:08.845992   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.846005   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.846010   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.846035   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_relu_75mIa03rw8JCGoKb, with op num: 9
+I20261007 03:52:08.846041   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.848230   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.848251   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_19:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/Conv2d[0]/ret.41, op type:nndct_depthwise_conv2d, output shape: [1, 64, 64, 88]
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[1]/ReLU[2]/15420, op type:nndct_relu, output shape: [1, 64, 64, 88]
+
+[0m
+I20261007 03:52:08.849326   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.849339   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.849344   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.849368   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_depthwise_conv2d_nndct_relu_W8XV3gmvJd91eQR7, with op num: 9
+I20261007 03:52:08.849375   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.851577   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.851604   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for pool_fix_4:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/15914, op type:nndct_avgpool, output shape: [1, 1, 1, 240]
+
+[0m
+I20261007 03:52:08.857872   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.857884   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.857889   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.857914   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_avgpool_nZJgzeGxUXdWE9iL, with op num: 6
+I20261007 03:52:08.857920   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.859586   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.859606   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for pool_fix_4:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16634, op type:nndct_avgpool, output shape: [1, 1, 1, 576]
+
+[0m
+I20261007 03:52:08.860343   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.860356   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.860361   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.860387   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_avgpool_WfZXv1Rtxhka7Bg3, with op num: 6
+I20261007 03:52:08.860394   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.862025   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.862046   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for pool_fix_4:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16095, op type:nndct_avgpool, output shape: [1, 1, 1, 120]
+
+[0m
+I20261007 03:52:08.862787   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.862800   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.862804   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.862830   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_avgpool_w50PniJv39FeGdCa, with op num: 6
+I20261007 03:52:08.862836   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.864462   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.864483   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for pool_fix_4:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16815, op type:nndct_avgpool, output shape: [1, 1, 1, 576]
+
+[0m
+I20261007 03:52:08.865192   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.865206   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.865211   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.865234   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_avgpool_GU1zE0kbOSuN45Zn, with op num: 6
+I20261007 03:52:08.865242   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.866873   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.866899   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for pool_fix_4:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16274, op type:nndct_avgpool, output shape: [1, 1, 1, 144]
+
+[0m
+I20261007 03:52:08.867605   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.867619   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.867623   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.867647   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_avgpool_cQ5mTwDGf3OvMyou, with op num: 6
+I20261007 03:52:08.867653   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.869278   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.869299   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for pool_fix_4:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/15733, op type:nndct_avgpool, output shape: [1, 1, 1, 240]
+
+[0m
+I20261007 03:52:08.870024   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.870038   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.870042   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.870066   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_avgpool_RFg7NenoxIAiCBrz, with op num: 6
+I20261007 03:52:08.870072   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.871713   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.871734   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for pool_fix_4:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/AdaptiveAvgPool2d[avgpool]/15207, op type:nndct_avgpool, output shape: [1, 1, 1, 16]
+
+[0m
+I20261007 03:52:08.872483   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.872501   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.872506   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.872530   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_avgpool_7ePpwhWj3LGaNVY0, with op num: 6
+I20261007 03:52:08.872537   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.874166   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.874185   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for pool_fix_4:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/16455, op type:nndct_avgpool, output shape: [1, 1, 1, 288]
+
+[0m
+I20261007 03:52:08.874905   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.874917   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.874922   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.874946   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_avgpool_ejUPTyup8qLCKoOY, with op num: 6
+I20261007 03:52:08.874953   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.876591   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.876611   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for pool_fix_4:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/AdaptiveAvgPool2d[avgpool]/15554, op type:nndct_avgpool, output shape: [1, 1, 1, 96]
+
+[0m
+I20261007 03:52:08.877327   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.877339   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.877344   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.877368   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_avgpool_zi28D9h0radGJ7Cw, with op num: 6
+I20261007 03:52:08.877375   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.879011   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.879032   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for resize_fix_7:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Upsample[up4]/ret.265, op type:nndct_resize, output shape: [1, 256, 256, 24]
+
+[0m
+I20261007 03:52:08.883489   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.883508   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.883513   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.883538   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_resize_MWCwxXPZAz2lo59B, with op num: 4
+I20261007 03:52:08.883544   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.885809   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.885830   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for resize_fix_7:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Upsample[up_final]/ret.277, op type:nndct_resize, output shape: [1, 512, 512, 16]
+
+[0m
+I20261007 03:52:08.886644   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.886656   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.886660   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.886685   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_resize_m74jTViJHCnMbFyO, with op num: 4
+I20261007 03:52:08.886691   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.888912   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.888933   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for resize_fix_7:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Upsample[up1]/ret.229, op type:nndct_resize, output shape: [1, 32, 32, 576]
+
+[0m
+I20261007 03:52:08.889524   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.889536   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.889541   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.889565   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_resize_7m5wqbpVUk0aDGIz, with op num: 4
+I20261007 03:52:08.889571   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.891974   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.891995   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for resize_fix_7:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Upsample[up2]/ret.241, op type:nndct_resize, output shape: [1, 64, 64, 96]
+
+[0m
+I20261007 03:52:08.892589   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.892601   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.892606   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.892630   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_resize_qWZrcsb7REO5P4ph, with op num: 4
+I20261007 03:52:08.892637   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.894870   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.894891   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for resize_fix_7:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Upsample[up3]/ret.253, op type:nndct_resize, output shape: [1, 128, 128, 48]
+
+[0m
+I20261007 03:52:08.895525   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.895537   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.895542   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.895566   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_resize_SGAxqhUy8YjPr0iH, with op num: 4
+I20261007 03:52:08.895572   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.897804   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.897825   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for concat_fix_13:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/ret.243, op type:nndct_concat, output shape: [1, 64, 64, 120]
+
+[0m
+I20261007 03:52:08.901481   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.901499   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.901504   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.901532   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_concat_CVxS3Pru4vXLQwzc, with op num: 6
+I20261007 03:52:08.901539   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.902815   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.902837   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for concat_fix_13:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/ret.255, op type:nndct_concat, output shape: [1, 128, 128, 64]
+
+[0m
+I20261007 03:52:08.903743   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.903755   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.903760   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.903784   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_concat_1VXRbgSEPJ5LI08j, with op num: 6
+I20261007 03:52:08.903791   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.905059   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.905079   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for concat_fix_13:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/ret.231, op type:nndct_concat, output shape: [1, 32, 32, 624]
+
+[0m
+I20261007 03:52:08.905906   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.905918   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.905929   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.905956   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_concat_prhujkCqG0TmB9XU, with op num: 6
+I20261007 03:52:08.905961   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.907236   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.907258   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for concat_fix_13:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/ret.267, op type:nndct_concat, output shape: [1, 256, 256, 40]
+
+[0m
+I20261007 03:52:08.908497   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.908509   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.908514   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.908538   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_concat_ctnR9JXaVFClzj3I, with op num: 6
+I20261007 03:52:08.908545   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.909814   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.909835   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.133, op type:nndct_conv2d, output shape: [1, 32, 32, 48]
+
+[0m
+I20261007 03:52:08.912240   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.912253   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.912258   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.912282   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_4rE9LsCOZ5VmfNQi, with op num: 8
+I20261007 03:52:08.912288   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.914305   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.914326   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[2]/Conv2d[0]/ret.33, op type:nndct_conv2d, output shape: [1, 64, 64, 24]
+
+[0m
+I20261007 03:52:08.915236   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.915249   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.915254   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.915278   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_b1O9R4rKeQnUvjGT, with op num: 8
+I20261007 03:52:08.915285   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.917207   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.917228   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.111, op type:nndct_conv2d, output shape: [1, 32, 32, 40]
+
+[0m
+I20261007 03:52:08.918160   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.918174   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.918179   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.918211   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_tJIsr6iE1OF5gTvp, with op num: 8
+I20261007 03:52:08.918218   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.920323   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.920344   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.221, op type:nndct_conv2d, output shape: [1, 16, 16, 96]
+
+[0m
+I20261007 03:52:08.921300   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.921314   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.921319   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.921342   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_rJosw5GMYNpPRjx7, with op num: 8
+I20261007 03:52:08.921348   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.924439   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.924460   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[2]/Conv2d[0]/ret.45, op type:nndct_conv2d, output shape: [1, 64, 64, 24]
+
+[0m
+I20261007 03:52:08.925395   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.925407   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.925412   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.925436   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_pScQj4Yd3C9BoO5N, with op num: 8
+I20261007 03:52:08.925442   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.927376   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.927397   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[out_conv]/Conv2d[2]/ret, op type:nndct_conv2d, output shape: [1, 512, 512, 1]
+
+[0m
+I20261007 03:52:08.929144   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.929157   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.929162   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.929188   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_Erua1SOXsoNYnVxA, with op num: 8
+I20261007 03:52:08.929193   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.931073   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.931093   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.89, op type:nndct_conv2d, output shape: [1, 32, 32, 40]
+
+[0m
+I20261007 03:52:08.931977   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.931990   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.931995   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.932024   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_6x9MUbQ720Jv5maL, with op num: 8
+I20261007 03:52:08.932031   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.934118   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.934139   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[2]/Conv2d[0]/ret.21, op type:nndct_conv2d, output shape: [1, 128, 128, 16]
+
+[0m
+I20261007 03:52:08.935037   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.935050   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.935055   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.935078   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_AgjtnEuFQMzShixl, with op num: 8
+I20261007 03:52:08.935086   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.936970   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.936991   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.155, op type:nndct_conv2d, output shape: [1, 32, 32, 48]
+
+[0m
+I20261007 03:52:08.937871   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.937883   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.937888   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.937912   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_MXfSg5Ru9AK8mBaQ, with op num: 8
+I20261007 03:52:08.937918   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.939946   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.939967   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.177, op type:nndct_conv2d, output shape: [1, 16, 16, 96]
+
+[0m
+I20261007 03:52:08.940873   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.940886   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.940891   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.940915   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_qb86l9FHZDtNLOU3, with op num: 8
+I20261007 03:52:08.940922   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.943395   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.943416   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.199, op type:nndct_conv2d, output shape: [1, 16, 16, 96]
+
+[0m
+I20261007 03:52:08.944339   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.944352   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.944356   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.944386   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_qnWafzCgyZIhxv3B, with op num: 8
+I20261007 03:52:08.944393   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.947463   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.947484   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_20:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/Conv2dNormActivation[3]/Conv2d[0]/ret.67, op type:nndct_conv2d, output shape: [1, 32, 32, 40]
+
+[0m
+I20261007 03:52:08.948382   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.948395   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.948400   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.948424   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_conv2d_pEeHdcQyJ0XxvRrn, with op num: 8
+I20261007 03:52:08.948432   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.950402   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 3, DPU subgraph number 1
+I20261007 03:52:08.950423   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_21:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/Sequential[block]/SqueezeExcitation[2]/ret.153, op type:nndct_elemwise_mul, output shape: [1, 32, 32, 144]
+
+[0m
+I20261007 03:52:08.952823   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.952836   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.952840   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.952865   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_mul_C6IJHSY0QTFz5Atw, with op num: 6
+I20261007 03:52:08.952872   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.954605   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.954628   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_21:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/ret.87, op type:nndct_elemwise_mul, output shape: [1, 32, 32, 240]
+
+[0m
+I20261007 03:52:08.955348   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.955360   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.955366   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.955389   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_mul_mChMeb3iFJoZRTWg, with op num: 6
+I20261007 03:52:08.955396   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.957129   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.957150   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_21:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[3]/Sequential[block]/SqueezeExcitation[2]/ret.131, op type:nndct_elemwise_mul, output shape: [1, 32, 32, 120]
+
+[0m
+I20261007 03:52:08.957868   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.957880   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.957890   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.957916   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_mul_ewvhKQgHAVEXoD2P, with op num: 6
+I20261007 03:52:08.957923   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.959662   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.959683   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_21:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/ret.109, op type:nndct_elemwise_mul, output shape: [1, 32, 32, 240]
+
+[0m
+I20261007 03:52:08.960381   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.960394   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.960398   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.960423   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_mul_tPQM3K8Iq57cJUzC, with op num: 6
+I20261007 03:52:08.960429   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.962157   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.962178   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_21:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/Sequential[block]/SqueezeExcitation[2]/ret.219, op type:nndct_elemwise_mul, output shape: [1, 16, 16, 576]
+
+[0m
+I20261007 03:52:08.962868   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.962880   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.962885   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.962909   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_mul_f9Wy7XcpqbZRreuo, with op num: 6
+I20261007 03:52:08.962916   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.964643   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.964665   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_21:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/ret.65, op type:nndct_elemwise_mul, output shape: [1, 32, 32, 96]
+
+[0m
+I20261007 03:52:08.965355   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.965368   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.965373   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.965399   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_mul_RC3lhaPU9KpeygQ5, with op num: 6
+I20261007 03:52:08.965405   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.967137   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.967159   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_21:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/Sequential[block]/SqueezeExcitation[2]/ret.197, op type:nndct_elemwise_mul, output shape: [1, 16, 16, 576]
+
+[0m
+I20261007 03:52:08.967839   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.967850   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.967860   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.967885   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_mul_pIler79kyEoOND5z, with op num: 6
+I20261007 03:52:08.967891   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.969628   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.969650   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_21:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage1]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[1]/ret.19, op type:nndct_elemwise_mul, output shape: [1, 128, 128, 16]
+
+[0m
+I20261007 03:52:08.970381   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.970393   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.970398   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.970422   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_mul_8ZQlbiSrzBEC5e2q, with op num: 6
+I20261007 03:52:08.970428   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.972164   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.972185   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for convlike_fix_21:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[0]/Sequential[block]/SqueezeExcitation[2]/ret.175, op type:nndct_elemwise_mul, output shape: [1, 16, 16, 288]
+
+[0m
+I20261007 03:52:08.972944   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.972956   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.972961   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.972985   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_mul_iGc80BRdEnF2hYDT, with op num: 6
+I20261007 03:52:08.972992   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.974721   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.974743   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for eltwise_fix_24:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[1]/15809, op type:nndct_elemwise_add, output shape: [1, 32, 32, 40]
+
+[0m
+I20261007 03:52:08.978322   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.978335   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.978340   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.978364   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_add_EsDYwkH1JNpQIoim, with op num: 6
+I20261007 03:52:08.978370   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.979720   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.979741   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for eltwise_fix_24:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[1]/16710, op type:nndct_elemwise_add, output shape: [1, 16, 16, 96]
+
+[0m
+I20261007 03:52:08.980401   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.980413   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.980418   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.980448   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_add_xkI6jomJXGZd3vLt, with op num: 6
+I20261007 03:52:08.980454   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.981793   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.981814   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for eltwise_fix_24:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage4]/InvertedResidual[2]/16891, op type:nndct_elemwise_add, output shape: [1, 16, 16, 96]
+
+[0m
+I20261007 03:52:08.982474   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.982487   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.982497   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.982522   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_add_C3uZrcOHViTBYF51, with op num: 6
+I20261007 03:52:08.982528   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.983855   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.983875   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for eltwise_fix_24:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[4]/16350, op type:nndct_elemwise_add, output shape: [1, 32, 32, 48]
+
+[0m
+I20261007 03:52:08.984541   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.984553   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.984557   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.984581   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_add_wnxit9UrzZX6joMN, with op num: 6
+I20261007 03:52:08.984588   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.985912   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.985934   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for eltwise_fix_24:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage3]/InvertedResidual[2]/15990, op type:nndct_elemwise_add, output shape: [1, 32, 32, 40]
+
+[0m
+I20261007 03:52:08.986582   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.986594   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.986599   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.986624   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_add_hULjwW4DBZPkoSdz, with op num: 6
+I20261007 03:52:08.986630   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.987946   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.987967   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: Find subgraph for eltwise_fix_24:
+node name:UNetMobileNetV3_dpu::UNetMobileNetV3_dpu/Sequential[enc_stage2]/InvertedResidual[1]/15449, op type:nndct_elemwise_add, output shape: [1, 64, 64, 24]
+
+[0m
+I20261007 03:52:08.988644   855 compile_pass_manager.cpp:352] [UNILOG][INFO] Compile mode: dpu
+I20261007 03:52:08.988656   855 compile_pass_manager.cpp:353] [UNILOG][INFO] Debug mode: null
+I20261007 03:52:08.988662   855 compile_pass_manager.cpp:357] [UNILOG][INFO] Target architecture: DPUCZDX8G_ISA1_B4096
+I20261007 03:52:08.988685   855 compile_pass_manager.cpp:465] [UNILOG][INFO] Graph name: nndct_elemwise_add_sUt6zFH1JEvcOXC9, with op num: 6
+I20261007 03:52:08.988698   855 compile_pass_manager.cpp:478] [UNILOG][INFO] Begin to compile...
+I20261007 03:52:08.990011   855 compile_pass_manager.cpp:489] [UNILOG][INFO] Total device subgraph number 4, DPU subgraph number 1
+I20261007 03:52:08.990031   855 compile_pass_manager.cpp:504] [UNILOG][INFO] Compile done.
+
+[0;32m[VAIQ_NOTE]: =>Get module with quantization.[0m
+Modelo: mobilenet_v3_dpu_focaldice_artigo; produtos: ['mag1c', 'TOA_AVIRIS_460nm', 'TOA_AVIRIS_550nm', 'TOA_AVIRIS_640nm']; patching: False; imagens: 1; range-policy: layer_mse
+
+[0;32m[VAIQ_NOTE]: =>Converting to xmodel ...[0m
+test: 1 amostras processadas em 0.4s; checkpoint=../Modelos_treinados/MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth
+
+[0;32m[VAIQ_NOTE]: =>Successfully convert 'UNetMobileNetV3_dpu' to xmodel.(build/vitis_ai/quantize_artigo/mobilenet_v3_dpu_focaldice_artigo/UNetMobileNetV3_dpu_int.xmodel)[0m
+XModel quantizado exportado em: build/vitis_ai/quantize_artigo/mobilenet_v3_dpu_focaldice_artigo

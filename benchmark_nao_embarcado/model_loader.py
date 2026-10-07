@@ -13,6 +13,8 @@ NOVOS_MODELOS = {
     "attentiongates_focaldice_artigo": ("UNetMobileNetV3AttentionGates", "MobileNetV3_AttentionGates_FocalDiceLossmag1c_rgb.pth"),
     "mobilenet_v3_bce_artigo": ("UNetMobileNetV3", "Mobile_Net_v3_BCELoss_mag1c_rgb.pth"),
     "mobilenet_v3_focaldice_artigo": ("UNetMobileNetV3", "MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu_bce_artigo": ("UNetMobileNetV3_dpu", "Mobile_Net_v3_BCELoss_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu_focaldice_artigo": ("UNetMobileNetV3_dpu", "MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth"),
 }
 
 from Modelos import UNetBaseline, UNetDepthReduced, UNetMobileNetV2, UNetMobileNetV3, UNetElementWise, carregar_hyperstarcop
