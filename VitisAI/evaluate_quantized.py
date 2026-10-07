@@ -10,12 +10,9 @@ import torch
 from torch.utils.data import DataLoader
 from sklearn.metrics import average_precision_score
 
-from common import PROJECT_ROOT, DEFAULT_PRODUCTS, build_model, validate_calibration, add_model_arguments, resolve_model, load_quantized_parameters
+from common import PROJECT_ROOT, build_model, validate_calibration, add_model_arguments, resolve_model, load_quantized_parameters
 from Utils.DataLoader import carregar_dataframe_starcop, STARCOPDataset, DataNormalizer
 from Testes.Teste_Unet import binary_opening
-
-PRODUCTS = list(DEFAULT_PRODUCTS)
-
 
 def tiled_logits(model, inputs):
     b, c, h, w = inputs.shape
@@ -75,7 +72,6 @@ def main():
     torch.set_num_threads(args.num_threads)
     output = Path(args.output_dir)
     output.mkdir(parents=True, exist_ok=True)
-    normalizer = DataNormalizer(PRODUCTS).eval()
     kernel = torch.tensor([[0., 1., 0.], [1., 1., 1.], [0., 1., 0.]])
     summaries = []
     selected = [resolve_model(args.model, args.checkpoint, args.architecture)] if (args.model or args.checkpoint or args.architecture) else [
@@ -84,11 +80,13 @@ def main():
         model, checkpoint = build_model(name, args.checkpoint, 4, architecture)
         source_dir = Path(args.quant_dir) / name
         contract = json.loads((source_dir / "calibration_manifest.json").read_text())
+        products = contract["products"]
+        normalizer = DataNormalizer(products).eval()
         height, width = contract["height"], contract["width"]
         patching, target_name = contract["patching"], contract["target"]
         if (height, width, patching) not in ((128, 128, True), (512, 512, False)):
             raise ValueError("A avaliacao suporta patches 128x128 ou imagens inteiras 512x512.")
-        validate_calibration(source_dir, name, checkpoint, PRODUCTS,
+        validate_calibration(source_dir, name, checkpoint, products,
                              height, width, target_name, patching, architecture)
         model_output = output / name
         model_output.mkdir(exist_ok=True)
@@ -110,11 +108,11 @@ def main():
                 continue
             if args.csv:
                 csv, root = Path(args.csv), Path(args.data_root)
-            df = carregar_dataframe_starcop(str(csv), str(root), produtos_obrigatorios=PRODUCTS + ["labelbinary"])
+            df = carregar_dataframe_starcop(str(csv), str(root), produtos_obrigatorios=products + ["labelbinary"])
             if args.limit:
                 df = df.iloc[:args.limit].reset_index(drop=True)
             df = df.iloc[args.shard_index::args.shard_count].reset_index(drop=True)
-            loader = DataLoader(STARCOPDataset(df, PRODUCTS, ["labelbinary"], patching=False), batch_size=1, num_workers=0)
+            loader = DataLoader(STARCOPDataset(df, products, ["labelbinary"], patching=False), batch_size=1, num_workers=0)
             modes = ["FP32_512", "FP32_patches128", "INT8_patches128"] if patching else ["FP32_512", "INT8_512"]
             rows = {mode: [] for mode in modes}
             started = time.perf_counter()

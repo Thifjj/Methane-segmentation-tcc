@@ -68,12 +68,12 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     #CAMINHO_CSV_TESTE ="/home/thiago/Documents/STARCOP_DATASET/train.csv"
     #DIRETORIO_DADOS_TESTE ="/home/thiago/Documents/STARCOP_DATASET/"
     
-    CAMINHO_CSV_TESTE ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
-    DIRETORIO_DADOS_TESTE = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
+    #CAMINHO_CSV_TESTE ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
+    #DIRETORIO_DADOS_TESTE = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
     
     #caminhos desktop
-    #CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
-    #DIRETORIO_DADOS_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/"
+    CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
+    DIRETORIO_DADOS_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/"
 
     #CAMINHO_CSV_TESTE ="/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
     #DIRETORIO_DADOS_TESTE="/media/jacques/games/Datasets/STARCOP_train_remaining_all/"

@@ -168,14 +168,15 @@ def executar(args, medidor_class, medir_energia):
     root = Path(args.data_root or (PROJECT_ROOT / "STARCOP_test" if args.dataset == "test"
                                   else Path("/media/jacques/games/Datasets/test/STARCOP_test/"))).resolve()
     dataset_csv = Path(args.csv).resolve() if args.csv else root / ("test.csv" if args.dataset == "test" else "train.csv")
+    products = ("mag1c", "TOA_AVIRIS_640nm", "TOA_AVIRIS_550nm", "TOA_AVIRIS_460nm") if args.attention_dpu == "hyperstarcop" else DEFAULT_PRODUCTS
     df = carregar_dataframe_starcop(str(dataset_csv), str(root),
-                                   produtos_obrigatorios=list(DEFAULT_PRODUCTS) + ["labelbinary"])
+                                   produtos_obrigatorios=list(products) + ["labelbinary"])
     classifications = carregar_classificacao_por_pasta(root, str(dataset_csv))
     if args.limit:
         df = df.iloc[:args.limit].reset_index(drop=True)
     if df.empty:
         raise ValueError("Nenhuma imagem valida encontrada.")
-    inputs_dataset = STARCOPDataset(df, list(DEFAULT_PRODUCTS), [], patching=False)
+    inputs_dataset = STARCOPDataset(df, list(products), [], patching=False)
     targets_dataset = STARCOPDataset(df, [], ["labelbinary"], patching=False)
     records = []
     for _, row in df.iterrows():
@@ -194,7 +195,7 @@ def executar(args, medidor_class, medir_energia):
     if calibration.exists() and json.loads(calibration.read_text()).get("checkpoint_sha256") != checkpoint_hash:
         raise ValueError("Checkpoint diferente do usado na calibracao oficial da DPU.")
     model = load_model(args.attention_dpu, device)
-    normalizer = DataNormalizer(list(DEFAULT_PRODUCTS)).eval()
+    normalizer = DataNormalizer(list(products)).eval()
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     output = Path(args.output_dir) / f"{args.attention_dpu}_{args.dataset}_{device.type}_{run_id}"
     output.mkdir(parents=True, exist_ok=False)
@@ -203,7 +204,7 @@ def executar(args, medidor_class, medir_energia):
                     checkpoint_sha256=checkpoint_hash, csv_sha256=file_sha256(dataset_csv),
                     imagens=len(df), imagem_altura=512, imagem_largura=512,
                     tamanho_patch=args.patch_size, patches_por_imagem=patches_per_image,
-                    patch_batch_size=args.patch_batch_size, ordem_canais="mag1c,460,550,640",
+                    patch_batch_size=args.patch_batch_size, ordem_canais=",".join(p.removeprefix("TOA_AVIRIS_").removesuffix("nm") for p in products),
                     unidade="imagem_512x512", protocolo="pytorch_sequencial", runners=0,
                     instancias_modelo=1, threads_pytorch=args.num_threads,
                     cpus_permitidas=len(os.sched_getaffinity(0)),
@@ -215,7 +216,7 @@ def executar(args, medidor_class, medir_energia):
                               if l.startswith("model name")), platform.processor()),
                     gpu=torch.cuda.get_device_name(device) if device.type == "cuda" else "n/a",
                     pytorch_versao=str(torch.__version__), cuda_versao=torch.version.cuda,
-                    normalizacao={p: dict(fator=1750 if p == "mag1c" else 60, clip=[0, 2]) for p in DEFAULT_PRODUCTS},
+                    normalizacao={p: dict(fator=1750 if p == "mag1c" else 60, clip=[0, 2]) for p in products},
                     model_only_entradas="primeiras_4_preparadas_reutilizadas",
                     e2e_exclui="label,metricas,escrita_csv", status="em_execucao")
     (output / "config.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False))

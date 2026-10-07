@@ -31,7 +31,7 @@ def calcular_f1_score(previsao_logits, gabarito, threshold=0.0):
     
     return f1.sum().item(), f1.numel() 
 
-def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produtos_entrada):
+def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produtos_entrada, loss_name="FocalDiceLoss"):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\n--- Iniciando Treinamento: {nome_modelo_salvar} ---")
     
@@ -39,15 +39,15 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
     #CAMINHO_CSV_TESTE ="/home/thiago/Documents/STARCOP_DATASET/train.csv"
     #DIRETORIO_DADOS_TESTE ="/home/thiago/Documents/STARCOP_DATASET/"
     
-    CAMINHO_CSV ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
-    DIRETORIO_DADOS = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
+    #CAMINHO_CSV ="/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/test.csv"
+    #DIRETORIO_DADOS = "/home/thiago/Documents/Laboratorio_LEDS/Projetos_aceleradores/Segmentacao_de_metano/Joao/projeto/Methane-segmentation-tcc/STARCOP_test/"
     
     #caminhos desktop
     #CAMINHO_CSV_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/test.csv" 
     #DIRETORIO_DADOS_TESTE = "/media/jacques/games/Datasets/test/STARCOP_test/"
 
-    #CAMINHO_CSV_TESTE ="/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
-    #DIRETORIO_DADOS_TESTE="/media/jacques/games/Datasets/STARCOP_train_remaining_all/"
+    CAMINHO_CSV ="/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
+    DIRETORIO_DADOS="/media/jacques/games/Datasets/STARCOP_train_remaining_all/"
 
     #CAMINHO_CSV = "/media/jacques/games/Datasets/train_remaining_only/train.csv"
     #DIRETORIO_DADOS = "/media/jacques/games/Datasets/train_remaining_only/"
@@ -71,17 +71,17 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
     normalizador = DataNormalizer(produtos_entrada).to(device)
     
     dataloader_treino = DataLoader(
-        dataset_treino, batch_size=16, shuffle=True, num_workers=8, pin_memory=True
+        dataset_treino, batch_size=4, shuffle=True, num_workers=4, pin_memory=True
     )
     
     dataloader_val = DataLoader(
-        dataset_val, batch_size=16, shuffle=False, num_workers=8, pin_memory=True
+        dataset_val, batch_size=4, shuffle=False, num_workers=4, pin_memory=True
     )
 
     modelo = modelo_escolhido(in_channels=len(produtos_entrada), out_channels=1).to(device)
     
     caminho_salvamento = f"Modelos_treinados/{nome_modelo_salvar}.pth"
-    os.makedirs("Modelos_treinados", exist_ok=True)
+    os.makedirs(os.path.dirname(caminho_salvamento), exist_ok=True)
     
     if os.path.exists(caminho_salvamento):
         print("Carregando pesos...")
@@ -89,8 +89,12 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
     
     optimizer = optim.Adam(modelo.parameters(), lr=1e-4)
     peso_pluma = torch.tensor([20.0]).to(device)
-    #criterion = nn.BCEWithLogitsLoss(reduction='none', pos_weight=peso_pluma)
-    criterion = FocalDiceLoss(alpha=0.25, gamma=2.0, weight_focal=1.0, weight_dice=1.0)
+    if loss_name == "BCEloss":
+        criterion = nn.BCEWithLogitsLoss(reduction='none', pos_weight=peso_pluma)
+    elif loss_name == "FocalDiceLoss":
+        criterion = FocalDiceLoss(alpha=0.25, gamma=2.0, weight_focal=1.0, weight_dice=1.0)
+    else:
+        raise ValueError(f"Loss não suportada: {loss_name}")
     scaler = torch.amp.GradScaler('cuda') 
 
     augmentacoes = K.AugmentationSequential(
@@ -130,8 +134,10 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
 
             with torch.amp.autocast('cuda'):
                 previsoes = modelo(inputs)
-                loss = criterion(previsoes, targets, weight_map=pesos_loss)
-                #loss = (criterion(previsoes, targets) * pesos_loss).mean() #LOSS DO BCE 
+                if loss_name == "BCEloss":
+                    loss = (criterion(previsoes, targets) * pesos_loss).mean()
+                else:
+                    loss = criterion(previsoes, targets, weight_map=pesos_loss)
 
             scaler.scale(loss).backward()
             scaler.step(optimizer)
