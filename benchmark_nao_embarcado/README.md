@@ -8,7 +8,7 @@ Para medir os cinco modelos na GPU com os checkpoints atuais, na raiz do projeto
 
 ```bash
 for modelo in attentiongates_dpu_bce_artigo attentiongates_dpu_focaldice_artigo mobilenet_v3_dpu_bce_artigo mobilenet_v3_dpu_focaldice_artigo hyperstarcop; do
-  .venv/bin/python -m benchmark_nao_embarcado.benchmark_geral \
+  venv/bin/python -m benchmark_nao_embarcado.benchmark_geral \
     --attention-dpu "$modelo" --device cuda --dataset test \
     --data-root /media/jacques/games/Datasets/test/STARCOP_test \
     --num-threads 4 --patch-size 512 --patch-batch-size 1 \
