@@ -1,5 +1,7 @@
 # Histórico de modificações do projeto
 
+Este é um registro histórico dos commits até 05/10/2026. Para o fluxo e os resultados atuais, consulte o [README principal](README.md).
+
 Histórico do Git, do commit mais recente para o mais antigo. Os identificadores abaixo são os hashes reais dos commits.
 
 ## Commit cd0b856 — 2026-10-05

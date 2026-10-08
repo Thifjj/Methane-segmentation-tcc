@@ -142,3 +142,22 @@ def resumir_energia_cpu(medidas, inferencias):
     return dict(cpu_potencia_media_w=sum(m["media_w"] for m in pacotes),
                 cpu_energia_j=energia, cpu_energia_por_inferencia_j=energia/inferencias,
                 cpu_energia_status="ok")
+
+
+def resumir_energia_cpu_gpu(medidas, inferencias):
+    """Soma os domínios monitorados CPU RAPL e GPU NVML em execuções CUDA."""
+    cpu = resumir_energia_cpu(medidas, inferencias)
+    gpu = medidas.get("gpu_nvml")
+    gpu_valido = gpu is not None and gpu["status"] == "ok" and gpu["duracao_s"] > 0
+    gpu_energia = gpu["energia_j"] if gpu_valido else float("nan")
+    gpu_potencia = gpu["media_w"] if gpu_valido else float("nan")
+    completo = cpu["cpu_energia_status"] == "ok" and gpu_valido
+    total = cpu["cpu_energia_j"] + gpu_energia if completo else float("nan")
+    return dict(gpu_energia_j=gpu_energia,
+                gpu_potencia_media_w=gpu_potencia,
+                gpu_energia_por_inferencia_j=gpu_energia/inferencias if gpu_valido else float("nan"),
+                gpu_energia_status="ok" if gpu_valido else "parcial" if gpu else "indisponivel",
+                cpu_gpu_energia_j=total,
+                cpu_gpu_potencia_media_w=cpu["cpu_potencia_media_w"] + gpu_potencia if completo else float("nan"),
+                cpu_gpu_energia_por_inferencia_j=total/inferencias if completo else float("nan"),
+                cpu_gpu_energia_status="ok" if completo else "parcial" if gpu or cpu["cpu_energia_status"] != "indisponivel" else "indisponivel")

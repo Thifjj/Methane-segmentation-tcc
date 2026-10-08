@@ -1,5 +1,9 @@
 # Benchmark ARM / ONNX na ZCU104
 
+## Resultados atuais do artigo
+
+As sete coletas ARM FP32 completas estão em `resultados_arm/`: AttentionGates BCE e Focal Dice originais, as duas variantes AttentionGates DPU, as duas MobileNetV3 DPU e HyperSTARCOP. Cada coleta do TEST possui 342 inferências por modo e validação das 342 imagens. Os cinco resultados GPU atualizados e a energia CPU+GPU monitorada ficam em [`../benchmark_nao_embarcado/README.md`](../benchmark_nao_embarcado/README.md); não são medições do ARM.
+
 O executável mede **ONNX Runtime CPU no Cortex-A53**, com os mesmos modos e
 protocolos de qualidade dos benchmarks CPU/GPU e DPU: `model_only`,
 `end_to_end`, validação bruta e `validacao_oficial`. A inferência continua em

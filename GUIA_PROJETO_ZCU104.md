@@ -1,35 +1,14 @@
 # Guia do fluxo ZCU104
 
-Este arquivo resume o fluxo atual; os comandos completos ficam nos READMEs
-específicos para evitar instruções duplicadas e divergentes.
+Este guia aponta para as instruções mantidas em cada componente. A seleção atual do artigo tem cinco XModels INT8 em `VitisAI/build/vitis_ai/compiled_artigo/` e resultados físicos em `benchmark_zcu104/resultados_zcu104/`.
 
-## Fluxo
+1. Confira os checkpoints em `Modelos_treinados/` e a arquitetura correspondente.
+2. Para calibração, quantização e compilação, siga o [README do Vitis AI](VitisAI/README.md). O perfil atual do artigo usa 100 imagens de treino, seed 12345, sem amostras do test set na calibração.
+3. Envie os XModels e os fontes de `benchmark_zcu104/codigos_c/` para a placa.
+4. Compile e execute conforme o [README do benchmark ZCU104](benchmark_zcu104/codigos_c/README.md).
 
-1. Treine os modelos PyTorch e mantenha os checkpoints em `Modelos_treinados/`.
-2. Inspecione, calibre, exporte e compile os XModels conforme
-   [`VitisAI/README.md`](VitisAI/README.md). A calibração reproduzível usa 1000
-   imagens do `train.csv` do STARCOP full, com seed 12345.
-3. Copie os modelos de `build/vitis_ai/compiled_zcu104/` e o código de
-   `benchmark_zcu104/codigos_c/` para a placa.
-4. Compile e rode os benchmarks conforme
-   [`benchmark_zcu104/codigos_c/README.md`](benchmark_zcu104/codigos_c/README.md).
+Na placa, o test set costuma ficar em `/home/root/thiago/STARCOP_test/` e os modelos em `/home/root/thiago/benchmark/modelos/`. Confirme os caminhos reais antes de executar. O benchmark mede `model_only`, `end_to_end` e a validação das 342 imagens.
 
-## Dados na placa
+## Comparação entre dispositivos
 
-- Test set: `/home/root/thiago/STARCOP_test` (normalmente `test.csv`).
-- Dataset full: `/home/root/thiago/dataset_starcop` (normalmente `train.csv`).
-- XModels: `/home/root/thiago/benchmark/modelos/<modelo>/methane_<modelo>.xmodel`.
-- Código e executáveis: `/home/root/thiago/benchmark/codigos_c/`.
-
-O README do benchmark tem comandos separados para cada dataset e modelo,
-além de uma opção para executar todos. Os resultados são separados pelo nome
-do dataset e gravados em `resultados_zcu104/` a partir do diretório de execução.
-
-## Comparação CPU/GPU/ZCU104
-
-O benchmark não embarcado está em `benchmark_nao_embarcado/`. A tabela CSV
-consolidada do test set está em
-[`comparativos/comparativo_test_zcu104_cpu_gpu.csv`](comparativos/comparativo_test_zcu104_cpu_gpu.csv).
-Compare `throughput_fps` da placa com FPS sequencial da CPU/GPU com cuidado:
-o throughput da placa usa runners concorrentes, enquanto CPU/GPU medem uma
-imagem por vez.
+A DPU usa XModel INT8 com pipeline concorrente. O [benchmark ARM](benchmark_arm/README.md) usa ONNX Runtime FP32, e o [benchmark host](benchmark_nao_embarcado/README.md) usa PyTorch FP32 em CPU ou GPU. Compare FPS, latência e energia apenas com o modo e o domínio do sensor identificados. A soma RAPL+NVML do host cobre CPU e GPU monitoradas; não é consumo total na tomada.

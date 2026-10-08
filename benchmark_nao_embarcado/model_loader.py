@@ -6,7 +6,7 @@ NOVOS_MODELOS = {
     "mobilenet_v3_focaldice": ("UNetMobileNetV3_dpu", "MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth"),
     "attentiongates_bce": ("UNetMobileNetV3AttentionGates", "MobileNetV3_AttentionGates_BCE_mag1c_rgb.pth"),
     "attentiongates_checkpoint_unet": ("UNetMobileNetV3AttentionGates", "UNetMobileNetV3AttentionGates_mag1c_rgb.pth"),
-    "attentiongates_dpu_focaldice_artigo": ("UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_FocalDiceLossmag1c_rgb.pth"),
+    "attentiongates_dpu_focaldice_artigo": ("UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_FocalDiceLoss_mag1c_rgb.pth"),
     "attentiongates_dpu_bce_artigo": ("UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_BCEloss_mag1c_rgb.pth"),
     "attentiongates_dpu_bce_remaining_all": ("UNetMobileNetV3AttentionGatesDPU", "remaining_all_dpu_retrain_original/UnetMobilenetV3AttentionGates_dpu_BCEloss_mag1c_rgb.pth"),
     "attentiongates_dpu_focaldice_remaining_all": ("UNetMobileNetV3AttentionGatesDPU", "remaining_all_dpu_retrain_original/UnetMobilenetV3AttentionGates_dpu_FocalDiceLoss_mag1c_rgb.pth"),

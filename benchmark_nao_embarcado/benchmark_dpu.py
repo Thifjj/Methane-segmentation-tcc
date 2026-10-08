@@ -17,7 +17,7 @@ from sklearn.metrics import auc, average_precision_score, precision_recall_curve
 from .dataset import carregar_classificacao_por_pasta
 from .metricas import calcular_metricas
 from .model_loader import load_model, NOVOS_MODELOS
-from .energia import resumir_energia_cpu
+from .energia import resumir_energia_cpu, resumir_energia_cpu_gpu
 from Testes.Teste_Unet import binary_opening
 from Utils.DataLoader import DataNormalizer, STARCOPDataset, carregar_dataframe_starcop
 from VitisAI.common import DEFAULT_PRODUCTS, MODEL_REGISTRY, PROJECT_ROOT, file_sha256
@@ -282,6 +282,7 @@ def executar(args, medidor_class, medir_energia):
                 latency = stats["latencia_total"]
                 perf = dict(metadata, modo=mode, inferencias=len(df),
                             **resumir_energia_cpu(measures, len(df)),
+                            **(resumir_energia_cpu_gpu(measures, len(df)) if device.type == "cuda" else {}),
                             entradas_preparadas=len(prepared) if mode == "model_only" else 0,
                             duracao_s=duration, throughput_fps=len(df)/duration,
                             fps_latencia=1000/latency["media_ms"],
@@ -317,6 +318,10 @@ def executar(args, medidor_class, medir_energia):
                 print(f"CPU {mode}: potencia media = {perf['cpu_potencia_media_w']:.3f} W; "
                       f"energia/inferencia = {perf['cpu_energia_por_inferencia_j']:.6f} J; "
                       f"status = {perf['cpu_energia_status']}", flush=True)
+                if device.type == "cuda":
+                    print(f"CPU+GPU {mode}: potencia media = {perf['cpu_gpu_potencia_media_w']:.3f} W; "
+                          f"energia/inferencia = {perf['cpu_gpu_energia_por_inferencia_j']:.6f} J; "
+                          f"status = {perf['cpu_gpu_energia_status']}", flush=True)
             escrever_csv(output / "benchmark_geral.csv", perf_rows)
             escrever_csv(output / "benchmark_estagios.csv", stage_rows)
             escrever_csv(output / "benchmark_samples.csv", sample_rows)

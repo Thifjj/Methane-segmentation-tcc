@@ -1,5 +1,9 @@
 # Benchmark de XModels na ZCU104
 
+## Seleção atual do artigo
+
+Os cinco XModels INT8 da seleção atual são AttentionGates DPU BCE e Focal Dice, MobileNetV3 DPU BCE e Focal Dice, e HyperSTARCOP. As coletas de referência ficam em `benchmark_zcu104/resultados_zcu104/`; os artefatos correspondentes ficam em `VitisAI/build/vitis_ai/compiled_artigo/`. As seções abaixo documentam também o fluxo e os oito modelos históricos em `compiled_zcu104/`. Para comparação com CPU/GPU FP32, veja [`../../benchmark_nao_embarcado/README.md`](../../benchmark_nao_embarcado/README.md).
+
 Compila e mede modelos de segmentação com VART/GraphRunner. O programa lê os
 quatro TIFFs do STARCOP, normaliza mag1c por 1750 e RGB por 60, limita os
 valores a [0, 2], quantiza para INT8 e gera máscara com `logit > 0`, igual ao
@@ -30,8 +34,8 @@ originais do repositório, incluindo **HyperSTARCOP**:
 Cada compilado tem `meta.json` e `md5sum.txt`. Cada quantizado tem
 `quant_info.json` e `bias_corr.pth`. A restauração recuperou os artefatos
 originais sem recalibração, quantização ou recompilação.
-O [manifesto da restauração](../../VitisAI/build/vitis_ai/restoration_manifest.json)
-registra commit de origem, tamanhos e SHA-256 dos 36 arquivos.
+O manifesto de restauração citado no fluxo antigo não está presente nesta
+árvore de trabalho; confira os manifestos dos modelos atuais em `compiled_artigo/`.
 Os seis MD5 e o target `DPUCZDX8G_ISA1_B4096` foram conferidos;
 os seis quantizados e seis compilados abriram no XIR.
 

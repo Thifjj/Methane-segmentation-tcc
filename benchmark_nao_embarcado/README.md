@@ -1,5 +1,23 @@
 # Benchmark manual em CPU e GPU
 
+## Coletas CUDA atuais do artigo
+
+Em `resultados_artigo/` há cinco coletas CUDA concluídas: `attentiongates_dpu_bce_artigo`, `attentiongates_dpu_focaldice_artigo`, `mobilenet_v3_dpu_bce_artigo`, `mobilenet_v3_dpu_focaldice_artigo` e `hyperstarcop`. Os resultados CUDA antigos foram removidos; as coletas CPU continuam disponíveis. Cada execução atual usa as 342 imagens do TEST, 512×512, FP32, batch 1 e dez aquecimentos.
+
+Para repetir as cinco coletas na GPU, na raiz do projeto:
+
+```bash
+for modelo in attentiongates_dpu_bce_artigo attentiongates_dpu_focaldice_artigo mobilenet_v3_dpu_bce_artigo mobilenet_v3_dpu_focaldice_artigo hyperstarcop; do
+  .venv/bin/python -m benchmark_nao_embarcado.benchmark_geral \
+    --attention-dpu "$modelo" --device cuda --dataset test \
+    --data-root /media/jacques/games/Datasets/test/STARCOP_test \
+    --num-threads 4 --patch-size 512 --patch-batch-size 1 \
+    --output-dir benchmark_nao_embarcado/resultados_artigo || break
+done
+```
+
+`benchmark_geral.csv` grava `cpu_energia_*`, `gpu_energia_*` e `cpu_gpu_energia_*` nas execuções CUDA. A soma recebe status `ok` somente com leituras válidas dos dois sensores. Ela cobre o pacote CPU (RAPL) e a GPU (NVML), não a energia total do PC na tomada. `benchmark_power_rails.csv` mantém cada fonte separada.
+
 ## Potencia media real da CPU
 
 O benchmark le o contador RAPL do pacote CPU e calcula **potencia media (W) =

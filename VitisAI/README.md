@@ -1,5 +1,9 @@
 # Vitis AI — quantizacao e compilacao dos modelos
 
+## Seleção atual do artigo
+
+Os cinco XModels da seleção atual estão em `build/vitis_ai/compiled_artigo/`: AttentionGates DPU BCE e Focal Dice, MobileNetV3 DPU BCE e Focal Dice, e HyperSTARCOP. Os manifestos de quantização atuais ficam em `build/vitis_ai/quantize_artigo/`. As seções sobre `easy_remaining`, `only_remaining` e `compiled_zcu104/` abaixo documentam o fluxo anterior e não substituem os resultados físicos atuais em `../benchmark_zcu104/resultados_zcu104/`. O host GPU FP32 usa checkpoints PyTorch e resultados em `../benchmark_nao_embarcado/resultados_artigo/`.
+
 Os AttentionGates easy_remaining e only_remaining usam entrada 512x512, sem
 dividir imagens em patches. A avaliacao compara FP32 e INT8 nas mesmas 342
 imagens de `STARCOP_test/test.csv`, com logits > 0 e abertura morfologica.
@@ -9,10 +13,10 @@ imagens de `STARCOP_test/test.csv`, com logits > 0 e abertura morfologica.
 | `attentiongates_dpu_easy_remaining` | 0.647798 | 0.619683 | 0.514058 | 0.436448 |
 | `attentiongates_dpu_only_remaining` | 0.676553 | 0.652105 | 0.610146 | 0.473214 |
 
-Os resultados INT8 sao simulacao Vitis AI 3.5 em CPU. Os XModels 512x512
-foram compilados para `DPUCZDX8G_ISA1_B4096`; FPS, energia e qualidade na placa
-ficam pendentes da nova execucao fisica. Os valores desta tabela sao resultados
-historicos; os manifestos guardam os perfis usados em cada rodada.
+Os resultados desta tabela são simulações INT8 históricas do Vitis AI 3.5 em CPU.
+Os XModels 512×512 foram compilados para `DPUCZDX8G_ISA1_B4096`.
+As coletas físicas atuais do artigo estão em `../benchmark_zcu104/resultados_zcu104/`;
+os manifestos guardam os perfis usados em cada rodada.
 
 ## Arquivos oficiais
 
@@ -174,7 +178,7 @@ Existe uma conversao final `fix2float` na CPU. O diretorio compilado contem
 `compilation_manifest.json` com hashes e interfaces e uma copia do `arch.json`.
 Logs: `build/vitis_ai/logs/mobilenet_v3_dpu/{calib,export,compile}.log`.
 A comparacao de qualidade FP32/INT8 foi concluida nas 342 imagens do test set:
-[relatorio](build/vitis_ai/evaluation/mobilenet_v3_dpu/comparacao_fp32_int8.md).
+relatório histórico de avaliação (arquivo não presente nesta árvore de trabalho).
 F1 global: FP32 imagem inteira 0,516919; FP32 patches 128x128 0,114279;
 INT8 nos mesmos patches 0,118082. O INT8 foi simulado em CPU pelo Vitis AI 3.5.
 A execucao fisica na placa ainda nao foi validada.
@@ -244,7 +248,7 @@ foi compilado para a ZCU104. XIR confirmou um unico subgrafo DPU com 276
 operacoes e entrada INT8 NHWC `[1,512,512,4]`; a CPU faz apenas `fix2float`
 na saida. O runner deve usar a entrada 512x512 deste artefato.
 
-[Relatorio e protocolo](build/vitis_ai/evaluation/mobilenet_v3_dpu_512/comparacao_fp32_int8.md).
+Relatório e protocolo históricos (arquivo não presente nesta árvore de trabalho).
 Os resultados INT8 sao de simulacao Vitis AI 3.5 na CPU; a execucao fisica
 na placa ainda nao foi validada.
 

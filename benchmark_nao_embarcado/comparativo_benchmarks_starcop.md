@@ -1,12 +1,14 @@
 # Comparativo dos benchmarks STARCOP em CPU
 
+**Histórico:** este comparativo usa coletas de setembro de 2026 e não representa a seleção atual do artigo. Para as cinco coletas CUDA atuais e a soma monitorada CPU+GPU, consulte o [README do benchmark](README.md) e `resultados_artigo/`.
+
 Execuções do conjunto `test`, com **342 imagens por modelo**, realizadas em 22/09/2026. O comparativo usa os CSVs locais e cobre todos os campos gravados neles. Valores de proporção aparecem como fração (0–1), exceto FPR por tile que também está mostrado em percentual.
 
 **Atenção:** os FPRs por tile dos CSVs CPU/GPU abaixo usaram `>10` pixels por imagem 512×512, como descreve o [texto do artigo](https://pmc.ncbi.nlm.nih.gov/articles/PMC10656523/). A [função de classificação do código oficial](https://github.com/spaceml-org/STARCOP/blob/main/starcop/models/model_module.py) escala esse limiar para `>640` nessa resolução. O benchmark atual segue o código oficial; os CSVs históricos permitem comparar com o limiar descrito no artigo, mas não fornecem contagens por imagem para recalcular `>640`.
 
-A comparação de throughput e métricas entre ZCU104, CPU e GPU está em
-[`../comparativos/comparativo_test_zcu104_cpu_gpu.csv`](../comparativos/comparativo_test_zcu104_cpu_gpu.csv).
-Este documento mantém o detalhamento das execuções CPU aqui descritas.
+Este documento mantém o detalhamento das execuções CPU históricas aqui descritas.
+O CSV consolidado entre dispositivos citado em versões anteriores não está mais
+no repositório; use os resultados por execução de cada benchmark.
 
 ## Foco: desempenho e métricas do paper
 
