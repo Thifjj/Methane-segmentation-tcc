@@ -12,14 +12,16 @@ uma execução INT8 nem usa a DPU.
 
 ## Modelos MobileNetV3
 
-Exportados com o script existente para `exportar_to_onnx/modelos_convertidos_onnx/`,
-em FP32, batch fixo 1, opset 16 / IR 8:
+Exportados com o script existente em FP32, batch fixo 1, opset 16 / IR 8.
+Os arquivos sem prefixo de pasta na tabela estão em
+`exportar_to_onnx/modelos_convertidos_onnx/`:
 
 | ONNX | Checkpoint em `Modelos_treinados/` | Entrada |
 |---|---|---|
 | `mobilenet_v3_attentiongates.onnx` | `UNetMobileNetV3AttentionGates_mag1c_rgb.pth` | `[1,4,512,512]` |
 | `attentiongates_dpu_easy_remaining_512.onnx` | `UnetMobilenetV3AttentionGates_dpu_easy_remaining_mag1c_rgb.pth` | `[1,4,512,512]` |
 | `attentiongates_dpu_only_remaining_512.onnx` | `UnetMobilenetV3AttentionGates_dpu_only_remaining_mag1c_rgb.pth` | `[1,4,512,512]` |
+| `modelos_artigo_onnx/attentiongates_dpu_bce_retreinado_artigo_512.onnx` | `UNetMobileNetV3AttentionGatesDPU_BCE_mag1c_rgb.pth` | `[1,4,512,512]` |
 | `mobilenet_v3_dpu.onnx` | `Mobile_Net_v3_dpu_mag1c_rgb.pth` | `[1,4,512,512]` |
 | `mobilenet_v3.onnx` | `Mobile_Net_v3_mag1c_rgb.pth` | `[1,4,512,512]` |
 | `mobilenet_v3_bce.onnx` | `Mobile_Net_v3_mag1c_rgb.pth` | `[1,4,512,512]` |
@@ -28,6 +30,12 @@ em FP32, batch fixo 1, opset 16 / IR 8:
 
 Todos gravam `mag1c,460,550,640`, conforme a ordem de treinamento em
 `main.ipynb`; o ARM lê essa ordem automaticamente dos metadados.
+O BCE retreinado usa a arquitetura `UNetMobileNetV3AttentionGatesDPU` e passou
+na comparação PyTorch/ONNX Runtime com batch 1: erro absoluto médio 0,000144,
+máximo 0,000710 e zero divergências na máscara `logit > 0` (entrada aleatória,
+seed 12345). O ONNX foi validado com `onnx.checker` e contém os quatro gates.
+Esse arquivo está em `exportar_to_onnx/modelos_artigo_onnx/`; a execução ARM
+atual está em `resultados_arm/attentiongates_dpu_bce_retreinado_artigo_512_STARCOP_test_1637343046695289/`.
 O checkpoint `MobileNetV3_AttentionGates_mag1c_rgb.pth` também existe e tem
 hash diferente; esta entrega usa explicitamente `UNetMobileNetV3AttentionGates_mag1c_rgb.pth`.
 MobileNetV3 DPU usa `UNetMobileNetV3_dpu`, preservando `align_corners=False`.
@@ -40,7 +48,7 @@ entrada aleatória normalizada, seed 12345, batch 1, `rtol=1e-4`;
 Estes últimos excederam a tolerância original em poucos pixels.
 A verificação imprime os erros e as divergências da máscara `logit > 0` no terminal.
 Isso não mede qualidade no dataset nem confirma execução física no Cortex-A53
-ou no ORT 1.14.1 da placa. As variantes de batch dinâmico anteriores não foram reexportadas.
+ou no ORT 1.14.0 da placa. As variantes de batch dinâmico anteriores não foram reexportadas.
 
 ### Exportar e reexportar no computador
 
@@ -50,6 +58,7 @@ Na raiz do repositório:
 venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3_attentiongates --verify
 venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates_dpu_easy_remaining --verify
 venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates_dpu_only_remaining --verify
+venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates_dpu_bce_retreinado --verify
 venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3_dpu --verify --verify-atol 0.0002
 venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model mobilenet_v3 --verify --verify-atol 0.0002
 venv/bin/python benchmark_arm/exportar_to_onnx/scripts/exportar.py --model attentiongates_bce --verify

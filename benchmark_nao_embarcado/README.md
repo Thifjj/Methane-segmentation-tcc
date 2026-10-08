@@ -2,9 +2,9 @@
 
 ## Coletas CUDA atuais do artigo
 
-Em `resultados_artigo/` há cinco coletas CUDA concluídas: `attentiongates_dpu_bce_artigo`, `attentiongates_dpu_focaldice_artigo`, `mobilenet_v3_dpu_bce_artigo`, `mobilenet_v3_dpu_focaldice_artigo` e `hyperstarcop`. Os resultados CUDA antigos foram removidos; as coletas CPU continuam disponíveis. Cada execução atual usa as 342 imagens do TEST, 512×512, FP32, batch 1 e dez aquecimentos.
+Em `resultados_artigo/` há cinco coletas CUDA concluídas: `attentiongates_dpu_bce_artigo`, `attentiongates_dpu_focaldice_artigo`, `mobilenet_v3_dpu_bce_artigo`, `mobilenet_v3_dpu_focaldice_artigo` e `hyperstarcop`. A coleta CUDA de `attentiongates_dpu_bce_artigo` usa o checkpoint anterior; o alias agora carrega `UNetMobileNetV3AttentionGatesDPU_BCE_mag1c_rgb.pth`, cujo benchmark CPU/GPU está pendente. Cada execução usa as 342 imagens do TEST, 512×512, FP32, batch 1 e dez aquecimentos.
 
-Para repetir as cinco coletas na GPU, na raiz do projeto:
+Para medir os cinco modelos na GPU com os checkpoints atuais, na raiz do projeto:
 
 ```bash
 for modelo in attentiongates_dpu_bce_artigo attentiongates_dpu_focaldice_artigo mobilenet_v3_dpu_bce_artigo mobilenet_v3_dpu_focaldice_artigo hyperstarcop; do
@@ -67,7 +67,8 @@ o modelo na extensão existente; estas execuções são PyTorch FP32 na CPU.
 A extensão `benchmark_dpu.py` adiciona as duas variantes DPU ao menu de
 `benchmark_geral.py` (opções 7 e 8). O fluxo dos seis modelos anteriores permanece
 o mesmo. Para executar sem perguntas, use os comandos abaixo **na raiz do projeto**.
-Eles usam os checkpoints FP32 correspondentes aos modelos quantizados da placa.
+O alias `attentiongates_dpu_bce_artigo` usa agora o checkpoint BCE principal
+medido no ARM e na DPU; as coletas CPU/GPU antigas desse alias são históricas.
 
 ### Dois modelos na CPU — TEST completo, 342 imagens válidas
 
