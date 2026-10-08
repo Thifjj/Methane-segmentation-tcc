@@ -14,7 +14,7 @@ from .dataset import (
     carregar_sample, encontrar_sample, carregar_label,
     carregar_classificacao_por_pasta,
 )
-from .preprocess import preprocess
+from .preprocess import preprocess as preprocess_padrao
 from .postprocess import postprocess
 from .metricas import calcular_metricas, calcular_f1_contagens, classificar_pluma
 
@@ -33,6 +33,14 @@ WARMUP = 10
 from .energia import MedidorEnergia, medir_energia, resumir_energia_cpu
 
 parser = argparse.ArgumentParser(description="Benchmark manual geral de inferência")
+parser.add_argument("--modelo", choices=("baseline", "depth_reduced", "mobilenet_v2", "mobilenet_v3", "skip", "hyperstarcop", "attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining", "attentiongates_dpu_bce_artigo"), help="Modelo a executar")
+parser.add_argument("--dataset", choices=("full", "test"), default="test", help="Dataset cadastrado")
+parser.add_argument("--data-root", type=Path, help="Pasta do dataset (deve conter test.csv ou train.csv)")
+parser.add_argument("--device", choices=("cpu", "gpu"), help="Dispositivo; gpu seleciona CUDA")
+parser.add_argument("--align-corners", choices=("true", "false"), default="true", help="Alinhamento da interpolacao bilinear do decoder")
+parser.add_argument("--quantidade", type=int, default=0, help="Número de imagens; 0 usa todas")
+parser.add_argument("--warmup", type=int, default=WARMUP, help="Inferências de aquecimento")
+parser.add_argument("--output-dir", type=Path, default=Path(__file__).resolve().parent / "resultados_artigo", help="Pasta para salvar os resultados")
 
 # Extensao DPU: as opcoes e medicoes dos modelos antigos seguem no fluxo abaixo.
 import sys
@@ -43,46 +51,73 @@ if any(a == "--attention-dpu" or a.startswith("--attention-dpu=") for a in sys.a
 
 args = parser.parse_args()
 
+if args.modelo == "attentiongates_dpu_bce_artigo":
+    from .benchmark_dpu import argumentos, executar
+    argv = ["--attention-dpu", args.modelo, "--dataset", args.dataset,
+            "--device", args.device or "cpu", "--align-corners", args.align_corners,
+            "--limit", str(args.quantidade), "--warmup", str(args.warmup),
+            "--patch-size", "512", "--patch-batch-size", "1", "--num-threads", "4",
+            "--output-dir", str(args.output_dir)]
+    if args.data_root:
+        argv.extend(["--data-root", str(args.data_root)])
+    executar(argumentos(argv), MedidorEnergia, medir_energia)
+    raise SystemExit(0)
+
+def preprocess(canais):
+    if "dpu" in args.modelo.lower():
+        # Mesmo contrato de entrada do ONNX executado no ARM.
+        canais = [canais[0], canais[3], canais[2], canais[1]]
+    return preprocess_padrao(canais)
+
 modelos_disponiveis = (
     "baseline", "depth_reduced", "mobilenet_v2", "mobilenet_v3", "skip",
     "hyperstarcop",
     "attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining",
 )
-print("Modelos disponíveis:")
-for indice, nome_modelo in enumerate(modelos_disponiveis, start=1):
-    print(f"{indice} - {nome_modelo}")
-while True:
-    escolha_modelo = input("Escolha o modelo: ").strip()
-    if escolha_modelo.isdigit() and 1 <= int(escolha_modelo) <= len(modelos_disponiveis):
-        break
-    print(f"Opção inválida. Digite um número de 1 a {len(modelos_disponiveis)}.")
-args.modelo = modelos_disponiveis[int(escolha_modelo) - 1]
+if args.modelo is None:
+    print("Modelos disponíveis:")
+    for indice, nome_modelo in enumerate(modelos_disponiveis, start=1):
+        print(f"{indice} - {nome_modelo}")
+    while True:
+        escolha_modelo = input("Escolha o modelo: ").strip()
+        if escolha_modelo.isdigit() and 1 <= int(escolha_modelo) <= len(modelos_disponiveis):
+            break
+        print(f"Opção inválida. Digite um número de 1 a {len(modelos_disponiveis)}.")
+    args.modelo = modelos_disponiveis[int(escolha_modelo) - 1]
 
-if args.modelo.startswith("attentiongates_dpu_"):
+if args.modelo in ("attentiongates_dpu_easy_remaining", "attentiongates_dpu_only_remaining"):
     from .benchmark_dpu import interativo
     interativo(args.modelo, DATASETS, MedidorEnergia, medir_energia)
     raise SystemExit(0)
 
-print("Datasets disponíveis:")
-print("1 - full")
-print("2 - test")
-while True:
-    escolha_dataset = input("Escolha o dataset [1/2]: ").strip()
-    if escolha_dataset in ("1", "2"):
-        break
-    print("Opção inválida. Digite 1 ou 2.")
-args.dataset = "full" if escolha_dataset == "1" else "test"
-DATASET_PATH, CSV_DATASET = DATASETS[args.dataset]
+if args.data_root:
+    DATASET_PATH = str(args.data_root.expanduser().resolve())
+    CSV_DATASET = "train.csv" if args.dataset == "full" else "test.csv"
+else:
+    if args.modelo is not None:
+        args.dataset = args.dataset or "test"
+    else:
+        print("Datasets disponíveis:")
+        print("1 - full")
+        print("2 - test")
+        while True:
+            escolha_dataset = input("Escolha o dataset [1/2]: ").strip()
+            if escolha_dataset in ("1", "2"):
+                args.dataset = "full" if escolha_dataset == "1" else "test"
+                break
+            print("Opção inválida. Digite 1 ou 2.")
+    DATASET_PATH, CSV_DATASET = DATASETS[args.dataset]
 
-print("Dispositivos disponíveis:")
-print("1 - CPU")
-print("2 - GPU (CUDA)")
-while True:
-    escolha_device = input("Escolha o dispositivo [1/2]: ").strip()
-    if escolha_device in ("1", "2"):
-        break
-    print("Opção inválida. Digite 1 ou 2.")
-args.device = "cpu" if escolha_device == "1" else "gpu"
+if args.device is None:
+    print("Dispositivos disponíveis:")
+    print("1 - CPU")
+    print("2 - GPU (CUDA)")
+    while True:
+        escolha_device = input("Escolha o dispositivo [1/2]: ").strip()
+        if escolha_device in ("1", "2"):
+            args.device = "cpu" if escolha_device == "1" else "gpu"
+            break
+        print("Opção inválida. Digite 1 ou 2.")
 
 if args.device == "gpu" and not torch.cuda.is_available():
     raise RuntimeError("GPU solicitada, mas CUDA não está disponível")
@@ -91,9 +126,11 @@ device = torch.device("cuda" if args.device == "gpu" else "cpu")
 if device.type == "cuda":
     print("GPU:", torch.cuda.get_device_name(0))
 
-model = load_model(args.modelo, device)
+model = load_model(args.modelo, device, align_corners=args.align_corners == "true")
 
 amostras = encontrar_sample(DATASET_PATH, CSV_DATASET)
+if not amostras:
+    raise FileNotFoundError(f"Nenhuma amostra encontrada em {DATASET_PATH}/{CSV_DATASET}")
 classificacao_por_pasta = carregar_classificacao_por_pasta(DATASET_PATH, CSV_DATASET)
 
 print("Amostras encontradas:", len(amostras))
@@ -108,12 +145,12 @@ for canal in canais:
 
 print("Shape label:", label.shape)
 
-quantidade = -1
-
-while quantidade < 0 or quantidade > len(amostras):
-    quantidade = int(
-        input(f"Quantas imagens deseja usar? (0 = todas, máximo {len(amostras)}): ")
-    )
+quantidade = args.quantidade
+if quantidade == 0 and sys.stdin.isatty() and args.modelo is None:
+    while quantidade < 0 or quantidade > len(amostras):
+        quantidade = int(input(f"Quantas imagens deseja usar? (0 = todas, máximo {len(amostras)}): "))
+if quantidade < 0 or quantidade > len(amostras):
+    raise ValueError(f"--quantidade precisa estar entre 0 e {len(amostras)}")
 
 if quantidade > 0:
     amostras = amostras[:quantidade]
@@ -125,7 +162,7 @@ canais = carregar_sample(amostras[0])
 entrada = preprocess(canais).to(device)
 
 with torch.inference_mode():
-    for _ in range(WARMUP):
+    for _ in range(args.warmup):
         model(entrada)
 if device.type == "cuda":
     torch.cuda.synchronize()
@@ -274,17 +311,17 @@ auprc = auc(
     precision_curve
 )
 
-precision = tp_total / (tp_total + fp_total)
+precision = tp_total / (tp_total + fp_total) if tp_total + fp_total else 0.0
 
-recall = tp_total / (tp_total + fn_total)
+recall = tp_total / (tp_total + fn_total) if tp_total + fn_total else 0.0
 
 f1_global = calcular_f1_contagens(tp_total, fp_total, fn_total)
 f1_strong_plume = calcular_f1_contagens(*contagens_grupo["strong_plume"])
 f1_weak_plume = calcular_f1_contagens(*contagens_grupo["weak_plume"])
 
-iou = tp_total / (tp_total + fp_total + fn_total)
+iou = tp_total / (tp_total + fp_total + fn_total) if tp_total + fp_total + fn_total else 0.0
 
-fpr = fp_total / (fp_total + tn_total)
+fpr = fp_total / (fp_total + tn_total) if fp_total + tn_total else 0.0
 
 media_e2e = np.mean(tempos_e2e)
 
@@ -391,13 +428,16 @@ print(f"Modelo:       {np.mean(tempos_model):.3f} ms "
 print(f"Posprocess:   {np.mean(tempos_posprocess):.3f} ms "
       f"({np.mean(tempos_posprocess) / media_e2e * 100:.1f}%)")
 
-data_hora = datetime.now().strftime("%Y%m%d_%H%M")
+data_hora = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
 
-ARQUIVO_RESULTADOS = Path(__file__).resolve().parent / f"resultado_{args.dataset}_{args.device}_{args.modelo}_{data_hora}.csv"
+args.output_dir.mkdir(parents=True, exist_ok=True)
+ARQUIVO_RESULTADOS = args.output_dir / f"resultado_{args.dataset}_{args.device}_{args.modelo}_align_{args.align_corners}_{data_hora}.csv"
 
 resultado = {
     "data": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     "modelo": args.modelo,
+    "align_corners": args.align_corners,
+    "ordem_canais": "mag1c,460,550,640" if "dpu" in args.modelo.lower() else "mag1c,640,550,460",
     "dataset": args.dataset,
     "device": args.device,
     "imagens": len(amostras),
