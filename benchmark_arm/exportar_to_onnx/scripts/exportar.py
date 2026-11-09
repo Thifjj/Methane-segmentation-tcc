@@ -10,30 +10,31 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
 import torch
+from Modelos_treinados.checkpoint_paths import resolve_checkpoint_path
 
 MODELOS = {
-    "baseline": ("Modelos.UNet_baseline:UNetBaseline", "UNET_mag1c_rgb.pth"),
-    "depth_reduced": ("Modelos.UNet_depth_reduced:UNetDepthReduced", "UNET_depth_reduced_mag1c_rgb.pth"),
-    "mobilenet_v2": ("Modelos.UNet_MobileNet_v2:UNetMobileNetV2", "Mobile_Net_v2_mag1c_rgb.pth"),
-    "mobilenet_v3": ("Modelos.UNet_MobileNet_v3:UNetMobileNetV3", "Mobile_Net_v3_mag1c_rgb.pth"),
-    "mobilenet_v3_bce": ("Modelos.UNet_MobileNet_v3:UNetMobileNetV3", "Mobile_Net_v3_mag1c_rgb.pth"),
-    "mobilenet_v3_focaldice": ("Modelos.UNet_MobileNet_v3_dpu:UNetMobileNetV3_dpu", "MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth"),
-    "mobilenet_v3_dpu": ("Modelos.UNet_MobileNet_v3_dpu:UNetMobileNetV3_dpu", "Mobile_Net_v3_dpu_mag1c_rgb.pth"),
-    "mobilenet_v3_attentiongates": ("Modelos.UNet_MobileNetV3_AttentionGates:UNetMobileNetV3AttentionGates", "UNetMobileNetV3AttentionGates_mag1c_rgb.pth"),
-    "attentiongates_bce": ("Modelos.UNet_MobileNetV3_AttentionGates:UNetMobileNetV3AttentionGates", "MobileNetV3_AttentionGates_BCE_mag1c_rgb.pth"),
-    "attentiongates_focaldice_artigo": ("Modelos.UNet_MobileNetV3_AttentionGates:UNetMobileNetV3AttentionGates", "MobileNetV3_AttentionGates_FocalDiceLossmag1c_rgb.pth"),
-    "attentiongates_dpu_bce_artigo": ("Modelos.UNet_MobileNetV3_AttentionGates_DPU:UNetMobileNetV3AttentionGatesDPU", "UNetMobileNetV3AttentionGatesDPU_BCE_mag1c_rgb.pth"),
-    "attentiongates_dpu_bce_retreinado": ("Modelos.UNet_MobileNetV3_AttentionGates_DPU:UNetMobileNetV3AttentionGatesDPU", "UNetMobileNetV3AttentionGatesDPU_BCE_mag1c_rgb.pth"),
+    "baseline": ("Modelos.UNet_baseline:UNetBaseline", "unet_baseline_mag1c_rgb.pth"),
+    "depth_reduced": ("Modelos.UNet_depth_reduced:UNetDepthReduced", "unet_depth_reduced_mag1c_rgb.pth"),
+    "mobilenet_v2": ("Modelos.UNet_MobileNet_v2:UNetMobileNetV2", "unet_mobilenet_v2_mag1c_rgb.pth"),
+    "mobilenet_v3": ("Modelos.UNet_MobileNet_v3:UNetMobileNetV3", "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3_bce": ("Modelos.UNet_MobileNet_v3:UNetMobileNetV3", "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3_focaldice": ("Modelos.UNet_MobileNet_v3_dpu:UNetMobileNetV3_dpu", "unet_mobilenet_v3_focaldice_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu": ("Modelos.UNet_MobileNet_v3_dpu:UNetMobileNetV3_dpu", "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3_attentiongates": ("Modelos.UNet_MobileNetV3_AttentionGates:UNetMobileNetV3AttentionGates", "unet_mobilenet_v3_attentiongates_focaldice_remaining_all_mag1c_rgb.pth"),
+    "attentiongates_bce": ("Modelos.UNet_MobileNetV3_AttentionGates:UNetMobileNetV3AttentionGates", "unet_mobilenet_v3_attentiongates_bce_mag1c_rgb.pth"),
+    "attentiongates_focaldice_artigo": ("Modelos.UNet_MobileNetV3_AttentionGates:UNetMobileNetV3AttentionGates", "unet_mobilenet_v3_attentiongates_focaldice_mag1c_rgb.pth"),
+    "attentiongates_dpu_bce_artigo": ("Modelos.UNet_MobileNetV3_AttentionGates_DPU:UNetMobileNetV3AttentionGatesDPU", "unet_mobilenet_v3_attentiongates_dpu_bce_retrained_mag1c_rgb.pth"),
+    "attentiongates_dpu_bce_retreinado": ("Modelos.UNet_MobileNetV3_AttentionGates_DPU:UNetMobileNetV3AttentionGatesDPU", "unet_mobilenet_v3_attentiongates_dpu_bce_retrained_mag1c_rgb.pth"),
     "attentiongates_dpu_focaldice_artigo": ("Modelos.UNet_MobileNetV3_AttentionGates_DPU:UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_FocalDiceLossmag1c_rgb.pth"),
-    "mobilenet_v3_bce_artigo": ("Modelos.UNet_MobileNet_v3:UNetMobileNetV3", "Mobile_Net_v3_BCELoss_mag1c_rgb.pth"),
-    "mobilenet_v3_focaldice_artigo": ("Modelos.UNet_MobileNet_v3:UNetMobileNetV3", "MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth"),
-    "skip": ("Modelos.UNet_SkipConnections:UNetElementWise", "UNET_SkipConnections_mag1c_rgb.pth"),
-    "resnet34": ("Modelos.UNet_ResNet34:UNetResNet34", "UNet_ResNet34_mag1c_rgb.pth"),
-    "segformer": ("Modelos.UNet_SegFormer:SegFormerB0", "UNet_SegFormer_mag1c_rgb.pth"),
+    "mobilenet_v3_bce_artigo": ("Modelos.UNet_MobileNet_v3:UNetMobileNetV3", "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3_focaldice_artigo": ("Modelos.UNet_MobileNet_v3:UNetMobileNetV3", "unet_mobilenet_v3_focaldice_mag1c_rgb.pth"),
+    "skip": ("Modelos.UNet_SkipConnections:UNetElementWise", "unet_skip_connections_mag1c_rgb.pth"),
+    "resnet34": ("Modelos.UNet_ResNet34:UNetResNet34", "unet_resnet34_mag1c_rgb.pth"),
+    "segformer": ("Modelos.UNet_SegFormer:SegFormerB0", "segformer_b0_mag1c_rgb.pth"),
     "hyperstarcop": ("Modelos.HyperStarcop_oficial:carregar_hyperstarcop", "HyperSTARCOP_oficial/final_checkpoint_model.ckpt"),
     "attention_gates": ("Modelos.UNet_AttentionGates:UNetAttentionGates", None),
     "attentiongates_dpu_easy_remaining": ("Modelos.UNet_MobileNetV3_AttentionGates_DPU:UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_easy_remaining_mag1c_rgb.pth"),
-    "attentiongates_dpu_only_remaining": ("Modelos.UNet_MobileNetV3_AttentionGates_DPU:UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_only_remaining_mag1c_rgb.pth"),
+    "attentiongates_dpu_only_remaining": ("Modelos.UNet_MobileNetV3_AttentionGates_DPU:UNetMobileNetV3AttentionGatesDPU", "unet_mobilenet_v3_attentiongates_dpu_only_remaining_val_test_mag1c_rgb.pth"),
     "psa": ("Modelos.UNet_PSA:UNetPSA", None),
 }
 
@@ -131,6 +132,7 @@ def main():
         if not args.checkpoint and padrao is None:
             parser.error(f"{nome} exige --checkpoint ARQUIVO")
         checkpoint = args.checkpoint or ROOT / "Modelos_treinados" / padrao
+        checkpoint = resolve_checkpoint_path(checkpoint)
         if not checkpoint.is_file():
             raise FileNotFoundError(checkpoint)
         patch_size = args.patch_size or 512

@@ -9,6 +9,8 @@ import kornia.augmentation as K
 from Utils.FocalDiceLoss import FocalDiceLoss
 from sklearn.model_selection import GroupShuffleSplit
 
+from Modelos_treinados.checkpoint_paths import training_checkpoint_path
+
 from Utils.DataLoader import carregar_dataframe_starcop, STARCOPDataset, DataNormalizer
 
 def binary_opening(x: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
@@ -32,6 +34,7 @@ def calcular_f1_score(previsao_logits, gabarito, threshold=0.0):
     return f1.sum().item(), f1.numel() 
 
 def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produtos_entrada):
+    caminho_salvamento = training_checkpoint_path(nome_modelo_salvar)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\n--- Iniciando Treinamento: {nome_modelo_salvar} ---")
 
@@ -63,7 +66,6 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
 
     modelo = modelo_escolhido(in_channels=len(produtos_entrada), out_channels=1).to(device)
     
-    caminho_salvamento = f"Modelos_treinados/{nome_modelo_salvar}.pth"
     os.makedirs("Modelos_treinados", exist_ok=True)
     
     if os.path.exists(caminho_salvamento):

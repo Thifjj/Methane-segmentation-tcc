@@ -191,7 +191,7 @@ def executar(args, medidor_class, medir_energia):
         raise ValueError("O protocolo oficial exige a coluna difficulty.")
     checkpoint = PROJECT_ROOT / "Modelos_treinados" / MODEL_REGISTRY[args.attention_dpu][1]
     if args.attention_dpu == "attentiongates_dpu_bce_artigo":
-        checkpoint = PROJECT_ROOT / "Modelos_treinados/Modelo_artigo/UNetMobileNetV3AttentionGatesDPU_BCE_mag1c_rgb.pth"
+        checkpoint = PROJECT_ROOT / "Modelos_treinados/Modelo_artigo/unet_mobilenet_v3_attentiongates_dpu_bce_retrained_mag1c_rgb.pth"
     checkpoint_hash = file_sha256(checkpoint)
     calibration = PROJECT_ROOT / "VitisAI/build/vitis_ai/quantize" / args.attention_dpu / "calibration_manifest.json"
     if calibration.exists() and json.loads(calibration.read_text()).get("checkpoint_sha256") != checkpoint_hash:

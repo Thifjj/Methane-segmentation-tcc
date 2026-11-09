@@ -7,11 +7,11 @@ import onnx
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "benchmark_arm/exportar_to_onnx/modelos_convertidos_onnx"
 MODELS = {
-    "mobilenet_v3_attentiongates": (512, "UNetMobileNetV3AttentionGates_mag1c_rgb.pth"),
+    "mobilenet_v3_attentiongates": (512, "unet_mobilenet_v3_attentiongates_focaldice_remaining_all_mag1c_rgb.pth"),
     "attentiongates_dpu_easy_remaining_512": (512, "UnetMobilenetV3AttentionGates_dpu_easy_remaining_mag1c_rgb.pth"),
-    "attentiongates_dpu_only_remaining_512": (512, "UnetMobilenetV3AttentionGates_dpu_only_remaining_mag1c_rgb.pth"),
-    "mobilenet_v3_dpu": (512, "Mobile_Net_v3_dpu_mag1c_rgb.pth"),
-    "mobilenet_v3": (512, "Mobile_Net_v3_mag1c_rgb.pth"),
+    "attentiongates_dpu_only_remaining_512": (512, "unet_mobilenet_v3_attentiongates_dpu_only_remaining_val_test_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu": (512, "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3": (512, "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
 }
 
 for name, (size, checkpoint) in MODELS.items():

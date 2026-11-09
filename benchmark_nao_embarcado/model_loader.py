@@ -3,23 +3,23 @@ from pathlib import Path
 import Modelos
 
 NOVOS_MODELOS = {
-    "mobilenet_v3_focaldice": ("UNetMobileNetV3_dpu", "MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth"),
-    "attentiongates_bce": ("UNetMobileNetV3AttentionGates", "MobileNetV3_AttentionGates_BCE_mag1c_rgb.pth"),
-    "attentiongates_checkpoint_unet": ("UNetMobileNetV3AttentionGates", "UNetMobileNetV3AttentionGates_mag1c_rgb.pth"),
-    "attentiongates_dpu_focaldice_artigo": ("UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_FocalDiceLoss_mag1c_rgb.pth"),
-    "attentiongates_dpu_bce_artigo": ("UNetMobileNetV3AttentionGatesDPU", "UNetMobileNetV3AttentionGatesDPU_BCE_mag1c_rgb.pth"),
-    "attentiongates_dpu_bce_remaining_all": ("UNetMobileNetV3AttentionGatesDPU", "remaining_all_dpu_retrain_original/UnetMobilenetV3AttentionGates_dpu_BCEloss_mag1c_rgb.pth"),
-    "attentiongates_dpu_focaldice_remaining_all": ("UNetMobileNetV3AttentionGatesDPU", "remaining_all_dpu_retrain_original/UnetMobilenetV3AttentionGates_dpu_FocalDiceLoss_mag1c_rgb.pth"),
-    "attentiongates_focaldice_artigo": ("UNetMobileNetV3AttentionGates", "MobileNetV3_AttentionGates_FocalDiceLossmag1c_rgb.pth"),
-    "mobilenet_v3_bce_artigo": ("UNetMobileNetV3", "Mobile_Net_v3_BCELoss_mag1c_rgb.pth"),
-    "mobilenet_v3_focaldice_artigo": ("UNetMobileNetV3", "MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth"),
-    "mobilenet_v3_dpu_bce_artigo": ("UNetMobileNetV3_dpu", "Mobile_Net_v3_BCELoss_mag1c_rgb.pth"),
-    "mobilenet_v3_dpu_focaldice_artigo": ("UNetMobileNetV3_dpu", "MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth"),
+    "mobilenet_v3_focaldice": ("UNetMobileNetV3_dpu", "unet_mobilenet_v3_focaldice_mag1c_rgb.pth"),
+    "attentiongates_bce": ("UNetMobileNetV3AttentionGates", "unet_mobilenet_v3_attentiongates_bce_mag1c_rgb.pth"),
+    "attentiongates_checkpoint_unet": ("UNetMobileNetV3AttentionGates", "unet_mobilenet_v3_attentiongates_focaldice_remaining_all_mag1c_rgb.pth"),
+    "attentiongates_dpu_focaldice_artigo": ("UNetMobileNetV3AttentionGatesDPU", "unet_mobilenet_v3_attentiongates_dpu_focaldice_remaining_all_mag1c_rgb.pth"),
+    "attentiongates_dpu_bce_artigo": ("UNetMobileNetV3AttentionGatesDPU", "unet_mobilenet_v3_attentiongates_dpu_bce_retrained_mag1c_rgb.pth"),
+    "attentiongates_dpu_bce_remaining_all": ("UNetMobileNetV3AttentionGatesDPU", "unet_mobilenet_v3_attentiongates_dpu_bce_remaining_all_mag1c_rgb.pth"),
+    "attentiongates_dpu_focaldice_remaining_all": ("UNetMobileNetV3AttentionGatesDPU", "unet_mobilenet_v3_attentiongates_dpu_focaldice_remaining_all_mag1c_rgb.pth"),
+    "attentiongates_focaldice_artigo": ("UNetMobileNetV3AttentionGates", "unet_mobilenet_v3_attentiongates_focaldice_mag1c_rgb.pth"),
+    "mobilenet_v3_bce_artigo": ("UNetMobileNetV3", "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3_focaldice_artigo": ("UNetMobileNetV3", "unet_mobilenet_v3_focaldice_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu_bce_artigo": ("UNetMobileNetV3_dpu", "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu_focaldice_artigo": ("UNetMobileNetV3_dpu", "unet_mobilenet_v3_focaldice_mag1c_rgb.pth"),
 }
 
 # Checkpoint do artigo treinado com align_corners=True. Os pesos sao compativeis
 # com a variante DPU, mas essa diferenca afeta a interpolacao durante inferencia.
-ARTIGO_BCE_MODELO = "UNetMobileNetV3AttentionGatesDPU_BCE_mag1c_rgb.pth"
+ARTIGO_BCE_MODELO = "unet_mobilenet_v3_attentiongates_dpu_bce_retrained_mag1c_rgb.pth"
 
 from Modelos import UNetBaseline, UNetDepthReduced, UNetMobileNetV2, UNetMobileNetV3, UNetElementWise, carregar_hyperstarcop
 
@@ -65,11 +65,11 @@ def load_model(nome_modelo, device, align_corners=True):
         return model.to(device).eval()
     
     modelos = {
-        "baseline": (UNetBaseline, "UNET_mag1c_rgb.pth"),
-        "depth_reduced": (UNetDepthReduced, "UNET_depth_reduced_mag1c_rgb.pth"),
-        "mobilenet_v2": (UNetMobileNetV2, "Mobile_Net_v2_mag1c_rgb.pth"),
-        "mobilenet_v3": (UNetMobileNetV3, "Mobile_Net_v3_mag1c_rgb.pth"),
-        "skip": (UNetElementWise, "UNET_SkipConnections_mag1c_rgb.pth"),
+        "baseline": (UNetBaseline, "unet_baseline_mag1c_rgb.pth"),
+        "depth_reduced": (UNetDepthReduced, "unet_depth_reduced_mag1c_rgb.pth"),
+        "mobilenet_v2": (UNetMobileNetV2, "unet_mobilenet_v2_mag1c_rgb.pth"),
+        "mobilenet_v3": (UNetMobileNetV3, "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+        "skip": (UNetElementWise, "unet_skip_connections_mag1c_rgb.pth"),
     }
 
     classe_modelo, checkpoint = modelos[nome_modelo]

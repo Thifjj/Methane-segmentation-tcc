@@ -70,7 +70,7 @@ Para treinar pelo notebook, importe a nova classe e use um nome próprio, evitan
 from Modelos.UNet_MobileNetV3_AttentionGates_DPU import UNetMobileNetV3AttentionGatesDPU
 
 MODELS = [
-    (UNetMobileNetV3AttentionGatesDPU, "UNetMobileNetV3AttentionGatesDPU", 0.0),
+    (UNetMobileNetV3AttentionGatesDPU, "unet_mobilenet_v3_attentiongates_dpu_bce", 0.0),
 ]
 ```
 

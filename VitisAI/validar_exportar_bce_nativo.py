@@ -19,6 +19,7 @@ import torch
 from sklearn.metrics import average_precision_score
 from torch.utils.data import DataLoader
 
+from common import resolve_checkpoint_path
 from common import PROJECT_ROOT, build_model, file_sha256, load_quantized_parameters
 from Utils.DataLoader import carregar_dataframe_starcop, STARCOPDataset, DataNormalizer
 from Testes.Teste_Unet import binary_opening
@@ -35,7 +36,7 @@ def create_context(path, csv, dataset_root, limit, threads):
     original = Path(comparison['original_dir']).resolve()
     native = Path(comparison['native_dir']).resolve()
     original_manifest = json.loads((original / 'calibration_manifest.json').read_text())
-    checkpoint = Path(comparison['checkpoint']).resolve()
+    checkpoint = resolve_checkpoint_path(Path(comparison['checkpoint']).resolve())
     if not checkpoint.is_file():
         raise FileNotFoundError(f'Checkpoint nao encontrado: {checkpoint}')
     ck_hash = file_sha256(checkpoint)

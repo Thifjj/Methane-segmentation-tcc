@@ -11,6 +11,8 @@ from tqdm import tqdm
 from kornia.morphology import erosion, dilation
 from sklearn.metrics import average_precision_score
 
+from Modelos_treinados.checkpoint_paths import resolve_checkpoint_path
+
 from Utils.DataLoader import carregar_dataframe_starcop, STARCOPDataset, DataNormalizer
 
 def binary_opening(x: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
@@ -84,7 +86,7 @@ def avaliar_e_visualizar(modelo_escolhido, nome_modelo_salvo, produtos_entrada):
     normalizador = DataNormalizer(produtos_entrada).to(device_obj)
 
     modelo = modelo_escolhido(in_channels=len(produtos_entrada), out_channels=1).to(device_obj)
-    caminho_pesos = f"Modelos_treinados/{nome_modelo_salvo}.pth"
+    caminho_pesos = resolve_checkpoint_path(f"Modelos_treinados/{nome_modelo_salvo}.pth")
     modelo.load_state_dict(torch.load(caminho_pesos, map_location=device_obj, weights_only=True))
     modelo.eval()
 

@@ -1,3 +1,5 @@
+Checkpoint filenames were migrated; the export table below preserves historical provenance. See [MODEL_REGISTRY.md](../Modelos_treinados/MODEL_REGISTRY.md) for current paths and compatibility.
+
 # Benchmark ARM / ONNX na ZCU104
 
 ## Resultados atuais do artigo

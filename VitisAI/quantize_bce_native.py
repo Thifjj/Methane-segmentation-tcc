@@ -14,6 +14,7 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
+from common import resolve_checkpoint_path
 from common import PROJECT_ROOT, build_model, file_sha256
 from Utils.DataLoader import DataNormalizer, STARCOPDataset, carregar_dataframe_starcop
 from diagnostico_bce_vitisai35 import (
@@ -69,7 +70,7 @@ def main():
     torch.set_num_threads(args.threads)
     source = locate_quant_dir(args.source_quant_dir)
     manifest = json.loads((source / 'calibration_manifest.json').read_text())
-    checkpoint = find_checkpoint(args.checkpoint or manifest['checkpoint'], source)
+    checkpoint = find_checkpoint(str(resolve_checkpoint_path(args.checkpoint or manifest['checkpoint'])), source)
     if manifest.get('checkpoint_sha256') and file_sha256(checkpoint) != manifest['checkpoint_sha256']:
         raise RuntimeError('Checkpoint não corresponde ao manifesto da calibracao existente!')
     for filename, digest in manifest.get('artifacts', {}).items():

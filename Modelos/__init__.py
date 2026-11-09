@@ -17,7 +17,8 @@ _EXPORTS = {
     "SegFormerB0": (".UNet_SegFormer", "SegFormerB0"),
     "UNetMobileNetV3AttentionGatesDPU" : (".UNet_MobileNetV3_AttentionGates_DPU", "UNetMobileNetV3AttentionGatesDPU"),
     "UNetMobileNetV3AttentionGates": (".UNet_MobileNetV3_AttentionGates", "UNetMobileNetV3AttentionGates"),
-    "UNetMobileNetV3_dpu" : (".UNet_MobileNet_v3_dpu", "UNetMobileNetV3_dpu")
+    "UNetMobileNetV3_dpu" : (".UNet_MobileNet_v3_dpu", "UNetMobileNetV3_dpu"),
+    "SegFormerB0_Attention": (".UNet_SegFormer_AttentionGates", "SegFormerB0_Attention"),
 }
 
 __all__ = list(_EXPORTS)

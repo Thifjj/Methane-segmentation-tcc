@@ -138,13 +138,13 @@ Dentro do container, em `/workspace/VitisAI` com `vitis-ai-pytorch` ativo:
 
 ```bash
 python quantize_model.py \
-  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --checkpoint ../Modelos_treinados/unet_mobilenet_v3_bce_mag1c_rgb.pth \
   --quant-mode calib --csv /dataset_STARCOP/train.csv \
   --data-root /dataset_STARCOP --subset-len 100 \
   --range-samples 512 --refine-layers 0
 
 python quantize_model.py \
-  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --checkpoint ../Modelos_treinados/unet_mobilenet_v3_bce_mag1c_rgb.pth \
   --quant-mode test --deploy --csv /dataset_STARCOP/train.csv \
   --data-root /dataset_STARCOP --range-samples 512 --refine-layers 0
 
@@ -163,7 +163,7 @@ carregador nao garante que todas as suas operacoes sejam executadas na placa.
 
 ### MobileNet V3 DPU: execucao concluida
 
-Checkpoint: `Mobile_Net_v3_dpu_mag1c_rgb.pth`; arquitetura:
+Checkpoint: `unet_mobilenet_v3_bce_mag1c_rgb.pth`; arquitetura:
 `Modelos.UNetMobileNetV3_dpu`. Este artefato e historico: foi calibrado com
 300 imagens e 2700 patches equilibrados. Novas calibracoes deste alias tambem
 usam 100 imagens e 512 amostras por camada/imagem, mantendo a geometria do
@@ -206,18 +206,18 @@ No container com os dois datasets montados, execute em `/workspace/VitisAI`:
 
 ```bash
 python quantize_model.py --model mobilenet_v3_dpu_512 \
-  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --checkpoint ../Modelos_treinados/unet_mobilenet_v3_bce_mag1c_rgb.pth \
   --quant-mode calib --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP \
   --no-patching --subset-len 100 --range-samples 512 --refine-layers 0
 
 python evaluate_quantized.py --model mobilenet_v3_dpu_512 \
-  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --checkpoint ../Modelos_treinados/unet_mobilenet_v3_bce_mag1c_rgb.pth \
   --dataset test --csv /dataset_test/test.csv --data-root /dataset_test \
   --quant-dir build/vitis_ai/quantize \
   --output-dir build/vitis_ai/evaluation
 
 python quantize_model.py --model mobilenet_v3_dpu_512 \
-  --checkpoint ../Modelos_treinados/Mobile_Net_v3_dpu_mag1c_rgb.pth \
+  --checkpoint ../Modelos_treinados/unet_mobilenet_v3_bce_mag1c_rgb.pth \
   --quant-mode test --deploy --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP \
   --no-patching --subset-len 1 --range-samples 512 --refine-layers 0
 
@@ -255,7 +255,7 @@ na placa ainda nao foi validada.
 ## MobileNetV3 Focal Dice — quantizacao direta, 512x512
 
 Este fluxo aplica a quantizacao PTQ normal do Vitis AI ao checkpoint
-`MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth`, com a arquitetura
+`unet_mobilenet_v3_focaldice_mag1c_rgb.pth`, com a arquitetura
 `UNetMobileNetV3_dpu`. Nao faz reconstrucao de camadas nem ajuste posterior.
 O perfil de calibracao replica o `attentiongates_dpu_only_remaining`:
 
@@ -282,7 +282,7 @@ No container Vitis AI, em `/workspace/VitisAI`, execute:
 python quantize_model.py \
   --model mobilenet_v3_focaldice_dpu_512 \
   --architecture UNetMobileNetV3_dpu \
-  --checkpoint ../Modelos_treinados/MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth \
+  --checkpoint ../Modelos_treinados/unet_mobilenet_v3_focaldice_mag1c_rgb.pth \
   --quant-mode calib \
   --csv /dataset_STARCOP/train.csv --data-root /dataset_STARCOP \
   --no-patching --subset-len 100 --range-samples 512 \
@@ -291,14 +291,14 @@ python quantize_model.py \
 python evaluate_quantized.py \
   --model mobilenet_v3_focaldice_dpu_512 \
   --architecture UNetMobileNetV3_dpu \
-  --checkpoint ../Modelos_treinados/MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth \
+  --checkpoint ../Modelos_treinados/unet_mobilenet_v3_focaldice_mag1c_rgb.pth \
   --dataset test --csv /workspace/STARCOP_test/test.csv \
   --data-root /workspace/STARCOP_test --num-threads 2
 
 python quantize_model.py \
   --model mobilenet_v3_focaldice_dpu_512 \
   --architecture UNetMobileNetV3_dpu \
-  --checkpoint ../Modelos_treinados/MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth \
+  --checkpoint ../Modelos_treinados/unet_mobilenet_v3_focaldice_mag1c_rgb.pth \
   --quant-mode test --deploy --csv /dataset_STARCOP/train.csv \
   --data-root /dataset_STARCOP --no-patching --subset-len 1 \
   --range-samples 512 --refine-layers 0 --num-workers 0

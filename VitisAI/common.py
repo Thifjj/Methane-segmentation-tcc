@@ -15,6 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import Modelos
+from Modelos_treinados.checkpoint_paths import ARCHITECTURES, RENAMES, resolve_checkpoint_path
 from Utils.DataLoader import BAND_NORMALIZATION, DataNormalizer, STARCOPDataset, carregar_dataframe_starcop
 
 
@@ -88,26 +89,37 @@ DEFAULT_PRODUCTS = (
 
 MODEL_REGISTRY = {
     "attentiongates_dpu_easy_remaining": ("UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_easy_remaining_mag1c_rgb.pth"),
-    "attentiongates_dpu_only_remaining": ("UNetMobileNetV3AttentionGatesDPU", "UnetMobilenetV3AttentionGates_dpu_only_remaining_mag1c_rgb.pth"),
-    "baseline": ("UNetBaseline", "UNET_mag1c_rgb.pth"),
-    "depth_reduced": ("UNetDepthReduced", "UNET_depth_reduced_mag1c_rgb.pth"),
-    "skip_connections": ("UNetElementWise", "UNET_SkipConnections_mag1c_rgb.pth"),
-    "mobilenet_v2": ("UNetMobileNetV2", "Mobile_Net_v2_mag1c_rgb.pth"),
-    "mobilenet_v3": ("UNetMobileNetV3", "Mobile_Net_v3_mag1c_rgb.pth"),
-    "mobilenet_v3_dpu": ("UNetMobileNetV3_dpu", "Mobile_Net_v3_dpu_mag1c_rgb.pth"),
-    "mobilenet_v3_dpu_512": ("UNetMobileNetV3_dpu", "Mobile_Net_v3_dpu_mag1c_rgb.pth"),
-    "mobilenet_v3_attentiongates": ("UNetMobileNetV3AttentionGates", "MobileNetV3_AttentionGates_mag1c_rgb.pth"),
-    "resnet34": ("UNetResNet34", "UNet_ResNet34_mag1c_rgb.pth"),
-    "segformer": ("SegFormerB0", "UNet_SegFormer_mag1c_rgb.pth"),
+    "attentiongates_dpu_only_remaining": ("UNetMobileNetV3AttentionGatesDPU", "unet_mobilenet_v3_attentiongates_dpu_only_remaining_val_test_mag1c_rgb.pth"),
+    "baseline": ("UNetBaseline", "unet_baseline_mag1c_rgb.pth"),
+    "depth_reduced": ("UNetDepthReduced", "unet_depth_reduced_mag1c_rgb.pth"),
+    "skip_connections": ("UNetElementWise", "unet_skip_connections_mag1c_rgb.pth"),
+    "mobilenet_v2": ("UNetMobileNetV2", "unet_mobilenet_v2_mag1c_rgb.pth"),
+    "mobilenet_v3": ("UNetMobileNetV3", "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu": ("UNetMobileNetV3_dpu", "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3_dpu_512": ("UNetMobileNetV3_dpu", "unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "mobilenet_v3_attentiongates": ("UNetMobileNetV3AttentionGates", "unet_mobilenet_v3_attentiongates_focaldice_mag1c_rgb.pth"),
+    "resnet34": ("UNetResNet34", "unet_resnet34_mag1c_rgb.pth"),
+    "segformer": ("SegFormerB0", "segformer_b0_mag1c_rgb.pth"),
     "attentiongates": ("UNetAttentionGates", None),
     "psa": ("UNetPSA", None),
     "hyperstarcop": ("HyperSTARCOPOficial", "HyperSTARCOP_oficial/final_checkpoint_model.ckpt"),
+    "segformer_attgate_bce": ("SegFormerB0_Attention", "segformer_b0_attentiongates_bce_mag1c_rgb.pth")
 }
 
 CHECKPOINT_ALIASES = {
+    old: name for old, new in RENAMES.items()
+    for name, (_, path) in MODEL_REGISTRY.items() if path == new
+}
+CHECKPOINT_ALIASES.update({
+    "unet_mobilenet_v3_attentiongates_focaldice_remaining_all_mag1c_rgb.pth": "mobilenet_v3_attentiongates",
     "UNetMobileNetV3AttentionGates_mag1c_rgb.pth": "mobilenet_v3_attentiongates",
     "Mobile_Net_v3_mag1c_rgb_dpu.pth": "mobilenet_v3_dpu",
-}
+})
+
+CHECKPOINT_ALIASES.update({
+    "Mobile_Net_v3_dpu_mag1c_rgb.pth": "mobilenet_v3_dpu",
+    "Mobile_Net_v3_mag1c_rgb.pth": "mobilenet_v3",
+})
 
 CALIBRATION_PROFILE = dict(subset_len=100, range_samples=512, refine_layers=0)
 
@@ -138,6 +150,9 @@ def resolve_model(model_name=None, checkpoint=None, architecture=None):
                 model_name = next((name for name, (_, path) in MODEL_REGISTRY.items()
                                    if path and Path(path).name == filename), None)
             if model_name is None:
+                canonical = Path(RENAMES.get(filename, filename)).name
+                if architecture is None and canonical in ARCHITECTURES:
+                    architecture = ARCHITECTURES[canonical]
                 if architecture is None:
                     raise ValueError("Nome de checkpoint desconhecido: informe --architecture (classe de Modelos).")
                 model_name = Path(checkpoint).stem
@@ -162,6 +177,7 @@ def build_model(model_name: str, checkpoint: str | Path | None, in_channels: int
     if not checkpoint and not default_checkpoint:
         raise ValueError(f"Informe --checkpoint para {model_name}.")
     checkpoint_path = Path(checkpoint) if checkpoint else PROJECT_ROOT / "Modelos_treinados" / default_checkpoint
+    checkpoint_path = resolve_checkpoint_path(checkpoint_path)
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"Checkpoint nao encontrado: {checkpoint_path}")
 

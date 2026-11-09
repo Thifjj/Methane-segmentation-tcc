@@ -2,7 +2,7 @@
 
 ## Coletas CUDA atuais do artigo
 
-Em `resultados_artigo/` há cinco coletas CUDA concluídas: `attentiongates_dpu_bce_artigo`, `attentiongates_dpu_focaldice_artigo`, `mobilenet_v3_dpu_bce_artigo`, `mobilenet_v3_dpu_focaldice_artigo` e `hyperstarcop`. A coleta CUDA de `attentiongates_dpu_bce_artigo` usa o checkpoint anterior; o alias agora carrega `UNetMobileNetV3AttentionGatesDPU_BCE_mag1c_rgb.pth`, cujo benchmark CPU/GPU está pendente. Cada execução usa as 342 imagens do TEST, 512×512, FP32, batch 1 e dez aquecimentos.
+Em `resultados_artigo/` há cinco coletas CUDA concluídas: `attentiongates_dpu_bce_artigo`, `attentiongates_dpu_focaldice_artigo`, `mobilenet_v3_dpu_bce_artigo`, `mobilenet_v3_dpu_focaldice_artigo` e `hyperstarcop`. A coleta CUDA de `attentiongates_dpu_bce_artigo` usa o checkpoint anterior; o alias agora carrega `unet_mobilenet_v3_attentiongates_dpu_bce_retrained_mag1c_rgb.pth`, cujo benchmark CPU/GPU está pendente. Cada execução usa as 342 imagens do TEST, 512×512, FP32, batch 1 e dez aquecimentos.
 
 Para medir os cinco modelos na GPU com os checkpoints atuais, na raiz do projeto:
 
@@ -56,9 +56,9 @@ for MODELO in mobilenet_v3_focaldice attentiongates_bce; do
 done
 ```
 
-`mobilenet_v3_focaldice` usa `MobileNet_v3_FocalDiceLoss_mag1c_rgb.pth`
+`mobilenet_v3_focaldice` usa `unet_mobilenet_v3_focaldice_mag1c_rgb.pth`
 com `UNetMobileNetV3_dpu`, conforme o `main.ipynb` atual.
-`attentiongates_bce` usa `MobileNetV3_AttentionGates_BCE_mag1c_rgb.pth`
+`attentiongates_bce` usa `unet_mobilenet_v3_attentiongates_bce_mag1c_rgb.pth`
 com `UNetMobileNetV3AttentionGates`. A opção `--attention-dpu` seleciona
 o modelo na extensão existente; estas execuções são PyTorch FP32 na CPU.
 
@@ -261,11 +261,11 @@ deve conter a classe e o caminho do respectivo arquivo `.pth`:
 
 ```python
 modelos = {
-    "baseline": (UNetBaseline, "/caminho/UNET_mag1c_rgb.pth"),
-    "depth_reduced": (UNetDepthReduced, "/caminho/UNET_depth_reduced_mag1c_rgb.pth"),
-    "mobilenet_v2": (UNetMobileNetV2, "/caminho/Mobile_Net_v2_mag1c_rgb.pth"),
-    "mobilenet_v3": (UNetMobileNetV3, "/caminho/Mobile_Net_v3_mag1c_rgb.pth"),
-    "skip": (UNetElementWise, "/caminho/UNET_SkipConnections_mag1c_rgb.pth"),
+    "baseline": (UNetBaseline, "/caminho/unet_baseline_mag1c_rgb.pth"),
+    "depth_reduced": (UNetDepthReduced, "/caminho/unet_depth_reduced_mag1c_rgb.pth"),
+    "mobilenet_v2": (UNetMobileNetV2, "/caminho/unet_mobilenet_v2_mag1c_rgb.pth"),
+    "mobilenet_v3": (UNetMobileNetV3, "/caminho/unet_mobilenet_v3_bce_mag1c_rgb.pth"),
+    "skip": (UNetElementWise, "/caminho/unet_skip_connections_mag1c_rgb.pth"),
 }
 ```
 
