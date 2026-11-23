@@ -31,12 +31,12 @@ def calcular_f1_score(previsao_logits, gabarito, threshold=0.0):
     
     return f1.sum().item(), f1.numel() 
 
-def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produtos_entrada):
+def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produtos_entrada, selected_loss):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\n--- Iniciando Treinamento: {nome_modelo_salvar} ---")
 
-    CAMINHO_CSV = "Datasets/STARCOP_train/train.csv"
-    DIRETORIO_DADOS = "Datasets/STARCOP_train"
+    CAMINHO_CSV = "/media/jacques/games/Datasets/STARCOP_train_remaining_all/train.csv"
+    DIRETORIO_DADOS = "/media/jacques/games/Datasets/STARCOP_train_remaining_all"
     
     df_train = carregar_dataframe_starcop(CAMINHO_CSV, DIRETORIO_DADOS)
     
@@ -71,11 +71,14 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
         modelo.load_state_dict(torch.load(caminho_salvamento, map_location=device, weights_only=True))
     
     optimizer = optim.Adam(modelo.parameters(), lr=1e-4)
-        
-    criterion = nn.BCEWithLogitsLoss(reduction='none')
 
-    #criterion = FocalDiceLoss(alpha=0.25, gamma=2.0, weight_focal=1.0, weight_dice=1.0)
-    scaler = torch.amp.GradScaler('cuda') 
+    if selected_loss == "FD":
+        criterion = FocalDiceLoss(alpha=0.25, gamma=2.0, weight_focal=1.0, weight_dice=1.0)
+    else:
+        criterion = nn.BCEWithLogitsLoss(reduction='none')
+
+    amp_ativo = device.type == "cuda"
+    scaler = torch.amp.GradScaler(device.type, enabled=amp_ativo)
 
     augmentacoes = K.AugmentationSequential(
         K.RandomHorizontalFlip(p=0.5),
@@ -112,10 +115,12 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
             inputs = normalizador(inputs)
             optimizer.zero_grad(set_to_none=True)
 
-            with torch.amp.autocast('cuda'):
+            with torch.amp.autocast(device_type=device.type, enabled=amp_ativo):
                 previsoes = modelo(inputs)
-                #loss = criterion(previsoes, targets, weight_map=pesos_loss)
-                loss = (criterion(previsoes, targets) * pesos_loss).mean() #LOSS DO BCE 
+                if selected_loss == "FD":
+                    loss = criterion(previsoes, targets, weight_map=pesos_loss)
+                else:
+                    loss = (criterion(previsoes, targets) * pesos_loss).mean() #LOSS DO BCE 
 
             scaler.scale(loss).backward()
             scaler.step(optimizer)
@@ -138,7 +143,7 @@ def treinar_modelo(modelo_escolhido, nome_modelo_salvar, starting_point, produto
                 
                 inputs = normalizador(inputs)
                 
-                with torch.amp.autocast('cuda'):
+                with torch.amp.autocast(device_type=device.type, enabled=amp_ativo):
                     previsoes = modelo(inputs)
                     
                 soma_f1_batch, qtd_amostras = calcular_f1_score(previsoes, targets)

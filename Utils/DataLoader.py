@@ -63,12 +63,14 @@ def carregar_dataframe_starcop(
     return df
 
 class STARCOPDataset(Dataset):
-    def __init__(self, dataframe, input_products, output_products, weight_loss=None, patching=True):
+    def __init__(self, dataframe, input_products, output_products, weight_loss=None, patching=True, modo_treino=None):
         self.dataframe = dataframe
         self.input_products = input_products
         self.output_products = output_products
         self.weight_loss = weight_loss
-        self.patching = patching
+        # modo_treino (usado pelo treinamento do João): True = patches 128x128, False = imagem inteira.
+        # Se não for passado, vale `patching`, então as chamadas antigas continuam iguais.
+        self.patching = patching if modo_treino is None else modo_treino
 
     def __len__(self):
         return self.dataframe.shape[0]

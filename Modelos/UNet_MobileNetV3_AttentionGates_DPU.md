@@ -54,7 +54,7 @@ O nó de entrada é classificado como `user` pelo Inspector e não está incluí
 
 Também foi verificada uma passagem de treinamento em CPU, com entrada `[2, 4, 128, 128]`, saída `[2, 1, 128, 128]`, BCEWithLogitsLoss e gradientes finitos.
 
-Os relatórios estão em `../VitisAI/build/vitis_ai/inspect/attentiongates_dpu/`, nas pastas `128` e `512`.
+Os relatórios de inspeção desta variante não estão mais na árvore; a inspeção atual dos checkpoints fica em `../VitisAI/build/vitis_ai/inspect/`.
 
 Essa verificação confirma a atribuição dos operadores pelo Inspector para o target indicado. Não inclui calibração INT8, compilação completa, execução na placa ou avaliação da qualidade da segmentação.
 

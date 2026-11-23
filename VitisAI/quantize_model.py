@@ -43,7 +43,7 @@ def parse_args(argv=None):
     parser.set_defaults(balanced=None)
     parser.add_argument("--patches-per-group", type=int,
                         help="Limite por grupo forte/fraco/fundo; usa igual quantidade nos tres.")
-    parser.add_argument("--range-policy", choices=("layer_mse",), default="layer_mse",
+    parser.add_argument("--range-policy", choices=("default",), default="default",
                         help="Politica oficial: faixas por camada.")
     parser.add_argument("--max-clipping-percent", type=float, default=0.1)
     parser.add_argument("--range-samples", type=int)
@@ -187,25 +187,6 @@ def quantize(args):
         preserve_widest_ranges(quantizer.processor.quantizer)
     quant_model = quantizer.quant_model.eval()
     ranges = None
-    if args.quant_mode == "calib":
-        from calibration_ranges import LayerRanges
-        ranges = LayerRanges(quantizer.processor.quantizer.quant_config, args.max_clipping_percent, args.range_samples)
-        hooks = [module.register_forward_hook(ranges.capture) for module in quant_model.modules()]
-        NndctOption.nndct_quant_off.value = True
-        try:
-            with torch.inference_mode():
-                for i, inputs in enumerate(normalized_inputs(loader, products, device)):
-                    if tuple(inputs.shape[1:]) != (len(products), args.height, args.width):
-                        raise ValueError("Dimensoes dos patches diferem da configuracao.")
-                    quant_model(inputs)
-                    if (i + 1) % 100 == 0:
-                        print(f"Observacao FP32 por camada: {i + 1} batches", flush=True)
-        finally:
-            for hook in hooks:
-                hook.remove()
-            NndctOption.nndct_quant_off.value = False
-        ranges.apply(quantizer.processor.quantizer)
-        print(f"Faixas selecionadas individualmente: {len(ranges.stats)} camadas", flush=True)
 
     count = 0
     print(f"Modelo: {args.model}; produtos: {products}; patching: {args.patching}; imagens: {len(loader.dataset.dataframe)}; range-policy: {args.range_policy}", flush=True)

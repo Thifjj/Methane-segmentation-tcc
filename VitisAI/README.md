@@ -2,7 +2,7 @@
 
 ## Seleção atual do artigo
 
-Os cinco XModels da seleção atual estão em `build/vitis_ai/compiled_artigo/`: AttentionGates DPU BCE e Focal Dice, MobileNetV3 DPU BCE e Focal Dice, e HyperSTARCOP. Os manifestos de quantização atuais ficam em `build/vitis_ai/quantize_artigo/`. As seções sobre `easy_remaining`, `only_remaining` e `compiled_zcu104/` abaixo documentam o fluxo anterior e não substituem os resultados físicos atuais em `../benchmark_zcu104/resultados_zcu104/`. O host GPU FP32 usa checkpoints PyTorch e resultados em `../benchmark_nao_embarcado/resultados_artigo/`.
+Os cinco XModels da seleção atual estão em `build/vitis_ai/compiled_artigo/`: AttentionGates DPU BCE e Focal Dice, MobileNetV3 DPU BCE e Focal Dice, e HyperSTARCOP. Os manifestos de quantização atuais ficam em `build/vitis_ai/quantize_artigo/`. As seções sobre `easy_remaining`, `only_remaining` e `compiled/` abaixo documentam o fluxo anterior e não substituem os resultados físicos atuais em `../benchmark_zcu104/resultados_zcu104/`. O host GPU FP32 usa checkpoints PyTorch e resultados em `../benchmark_nao_embarcado/resultados_artigo/`.
 
 Os AttentionGates easy_remaining e only_remaining usam entrada 512x512, sem
 dividir imagens em patches. A avaliacao compara FP32 e INT8 nas mesmas 342
@@ -29,7 +29,7 @@ Os artefatos ficam em `build/vitis_ai/`, agrupados por etapa e modelo:
 - `inspect/`: inspecoes disponiveis dos dois checkpoints.
 - `logs/<modelo>/`: logs de calibracao, exportacao, compilacao e avaliacao.
 
-Os modelos compilados ficam em `build/vitis_ai/compiled_zcu104/<modelo>/`,
+Os modelos compilados ficam em `build/vitis_ai/compiled/<modelo>/`,
 com os demais compilados ZCU104.
 
 Os checkpoints FP32 ficam em `../Modelos_treinados/`. `common.py` registra
@@ -90,7 +90,7 @@ Para compilar o XModel exportado, use `compile_xmodel.py --xmodel ARQUIVO \
 
 ## Compilacao oficial concluida
 
-Os dois XModels em `build/vitis_ai/compiled_zcu104/` foram compilados para
+Os dois XModels em `build/vitis_ai/compiled/` foram compilados para
 `DPUCZDX8G_ISA1_B4096`, usando o arch.json da ZCU104 do Vitis AI 3.5.
 Cada modelo tem um subgrafo DPU com 324 operacoes e entrada INT8 NHWC
 `[1, 512, 512, 4]`. A compilacao foi conferida com XIR; a execucao na placa
@@ -102,7 +102,7 @@ esta pendente.
 Os modelos `baseline`, `depth_reduced`, `skip_connections`, `mobilenet_v2`,
 `mobilenet_v3` e `hyperstarcop` foram restaurados do Git/Git LFS:
 
-- `build/vitis_ai/compiled_zcu104/<modelo>/`: compilado ZCU104, meta e MD5.
+- `build/vitis_ai/compiled/<modelo>/`: compilado ZCU104, meta e MD5.
 - `build/vitis_ai/quantize/<modelo>/`: XModel quantizado, configuração e bias.
 - `build/vitis_ai/restoration_manifest.json`: commit, tamanhos e SHA-256.
 
@@ -151,7 +151,7 @@ python quantize_model.py \
 python compile_xmodel.py \
   --xmodel build/vitis_ai/quantize/mobilenet_v3_dpu/UNetMobileNetV3_dpu_int.xmodel \
   --arch /opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json \
-  --output-dir build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu \
+  --output-dir build/vitis_ai/compiled/mobilenet_v3_dpu \
   --name mobilenet_v3_dpu
 ```
 
@@ -170,7 +170,7 @@ usam 100 imagens e 512 amostras por camada/imagem, mantendo a geometria do
 modelo selecionado. Foram exportados:
 
 - `build/vitis_ai/quantize/mobilenet_v3_dpu/UNetMobileNetV3_dpu_int.xmodel`.
-- `build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu/mobilenet_v3_dpu.xmodel`.
+- `build/vitis_ai/compiled/mobilenet_v3_dpu/mobilenet_v3_dpu.xmodel`.
 
 A verificacao XIR confirmou um subgrafo DPU com 276 operacoes, entrada INT8
 NHWC `[1,128,128,4]` com fix_point 5 e saida INT8 `[1,128,128,1]` com fix_point 2.
@@ -199,8 +199,8 @@ contexto espacial da inferencia FP32 de referencia. Novas calibracoes usam
 clipping de 0,1% e nenhum refinamento. Os argumentos de calibracao de um JSON
 ou CLI que contrariem esse perfil sao rejeitados. A quantizacao fica em
 `build/vitis_ai/quantize/mobilenet_v3_dpu_512/` e a avaliacao em
-`build/vitis_ai/evaluation/mobilenet_v3_dpu_512/`.
-O compilado fica em `build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu_512/`.
+`build/vitis_ai/evaluation_artigo/mobilenet_v3_dpu_bce_artigo/` (mesmos CSVs INT8; a copia sem `_artigo` foi removida por repeticao).
+O compilado fica em `build/vitis_ai/compiled/mobilenet_v3_dpu_512/`.
 
 No container com os dois datasets montados, execute em `/workspace/VitisAI`:
 
@@ -224,7 +224,7 @@ python quantize_model.py --model mobilenet_v3_dpu_512 \
 python compile_xmodel.py \
   --xmodel build/vitis_ai/quantize/mobilenet_v3_dpu_512/UNetMobileNetV3_dpu_int.xmodel \
   --arch /opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json \
-  --output-dir build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu_512 \
+  --output-dir build/vitis_ai/compiled/mobilenet_v3_dpu_512 \
   --name mobilenet_v3_dpu_512
 ```
 
@@ -243,7 +243,7 @@ refinamento de 12 camadas), conforme o manifesto; seus resultados nao usam o
 perfil padronizado novo. Os IDs de calibracao nao aparecem no conjunto de teste.
 AUPRC: 0,745439 / 0,722560; F1 fraco: 0,562549 / 0,518384 (FP32 / INT8).
 
-O arquivo `build/vitis_ai/compiled_zcu104/mobilenet_v3_dpu_512/mobilenet_v3_dpu_512.xmodel`
+O arquivo `build/vitis_ai/compiled/mobilenet_v3_dpu_512/mobilenet_v3_dpu_512.xmodel`
 foi compilado para a ZCU104. XIR confirmou um unico subgrafo DPU com 276
 operacoes e entrada INT8 NHWC `[1,512,512,4]`; a CPU faz apenas `fix2float`
 na saida. O runner deve usar a entrada 512x512 deste artefato.
@@ -311,14 +311,14 @@ Para compilar o XModel para a placa, use um container Vitis AI que inclua
 python compile_xmodel.py \
   --xmodel build/vitis_ai/quantize/mobilenet_v3_focaldice_dpu_512/UNetMobileNetV3_dpu_int.xmodel \
   --arch /opt/vitis_ai/compiler/arch/DPUCZDX8G/ZCU104/arch.json \
-  --output-dir build/vitis_ai/compiled_zcu104/mobilenet_v3_focaldice_dpu_512 \
+  --output-dir build/vitis_ai/compiled/mobilenet_v3_focaldice_dpu_512 \
   --name mobilenet_v3_focaldice_dpu_512
 ```
 
 A calibracao e o XModel INT8 ficam em
 `build/vitis_ai/quantize/mobilenet_v3_focaldice_dpu_512/`. O avaliador grava
 as linhas por imagem e o resumo em
-`build/vitis_ai/evaluation/mobilenet_v3_focaldice_dpu_512/`.
+`build/vitis_ai/evaluation_artigo/mobilenet_v3_dpu_focaldice_artigo/` (mesmos CSVs; a copia sem `_artigo` foi removida por repeticao).
 
 ### Resultado no test set
 

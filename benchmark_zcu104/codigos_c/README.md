@@ -2,7 +2,7 @@
 
 ## Seleção atual do artigo
 
-Os cinco XModels INT8 da seleção atual são AttentionGates DPU BCE e Focal Dice, MobileNetV3 DPU BCE e Focal Dice, e HyperSTARCOP. As coletas de referência ficam em `benchmark_zcu104/resultados_zcu104/`; os artefatos correspondentes ficam em `VitisAI/build/vitis_ai/compiled_artigo/`. As seções abaixo documentam também o fluxo e os oito modelos históricos em `compiled_zcu104/`. Para comparação com CPU/GPU FP32, veja [`../../benchmark_nao_embarcado/README.md`](../../benchmark_nao_embarcado/README.md).
+Os cinco XModels INT8 da seleção atual são AttentionGates DPU BCE e Focal Dice, MobileNetV3 DPU BCE e Focal Dice, e HyperSTARCOP. As coletas de referência ficam em `benchmark_zcu104/resultados_zcu104/`; os artefatos correspondentes ficam em `VitisAI/build/vitis_ai/compiled_artigo/`. As seções abaixo documentam também o fluxo e os oito modelos históricos em `compiled/`. Para comparação com CPU/GPU FP32, veja [`../../benchmark_nao_embarcado/README.md`](../../benchmark_nao_embarcado/README.md).
 
 Compila e mede modelos de segmentação com VART/GraphRunner. O programa lê os
 quatro TIFFs do STARCOP, normaliza mag1c por 1750 e RGB por 60, limita os
@@ -22,7 +22,7 @@ limiar efetivo do `benchmark_nao_embarcado/benchmark_geral.py`.
 Os seis modelos antigos foram restaurados do Git/Git LFS nos caminhos
 originais do repositório, incluindo **HyperSTARCOP**:
 
-| Modelo | Compilado em `VitisAI/build/vitis_ai/compiled_zcu104/` | Quantizado em `VitisAI/build/vitis_ai/quantize/` |
+| Modelo | Compilado em `VitisAI/build/vitis_ai/compiled/` | Quantizado em `VitisAI/build/vitis_ai/quantize/` |
 |---|---|---|
 | Baseline | `baseline/methane_baseline.xmodel` | `baseline/UNetBaseline_int.xmodel` |
 | Depth Reduced | `depth_reduced/methane_depth_reduced.xmodel` | `depth_reduced/UNetDepthReduced_int.xmodel` |
@@ -40,9 +40,9 @@ Os seis MD5 e o target `DPUCZDX8G_ISA1_B4096` foram conferidos;
 os seis quantizados e seis compilados abriram no XIR.
 
 Os dois AttentionGates continuam em
-`VitisAI/build/vitis_ai/compiled_zcu104/` e
+`VitisAI/build/vitis_ai/compiled/` e
 `VitisAI/build/vitis_ai/quantize/`.
-A pasta de modelos da placa recebe os arquivos de **compiled_zcu104**;
+A pasta de modelos da placa recebe os arquivos de **compiled**;
 os grafos em **quantize** são os artefatos anteriores à compilação.
 
 ## Copiar para a placa — no computador
@@ -57,7 +57,7 @@ scp -O -r benchmark_zcu104/codigos_c root@192.168.2.100:/home/root/thiago/benchm
 
 # Copia todos os compilados, incluindo HyperSTARCOP, AttentionGates e MobileNet DPU.
 # Os subdiretórios baseline, hyperstarcop etc. ficam diretamente em modelos/.
-scp -O -r VitisAI/build/vitis_ai/compiled_zcu104/* root@192.168.2.100:/home/root/thiago/benchmark/modelos/
+scp -O -r VitisAI/build/vitis_ai/compiled/* root@192.168.2.100:/home/root/thiago/benchmark/modelos/
 
 
 # Opcional: envia o test set se ele ainda não estiver na placa.
@@ -141,7 +141,7 @@ de cada modelo. Os comandos acima usam diretamente a configuração atual.
 Os modelos anteriores são `baseline`, `depth_reduced`,
 `skip_connections`, `mobilenet_v2`, `mobilenet_v3` e `hyperstarcop`.
 Os dois AttentionGates oficiais estão no repositório em
-`VitisAI/build/vitis_ai/compiled_zcu104/`. Na placa, considerando que
+`VitisAI/build/vitis_ai/compiled/`. Na placa, considerando que
 os arquivos foram copiados para `/home/root/thiago/benchmark/modelos` e os
 datasets estão em `/home/root/thiago`, compile e execute todos os modelos nos
 dois conjuntos: `STARCOP_test` e o full, chamado `dataset_starcop` na placa:

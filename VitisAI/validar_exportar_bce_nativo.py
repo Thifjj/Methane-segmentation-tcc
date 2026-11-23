@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# HISTORICO: este experimento de PTQ nativa BCE nao roda mais no layout atual de
+# VitisAI/build/vitis_ai. Os artefatos estao divididos em quantize/native_bce*,
+# compiled/native_bce e evaluation/native_bce_*; o manifesto aponta para pastas
+# que nao existem mais (ptq_nativa_bce_comparacao/, quantized_artigo/). Mantido como referencia.
 """Valida a calibração PTQ nativa e exporta XModel para ZCU104 (Vitis AI 3.5).
 
 Requer o resultado de quantize_bce_native.py em

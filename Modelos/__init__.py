@@ -14,7 +14,11 @@ _EXPORTS = {
     "UNetAttentionGates": (".UNet_AttentionGates", "UNetAttentionGates"),
     "UNetPSA": (".UNet_PSA", "UNetPSA"),
     "UNetResNet34": (".UNet_ResNet34", "UNetResNet34"),
+    "UNetResNet34_dpu": (".UNet_ResNet34_dpu", "UNetResNet34"),
     "SegFormerB0": (".UNet_SegFormer", "SegFormerB0"),
+    "SegFormerB0_Attention": (".UNet_SegFormer_AttentionGates", "SegFormerB0_Attention"),
+    "SegFormerB0_DPU": (".UNet_SegFormer_DPU", "SegFormerB0_DPU"),
+    "SegFormerB0_Attention_DPU": (".UNet_SegFormer_AttentionGates_DPU", "SegFormerB0_Attention_DPU"),
     "UNetMobileNetV3AttentionGatesDPU" : (".UNet_MobileNetV3_AttentionGates_DPU", "UNetMobileNetV3AttentionGatesDPU"),
     "UNetMobileNetV3AttentionGates": (".UNet_MobileNetV3_AttentionGates", "UNetMobileNetV3AttentionGates"),
     "UNetMobileNetV3_dpu" : (".UNet_MobileNet_v3_dpu", "UNetMobileNetV3_dpu")
